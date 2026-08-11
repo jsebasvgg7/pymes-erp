@@ -1,0 +1,172 @@
+.inv {
+	display: grid;
+	gap: 16px;
+}
+
+.inv__controls {
+	display: grid;
+	grid-template-columns: 1fr auto;
+	align-items: center;
+	gap: 12px;
+}
+
+.inv__filters {
+	display: flex;
+	align-items: flex-end;
+	gap: 12px;
+}
+
+.inv__filter {
+	display: grid;
+	gap: 8px;
+}
+
+.inv__filterLabel {
+	font-size: 13px;
+	color: rgba(10, 18, 34, 0.72);
+}
+
+.inv__select {
+	width: 100%;
+	height: 44px;
+	padding: 0 12px;
+	border-radius: 12px;
+	border: 1px solid rgba(10, 18, 34, 0.14);
+	background: rgba(255, 255, 255, 1);
+	color: #0a1222;
+	outline: none;
+	transition: border-color 160ms ease, box-shadow 160ms ease;
+}
+
+.inv__select:focus {
+	border-color: rgba(11, 74, 166, 0.45);
+	box-shadow: 0 0 0 4px rgba(11, 74, 166, 0.12);
+}
+
+.inv__table {
+	min-width: 0;
+}
+
+.inv__actions {
+	display: flex;
+	gap: 10px;
+	justify-content: flex-end;
+}
+
+.inv__actionBtn {
+	height: 36px;
+	padding: 0 12px;
+	border-radius: 12px;
+}
+
+.inv__stockBadge .ui-badge {
+	font-size: 0;
+}
+
+.inv__stockBadge .ui-badge::after {
+	font-size: 12px;
+}
+
+.inv__stockBadge--out .ui-badge::after {
+	content: "🔴 Agotado";
+}
+
+.inv__stockBadge--low .ui-badge::after {
+	content: "🟡 Stock Bajo";
+}
+
+.inv__stockBadge--ok .ui-badge::after {
+	content: "🟢 Disponible";
+}
+
+.inv__empty {
+	display: grid;
+	gap: 6px;
+	text-align: center;
+	padding: 26px 10px;
+}
+
+.inv__emptyTitle {
+	font-size: 14px;
+	font-weight: 650;
+	color: rgba(10, 18, 34, 0.86);
+}
+
+.inv__emptySubtitle {
+	font-size: 13px;
+	color: rgba(10, 18, 34, 0.62);
+}
+
+.inv__modalActions {
+	display: flex;
+	gap: 10px;
+	justify-content: flex-end;
+	width: 100%;
+}
+
+.inv__details {
+	display: grid;
+	gap: 12px;
+}
+
+.inv__detailGrid {
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	gap: 12px;
+}
+
+.inv__detail {
+	display: grid;
+	gap: 6px;
+	padding: 12px;
+	border-radius: 14px;
+	border: 1px solid rgba(10, 18, 34, 0.10);
+	background: rgba(255, 255, 255, 1);
+}
+
+.inv__detail--full {
+	grid-column: 1 / -1;
+}
+
+.inv__detailLabel {
+	font-size: 12px;
+	color: rgba(10, 18, 34, 0.62);
+}
+
+.inv__detailValue {
+	font-size: 13px;
+	font-weight: 650;
+	color: rgba(10, 18, 34, 0.86);
+	word-break: break-word;
+}
+
+.inv__imagePreview {
+	height: 140px;
+	border-radius: 16px;
+	border: 1px solid rgba(10, 18, 34, 0.12);
+	background: linear-gradient(135deg, rgba(11, 74, 166, 0.10), rgba(11, 74, 166, 0.04));
+	background-size: cover;
+	background-position: center;
+}
+
+@media (max-width: 860px) {
+	.inv__controls {
+		grid-template-columns: 1fr;
+	}
+
+	.inv__filters {
+		justify-content: flex-start;
+		flex-wrap: wrap;
+	}
+}
+
+@media (max-width: 520px) {
+	.inv__detailGrid {
+		grid-template-columns: 1fr;
+	}
+
+	.inv__actions {
+		flex-wrap: wrap;
+	}
+}
+

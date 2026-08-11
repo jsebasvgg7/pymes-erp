@@ -1,0 +1,135 @@
+.cash {
+	display: grid;
+	gap: 16px;
+}
+
+.cash__metrics {
+	display: grid;
+	grid-template-columns: repeat(4, minmax(0, 1fr));
+	gap: 12px;
+}
+
+.cash__table {
+	min-width: 0;
+}
+
+.cash__typeBadge .ui-badge {
+	font-size: 0;
+}
+
+.cash__typeBadge .ui-badge::after {
+	font-size: 12px;
+}
+
+.cash__typeBadge--in .ui-badge::after {
+	content: "Ingreso";
+}
+
+.cash__typeBadge--out .ui-badge::after {
+	content: "Egreso";
+}
+
+.cash__empty {
+	display: grid;
+	gap: 6px;
+	text-align: center;
+	padding: 26px 10px;
+}
+
+.cash__emptyTitle {
+	font-size: 14px;
+	font-weight: 650;
+	color: rgba(10, 18, 34, 0.86);
+}
+
+.cash__emptySubtitle {
+	font-size: 13px;
+	color: rgba(10, 18, 34, 0.62);
+}
+
+.cash__modalActions {
+	display: flex;
+	gap: 10px;
+	justify-content: flex-end;
+	width: 100%;
+}
+
+.cash__form {
+	margin-top: 2px;
+}
+
+.cash__grid {
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	gap: 12px;
+}
+
+.cash__field {
+	display: grid;
+	gap: 8px;
+}
+
+.cash__field--full {
+	grid-column: 1 / -1;
+}
+
+.cash__label {
+	font-size: 13px;
+	color: rgba(10, 18, 34, 0.72);
+}
+
+.cash__input,
+.cash__select {
+	width: 100%;
+	height: 44px;
+	padding: 0 12px;
+	border-radius: 12px;
+	border: 1px solid rgba(10, 18, 34, 0.14);
+	background: rgba(255, 255, 255, 1);
+	color: #0a1222;
+	outline: none;
+	transition: border-color 160ms ease, box-shadow 160ms ease;
+}
+
+.cash__input::placeholder {
+	color: rgba(10, 18, 34, 0.38);
+}
+
+.cash__input:focus,
+.cash__select:focus {
+	border-color: rgba(11, 74, 166, 0.45);
+	box-shadow: 0 0 0 4px rgba(11, 74, 166, 0.12);
+}
+
+.cash__textarea {
+	width: 100%;
+	padding: 12px;
+	border-radius: 12px;
+	border: 1px solid rgba(10, 18, 34, 0.14);
+	background: rgba(255, 255, 255, 1);
+	color: #0a1222;
+	outline: none;
+	resize: vertical;
+	transition: border-color 160ms ease, box-shadow 160ms ease;
+}
+
+.cash__textarea:focus {
+	border-color: rgba(11, 74, 166, 0.45);
+	box-shadow: 0 0 0 4px rgba(11, 74, 166, 0.12);
+}
+
+@media (max-width: 980px) {
+	.cash__metrics {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
+}
+
+@media (max-width: 520px) {
+	.cash__metrics {
+		grid-template-columns: 1fr;
+	}
+
+	.cash__grid {
+		grid-template-columns: 1fr;
+	}
+}

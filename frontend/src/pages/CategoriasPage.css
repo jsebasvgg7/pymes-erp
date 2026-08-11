@@ -1,0 +1,144 @@
+.cat {
+	display: grid;
+	gap: 16px;
+}
+
+.cat__controls {
+	display: grid;
+	grid-template-columns: 1fr auto;
+	align-items: center;
+	gap: 12px;
+}
+
+.cat__table {
+	min-width: 0;
+}
+
+.cat__actions {
+	display: flex;
+	gap: 10px;
+	justify-content: flex-end;
+}
+
+.cat__actionBtn {
+	height: 36px;
+	padding: 0 12px;
+	border-radius: 12px;
+}
+
+.cat__actionBtn--danger {
+	border-color: rgba(239, 68, 68, 0.22);
+	background: rgba(239, 68, 68, 0.06);
+	color: rgba(239, 68, 68, 0.92);
+	box-shadow: none;
+}
+
+.cat__empty {
+	display: grid;
+	gap: 6px;
+	text-align: center;
+	padding: 26px 10px;
+}
+
+.cat__emptyTitle {
+	font-size: 14px;
+	font-weight: 650;
+	color: rgba(10, 18, 34, 0.86);
+}
+
+.cat__emptySubtitle {
+	font-size: 13px;
+	color: rgba(10, 18, 34, 0.62);
+}
+
+.cat__emptyEmph {
+	font-weight: 650;
+	color: rgba(11, 74, 166, 0.92);
+}
+
+.cat__modalActions {
+	display: flex;
+	gap: 10px;
+	justify-content: flex-end;
+	width: 100%;
+}
+
+.cat__form {
+	margin-top: 2px;
+}
+
+.cat__grid {
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	gap: 12px;
+}
+
+.cat__field {
+	display: grid;
+	gap: 8px;
+}
+
+.cat__field--full {
+	grid-column: 1 / -1;
+}
+
+.cat__label {
+	font-size: 13px;
+	color: rgba(10, 18, 34, 0.72);
+}
+
+.cat__input,
+.cat__select {
+	width: 100%;
+	height: 44px;
+	padding: 0 12px;
+	border-radius: 12px;
+	border: 1px solid rgba(10, 18, 34, 0.14);
+	background: rgba(255, 255, 255, 1);
+	color: #0a1222;
+	outline: none;
+	transition: border-color 160ms ease, box-shadow 160ms ease;
+}
+
+.cat__input::placeholder {
+	color: rgba(10, 18, 34, 0.38);
+}
+
+.cat__input:focus,
+.cat__select:focus {
+	border-color: rgba(11, 74, 166, 0.45);
+	box-shadow: 0 0 0 4px rgba(11, 74, 166, 0.12);
+}
+
+.cat__textarea {
+	width: 100%;
+	padding: 12px;
+	border-radius: 12px;
+	border: 1px solid rgba(10, 18, 34, 0.14);
+	background: rgba(255, 255, 255, 1);
+	color: #0a1222;
+	outline: none;
+	resize: vertical;
+	transition: border-color 160ms ease, box-shadow 160ms ease;
+}
+
+.cat__textarea:focus {
+	border-color: rgba(11, 74, 166, 0.45);
+	box-shadow: 0 0 0 4px rgba(11, 74, 166, 0.12);
+}
+
+@media (max-width: 860px) {
+	.cat__controls {
+		grid-template-columns: 1fr;
+	}
+}
+
+@media (max-width: 520px) {
+	.cat__grid {
+		grid-template-columns: 1fr;
+	}
+
+	.cat__actions {
+		flex-wrap: wrap;
+	}
+}

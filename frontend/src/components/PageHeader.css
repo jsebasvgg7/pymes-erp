@@ -1,0 +1,30 @@
+.ui-pageHeader {
+	display: flex;
+	align-items: flex-start;
+	justify-content: space-between;
+	gap: 12px;
+}
+
+.ui-pageHeader__text {
+	min-width: 0;
+}
+
+.ui-pageHeader__title {
+	margin: 0;
+	font-size: 15px;
+	letter-spacing: -0.01em;
+}
+
+.ui-pageHeader__subtitle {
+	margin: 6px 0 0 0;
+	font-size: 12px;
+	color: rgba(10, 18, 34, 0.56);
+}
+
+.ui-pageHeader__actions {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	flex-shrink: 0;
+}
+

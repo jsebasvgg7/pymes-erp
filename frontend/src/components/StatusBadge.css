@@ -1,0 +1,40 @@
+.ui-badge {
+	font-size: 12px;
+	color: rgba(10, 18, 34, 0.56);
+	background: rgba(11, 74, 166, 0.08);
+	border: 1px solid rgba(11, 74, 166, 0.12);
+	padding: 6px 10px;
+	border-radius: 999px;
+	white-space: nowrap;
+}
+
+.ui-badge--active {
+	color: rgba(26, 163, 98, 0.95);
+	background: rgba(26, 163, 98, 0.10);
+	border-color: rgba(26, 163, 98, 0.18);
+}
+
+.ui-badge--inactive {
+	color: rgba(10, 18, 34, 0.64);
+	background: rgba(10, 18, 34, 0.06);
+	border-color: rgba(10, 18, 34, 0.12);
+}
+
+.ui-badge--pending {
+	color: rgba(245, 158, 11, 0.95);
+	background: rgba(245, 158, 11, 0.12);
+	border-color: rgba(245, 158, 11, 0.18);
+}
+
+.ui-badge--paid {
+	color: rgba(11, 74, 166, 0.95);
+	background: rgba(11, 74, 166, 0.10);
+	border-color: rgba(11, 74, 166, 0.18);
+}
+
+.ui-badge--void {
+	color: rgba(239, 68, 68, 0.95);
+	background: rgba(239, 68, 68, 0.10);
+	border-color: rgba(239, 68, 68, 0.18);
+}
+

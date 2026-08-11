@@ -1,0 +1,325 @@
+.pos {
+	display: grid;
+	grid-template-columns: 1.15fr 0.85fr;
+	gap: 16px;
+	min-height: calc(100vh - 140px);
+}
+
+.pos__left,
+.pos__right {
+	min-width: 0;
+	display: grid;
+	gap: 12px;
+}
+
+.pos__panel {
+	border: 1px solid rgba(10, 18, 34, 0.10);
+	border-radius: 18px;
+	background: rgba(255, 255, 255, 1);
+	box-shadow: 0 18px 40px rgba(10, 16, 32, 0.06);
+	overflow: hidden;
+}
+
+.pos__panelHeader {
+	padding: 14px 16px;
+	border-bottom: 1px solid rgba(10, 18, 34, 0.08);
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+}
+
+.pos__panelTitle {
+	font-size: 13px;
+	font-weight: 750;
+	color: rgba(10, 18, 34, 0.86);
+}
+
+.pos__panelBody {
+	padding: 14px 16px;
+}
+
+.pos__productsGrid {
+	display: grid;
+	grid-template-columns: repeat(3, minmax(0, 1fr));
+	gap: 12px;
+}
+
+.pos__productCard {
+	border: 1px solid rgba(10, 18, 34, 0.10);
+	border-radius: 16px;
+	background: rgba(255, 255, 255, 1);
+	padding: 12px;
+	display: grid;
+	gap: 10px;
+	min-height: 160px;
+}
+
+.pos__productTop {
+	display: grid;
+	grid-template-columns: 44px 1fr;
+	gap: 10px;
+	align-items: center;
+}
+
+.pos__productImg {
+	width: 44px;
+	height: 44px;
+	border-radius: 14px;
+	border: 1px solid rgba(10, 18, 34, 0.12);
+	background: linear-gradient(135deg, rgba(11, 74, 166, 0.12), rgba(11, 74, 166, 0.04));
+	background-size: cover;
+	background-position: center;
+}
+
+.pos__productName {
+	font-size: 13px;
+	font-weight: 750;
+	color: rgba(10, 18, 34, 0.88);
+	line-height: 1.2;
+}
+
+.pos__productMeta {
+	display: flex;
+	justify-content: space-between;
+	gap: 8px;
+	font-size: 12px;
+	color: rgba(10, 18, 34, 0.62);
+}
+
+.pos__productPrice {
+	font-weight: 760;
+	color: rgba(11, 74, 166, 0.92);
+}
+
+.pos__productStock {
+	color: rgba(10, 18, 34, 0.62);
+}
+
+.pos__productActions {
+	display: flex;
+	justify-content: flex-end;
+}
+
+.pos__cartTable {
+	display: grid;
+	gap: 10px;
+}
+
+.pos__cartHead,
+.pos__cartRow {
+	display: grid;
+	grid-template-columns: 1.2fr 0.6fr 0.7fr 0.7fr auto;
+	gap: 10px;
+	align-items: center;
+}
+
+.pos__cartHead {
+	font-size: 12px;
+	font-weight: 750;
+	color: rgba(10, 18, 34, 0.62);
+}
+
+.pos__cartRow {
+	padding: 10px 0;
+	border-top: 1px solid rgba(10, 18, 34, 0.08);
+}
+
+.pos__cartName {
+	font-size: 13px;
+	font-weight: 650;
+	color: rgba(10, 18, 34, 0.86);
+}
+
+.pos__cartQty {
+	display: flex;
+	gap: 8px;
+	align-items: center;
+	justify-content: flex-start;
+}
+
+.pos__qtyBtn {
+	height: 34px;
+	padding: 0 10px;
+	border-radius: 12px;
+}
+
+.pos__qtyValue {
+	min-width: 22px;
+	text-align: center;
+	font-weight: 750;
+	color: rgba(10, 18, 34, 0.86);
+}
+
+.pos__cellRight {
+	text-align: right;
+	font-weight: 750;
+	color: rgba(10, 18, 34, 0.82);
+}
+
+.pos__removeBtn {
+	height: 34px;
+	padding: 0 10px;
+	border-radius: 12px;
+}
+
+.pos__totals {
+	display: grid;
+	gap: 8px;
+	margin-top: 12px;
+	padding-top: 12px;
+	border-top: 1px dashed rgba(10, 18, 34, 0.18);
+}
+
+.pos__totalRow {
+	display: flex;
+	justify-content: space-between;
+	gap: 10px;
+	font-size: 13px;
+	color: rgba(10, 18, 34, 0.72);
+}
+
+.pos__totalValue {
+	font-weight: 800;
+	color: rgba(10, 18, 34, 0.90);
+}
+
+.pos__pay {
+	display: grid;
+	gap: 8px;
+	margin-top: 12px;
+}
+
+.pos__label {
+	font-size: 13px;
+	color: rgba(10, 18, 34, 0.72);
+}
+
+.pos__select {
+	width: 100%;
+	height: 44px;
+	padding: 0 12px;
+	border-radius: 12px;
+	border: 1px solid rgba(10, 18, 34, 0.14);
+	background: rgba(255, 255, 255, 1);
+	color: #0a1222;
+	outline: none;
+	transition: border-color 160ms ease, box-shadow 160ms ease;
+}
+
+.pos__select:focus {
+	border-color: rgba(11, 74, 166, 0.45);
+	box-shadow: 0 0 0 4px rgba(11, 74, 166, 0.12);
+}
+
+.pos__actions {
+	display: flex;
+	gap: 10px;
+	justify-content: flex-end;
+	margin-top: 12px;
+}
+
+.pos__empty {
+	display: grid;
+	gap: 6px;
+	text-align: center;
+	padding: 26px 10px;
+}
+
+.pos__emptyTitle {
+	font-size: 14px;
+	font-weight: 650;
+	color: rgba(10, 18, 34, 0.86);
+}
+
+.pos__emptySubtitle {
+	font-size: 13px;
+	color: rgba(10, 18, 34, 0.62);
+}
+
+.pos__receipt {
+	display: grid;
+	gap: 12px;
+}
+
+.pos__receiptMeta {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: 10px;
+}
+
+.pos__receiptLine {
+	display: grid;
+	gap: 6px;
+	padding: 12px;
+	border-radius: 14px;
+	border: 1px solid rgba(10, 18, 34, 0.10);
+	background: rgba(255, 255, 255, 1);
+}
+
+.pos__receiptLabel {
+	font-size: 12px;
+	color: rgba(10, 18, 34, 0.62);
+}
+
+.pos__receiptValue {
+	font-size: 13px;
+	font-weight: 750;
+	color: rgba(10, 18, 34, 0.86);
+}
+
+.pos__receiptItems {
+	display: grid;
+	gap: 8px;
+}
+
+.pos__receiptItem {
+	display: flex;
+	justify-content: space-between;
+	gap: 10px;
+	font-size: 13px;
+	color: rgba(10, 18, 34, 0.78);
+}
+
+.pos__receiptTotal {
+	display: flex;
+	justify-content: space-between;
+	font-size: 14px;
+	font-weight: 800;
+	color: rgba(10, 18, 34, 0.92);
+	padding-top: 10px;
+	border-top: 1px dashed rgba(10, 18, 34, 0.18);
+}
+
+.pos__receiptActions {
+	display: flex;
+	gap: 10px;
+	justify-content: flex-end;
+	width: 100%;
+}
+
+@media (max-width: 1100px) {
+	.pos__productsGrid {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
+}
+
+@media (max-width: 860px) {
+	.pos {
+		grid-template-columns: 1fr;
+	}
+
+	.pos__productsGrid {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
+}
+
+@media (max-width: 520px) {
+	.pos__productsGrid {
+		grid-template-columns: 1fr;
+	}
+
+	.pos__receiptMeta {
+		grid-template-columns: 1fr;
+	}
+}

@@ -1,0 +1,28 @@
+.ui-btnSecondary {
+	height: 42px;
+	padding: 0 14px;
+	border-radius: 14px;
+	border: 1px solid rgba(10, 18, 34, 0.12);
+	background: #ffffff;
+	cursor: pointer;
+	color: rgba(10, 18, 34, 0.78);
+	font-weight: 600;
+	transition: transform 160ms ease, box-shadow 160ms ease, background 160ms ease;
+}
+
+.ui-btnSecondary:hover {
+	transform: translateY(-1px);
+	box-shadow: 0 12px 24px rgba(10, 16, 32, 0.10);
+	background: rgba(255, 255, 255, 0.96);
+}
+
+.ui-btnSecondary:active {
+	transform: translateY(0);
+}
+
+.ui-btnSecondary:disabled {
+	opacity: 0.6;
+	cursor: not-allowed;
+	box-shadow: none;
+}
+

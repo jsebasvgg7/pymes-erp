@@ -1,0 +1,29 @@
+.ui-search {
+	height: 42px;
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	padding: 0 12px;
+	border-radius: 14px;
+	background: #ffffff;
+	border: 1px solid rgba(10, 18, 34, 0.10);
+	box-shadow: 0 10px 22px rgba(10, 16, 32, 0.06);
+}
+
+.ui-search__icon {
+	color: rgba(10, 18, 34, 0.55);
+}
+
+.ui-search__input {
+	border: 0;
+	outline: none;
+	width: 100%;
+	font-size: 13px;
+	color: rgba(10, 18, 34, 0.78);
+	background: transparent;
+}
+
+.ui-search__input::placeholder {
+	color: rgba(10, 18, 34, 0.40);
+}
+

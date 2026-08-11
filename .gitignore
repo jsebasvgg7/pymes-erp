@@ -1,0 +1,44 @@
+
+# === Backend (Java / Maven / Spring Boot) ===
+backend/target/
+backend/.mvn/wrapper/maven-wrapper.jar
+*.class
+*.jar
+!.mvn/wrapper/maven-wrapper.jar
+HELP.md
+
+# === Frontend (Node / Vite / React) ===
+frontend/node_modules/
+frontend/dist/
+frontend/dist-ssr/
+frontend/*.local
+
+# === Variables de entorno / secretos ===
+.env
+.env.local
+.env.*.local
+*.pem
+application-local.yml
+application-secrets.yml
+
+# === IDEs ===
+.idea/
+*.iml
+.vscode/
+!.vscode/extensions.json
+.classpath
+.project
+.settings/
+
+# === Sistema operativo ===
+.DS_Store
+Thumbs.db
+
+# === Logs ===
+*.log
+logs/
+# Maven wrapper descargado (se regenera solo)
+backend/.mvn/wrapper/dists/
+
+# TypeScript build cache
+frontend/tsconfig.tsbuildinfo
