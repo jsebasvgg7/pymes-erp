@@ -3,17 +3,27 @@ server:
 
 spring:
   datasource:
-    url: ${DB_URL:jdbc:mysql://localhost:3306/contabilidad}
-    username: ${DB_USER:root}
-    password: ${DB_PASSWORD}
+    url: jdbc:postgresql://pg-15cdf451-erp-bd84.b.aivencloud.com:28175/defaultdb?sslmode=require
+    username: avnadmin
+    password: AVNS_HpEqe9GMkSc_ZlqXBij
+    driver-class-name: org.postgresql.Driver
   jpa:
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    show-sql: true
     hibernate:
-      ddl-auto: none
+      ddl-auto: validate
     open-in-view: false
+    properties:
+      hibernate:
+        format_sql: true
+        jdbc:
+          lob:
+            non_contextual_creation: true
   flyway:
     enabled: true
     baseline-on-migrate: true
-    baseline-version: 0
+    baseline-version: 1
+    locations: classpath:db/migration
 
 springdoc:
   swagger-ui:
