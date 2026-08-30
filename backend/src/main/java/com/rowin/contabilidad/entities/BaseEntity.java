@@ -15,25 +15,57 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 @MappedSuperclass
 @EntityListeners(AuditingEntityListener.class)
-@Getter
-@Setter
 public abstract class BaseEntity {
-	@Id
-	@GeneratedValue(strategy = GenerationType.IDENTITY)
-	private Long id;
 
-	@CreatedDate
-	@Column(nullable = false)
-	private LocalDateTime createdAt;
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
 
-	@LastModifiedDate
-	@Column(nullable = false)
-	private LocalDateTime updatedAt;
+    @CreatedDate
+    @Column(nullable = false)
+    private LocalDateTime createdAt;
 
-	@Column(nullable = false)
-	private boolean active = true;
+    @LastModifiedDate
+    @Column(nullable = false)
+    private LocalDateTime updatedAt;
 
-	protected BaseEntity() {
-	}
+    @Column(nullable = false)
+    private boolean active = true;
+
+    protected BaseEntity() {
+    }
+
+    // ========== GETTERS ==========
+    public Long getId() {
+        return id;
+    }
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public LocalDateTime getUpdatedAt() {
+        return updatedAt;
+    }
+
+    public boolean isActive() {
+        return active;
+    }
+
+    // ========== SETTERS ==========
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
+    }
+
+    public void setUpdatedAt(LocalDateTime updatedAt) {
+        this.updatedAt = updatedAt;
+    }
+
+    public void setActive(boolean active) {
+        this.active = active;
+    }
 }
-

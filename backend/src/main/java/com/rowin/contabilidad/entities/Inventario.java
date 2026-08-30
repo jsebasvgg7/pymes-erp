@@ -12,21 +12,55 @@ import java.math.BigDecimal;
 @Entity
 @Table(name = "inventario")
 public class Inventario extends BaseEntity {
-	@ManyToOne(fetch = FetchType.LAZY)
-	@JoinColumn(name = "empresa_id", nullable = false)
-	private Empresa empresa;
 
-	@OneToOne(fetch = FetchType.LAZY)
-	@JoinColumn(name = "producto_id", nullable = false, unique = true)
-	private Producto producto;
+    public Inventario() {
+    }
 
-	@Column(nullable = false, precision = 19, scale = 3)
-	private BigDecimal cantidadActual = BigDecimal.ZERO;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "empresa_id", nullable = false)
+    private Empresa empresa;
 
-	@Column(nullable = false, precision = 19, scale = 2)
-	private BigDecimal costoPromedio = BigDecimal.ZERO;
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "producto_id", nullable = false, unique = true)
+    private Producto producto;
 
-	protected Inventario() {
-	}
+    @Column(nullable = false, precision = 19, scale = 3)
+    private BigDecimal cantidadActual = BigDecimal.ZERO;
+
+    @Column(nullable = false, precision = 19, scale = 2)
+    private BigDecimal costoPromedio = BigDecimal.ZERO;
+
+    // ========== GETTERS ==========
+    public Empresa getEmpresa() {
+        return empresa;
+    }
+
+    public Producto getProducto() {
+        return producto;
+    }
+
+    public BigDecimal getCantidadActual() {
+        return cantidadActual;
+    }
+
+    public BigDecimal getCostoPromedio() {
+        return costoPromedio;
+    }
+
+    // ========== SETTERS ==========
+    public void setEmpresa(Empresa empresa) {
+        this.empresa = empresa;
+    }
+
+    public void setProducto(Producto producto) {
+        this.producto = producto;
+    }
+
+    public void setCantidadActual(BigDecimal cantidadActual) {
+        this.cantidadActual = cantidadActual;
+    }
+
+    public void setCostoPromedio(BigDecimal costoPromedio) {
+        this.costoPromedio = costoPromedio;
+    }
 }
-

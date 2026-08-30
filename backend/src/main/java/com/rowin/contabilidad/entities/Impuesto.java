@@ -12,37 +12,92 @@ import jakarta.persistence.Table;
 import java.math.BigDecimal;
 import java.util.HashSet;
 import java.util.Set;
-import lombok.Getter;
-import lombok.Setter;
 
 @Entity
 @Table(name = "impuesto")
-@Getter
-@Setter
 public class Impuesto extends BaseEntity {
-	@ManyToOne(fetch = FetchType.LAZY)
-	@JoinColumn(name = "empresa_id", nullable = false)
-	private Empresa empresa;
 
-	@Column(nullable = false, length = 120)
-	private String nombre;
+    public Impuesto() {
+    }
 
-	@Enumerated(EnumType.STRING)
-	@Column(nullable = false, length = 30)
-	private TipoImpuesto tipo;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "empresa_id", nullable = false)
+    private Empresa empresa;
 
-	@Column(nullable = false, precision = 7, scale = 4)
-	private BigDecimal porcentaje;
+    @Column(nullable = false, length = 120)
+    private String nombre;
 
-	@ManyToMany(mappedBy = "impuestos")
-	private Set<Producto> productos = new HashSet<>();
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 30)
+    private TipoImpuesto tipo;
 
-	@ManyToMany(mappedBy = "impuestos")
-	private Set<DetalleFactura> detallesFactura = new HashSet<>();
+    @Column(nullable = false, precision = 7, scale = 4)
+    private BigDecimal porcentaje;
 
-	@ManyToMany(mappedBy = "impuestos")
-	private Set<DetalleCompra> detallesCompra = new HashSet<>();
+    @ManyToMany(mappedBy = "impuestos")
+    private Set<Producto> productos = new HashSet<>();
 
-	public Impuesto() {
-	}
+    @ManyToMany(mappedBy = "impuestos")
+    private Set<DetalleFactura> detallesFactura = new HashSet<>();
+
+    @ManyToMany(mappedBy = "impuestos")
+    private Set<DetalleCompra> detallesCompra = new HashSet<>();
+
+    // ========== GETTERS ==========
+    public Empresa getEmpresa() {
+        return empresa;
+    }
+
+    public String getNombre() {
+        return nombre;
+    }
+
+    public TipoImpuesto getTipo() {
+        return tipo;
+    }
+
+    public BigDecimal getPorcentaje() {
+        return porcentaje;
+    }
+
+    public Set<Producto> getProductos() {
+        return productos;
+    }
+
+    public Set<DetalleFactura> getDetallesFactura() {
+        return detallesFactura;
+    }
+
+    public Set<DetalleCompra> getDetallesCompra() {
+        return detallesCompra;
+    }
+
+    // ========== SETTERS ==========
+    public void setEmpresa(Empresa empresa) {
+        this.empresa = empresa;
+    }
+
+    public void setNombre(String nombre) {
+        this.nombre = nombre;
+    }
+
+    public void setTipo(TipoImpuesto tipo) {
+        this.tipo = tipo;
+    }
+
+    public void setPorcentaje(BigDecimal porcentaje) {
+        this.porcentaje = porcentaje;
+    }
+
+    public void setProductos(Set<Producto> productos) {
+        this.productos = productos;
+    }
+
+    public void setDetallesFactura(Set<DetalleFactura> detallesFactura) {
+        this.detallesFactura = detallesFactura;
+    }
+
+    public void setDetallesCompra(Set<DetalleCompra> detallesCompra) {
+        this.detallesCompra = detallesCompra;
+    }
 }
