@@ -15,52 +15,158 @@ import ConfiguracionPage from "../pages/ConfiguracionPage";
 import UsuariosPage from "../pages/UsuariosPage";
 import ProductosPage from "../pages/ProductosPage";
 import ProveedoresPage from "../pages/ProveedoresPage";
+import { authService } from "../services/authService";
+
+// Componente para proteger rutas
+function ProtectedRoute({ children }: { children: React.ReactNode }) {
+  if (!authService.isAuthenticated()) {
+    return <Navigate to="/login" replace />;
+  }
+  return children;
+}
 
 export default function AppRouter() {
-	return (
-		<Routes>
-			<Route path="/" element={<LoginPage />} />
-			<Route path="/login" element={<LoginPage />} />
-			<Route path="/dashboard" element={<DashboardLayout />}>
-				<Route index element={<DashboardPage />} />
-			</Route>
-			<Route path="/clientes" element={<DashboardLayout />}>
-				<Route index element={<ClientesPage />} />
-			</Route>
-			<Route path="/proveedores" element={<DashboardLayout />}>
-				<Route index element={<ProveedoresPage />} />
-			</Route>
-			<Route path="/productos" element={<DashboardLayout />}>
-				<Route index element={<ProductosPage />} />
-			</Route>
-			<Route path="/categorias" element={<DashboardLayout />}>
-				<Route index element={<CategoriasPage />} />
-			</Route>
-			<Route path="/compras" element={<DashboardLayout />}>
-				<Route index element={<ComprasPage />} />
-			</Route>
-			<Route path="/inventario" element={<DashboardLayout />}>
-				<Route index element={<InventarioPage />} />
-			</Route>
-			<Route path="/pos" element={<DashboardLayout />}>
-				<Route index element={<PosPage />} />
-			</Route>
-			<Route path="/caja" element={<DashboardLayout />}>
-				<Route index element={<CajaPage />} />
-			</Route>
-			<Route path="/reportes" element={<DashboardLayout />}>
-				<Route index element={<ReportesPage />} />
-			</Route>
-			<Route path="/configuracion" element={<DashboardLayout />}>
-				<Route index element={<ConfiguracionPage />} />
-			</Route>
-			<Route path="/usuarios" element={<DashboardLayout />}>
-				<Route index element={<UsuariosPage />} />
-			</Route>
-			<Route element={<MainLayout />}>
-				<Route path="/404" element={<NotFoundPage />} />
-				<Route path="*" element={<Navigate to="/404" replace />} />
-			</Route>
-		</Routes>
-	);
+  return (
+    <Routes>
+      <Route path="/login" element={<LoginPage />} />
+      <Route path="/" element={<Navigate to="/dashboard" replace />} />
+
+      <Route
+        path="/dashboard"
+        element={
+          <ProtectedRoute>
+            <DashboardLayout />
+          </ProtectedRoute>
+        }
+      >
+        <Route index element={<DashboardPage />} />
+      </Route>
+
+      <Route
+        path="/clientes"
+        element={
+          <ProtectedRoute>
+            <DashboardLayout />
+          </ProtectedRoute>
+        }
+      >
+        <Route index element={<ClientesPage />} />
+      </Route>
+
+      <Route
+        path="/proveedores"
+        element={
+          <ProtectedRoute>
+            <DashboardLayout />
+          </ProtectedRoute>
+        }
+      >
+        <Route index element={<ProveedoresPage />} />
+      </Route>
+
+      <Route
+        path="/productos"
+        element={
+          <ProtectedRoute>
+            <DashboardLayout />
+          </ProtectedRoute>
+        }
+      >
+        <Route index element={<ProductosPage />} />
+      </Route>
+
+      <Route
+        path="/categorias"
+        element={
+          <ProtectedRoute>
+            <DashboardLayout />
+          </ProtectedRoute>
+        }
+      >
+        <Route index element={<CategoriasPage />} />
+      </Route>
+
+      <Route
+        path="/compras"
+        element={
+          <ProtectedRoute>
+            <DashboardLayout />
+          </ProtectedRoute>
+        }
+      >
+        <Route index element={<ComprasPage />} />
+      </Route>
+
+      <Route
+        path="/inventario"
+        element={
+          <ProtectedRoute>
+            <DashboardLayout />
+          </ProtectedRoute>
+        }
+      >
+        <Route index element={<InventarioPage />} />
+      </Route>
+
+      <Route
+        path="/pos"
+        element={
+          <ProtectedRoute>
+            <DashboardLayout />
+          </ProtectedRoute>
+        }
+      >
+        <Route index element={<PosPage />} />
+      </Route>
+
+      <Route
+        path="/caja"
+        element={
+          <ProtectedRoute>
+            <DashboardLayout />
+          </ProtectedRoute>
+        }
+      >
+        <Route index element={<CajaPage />} />
+      </Route>
+
+      <Route
+        path="/reportes"
+        element={
+          <ProtectedRoute>
+            <DashboardLayout />
+          </ProtectedRoute>
+        }
+      >
+        <Route index element={<ReportesPage />} />
+      </Route>
+
+      <Route
+        path="/configuracion"
+        element={
+          <ProtectedRoute>
+            <DashboardLayout />
+          </ProtectedRoute>
+        }
+      >
+        <Route index element={<ConfiguracionPage />} />
+      </Route>
+
+      <Route
+        path="/usuarios"
+        element={
+          <ProtectedRoute>
+            <DashboardLayout />
+          </ProtectedRoute>
+        }
+      >
+        <Route index element={<UsuariosPage />} />
+      </Route>
+
+      <Route element={<MainLayout />}>
+        <Route path="/404" element={<NotFoundPage />} />
+        <Route path="*" element={<Navigate to="/404" replace />} />
+      </Route>
+    </Routes>
+  );
 }
