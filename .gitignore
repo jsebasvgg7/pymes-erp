@@ -6,7 +6,7 @@ backend/.mvn/wrapper/maven-wrapper.jar
 *.jar
 !.mvn/wrapper/maven-wrapper.jar
 HELP.md
-
+INICIO_FRONTEND.md
 # === Frontend (Node / Vite / React) ===
 frontend/node_modules/
 frontend/dist/

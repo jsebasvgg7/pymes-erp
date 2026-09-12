@@ -1,19 +1,15 @@
-import ConfirmDialog from "../components/ConfirmDialog";
+import { useEffect, useState } from "react";
+import { Users, Package, AlertTriangle, Wallet } from "lucide-react";
 import DataTable, { DataTableColumn } from "../components/DataTable";
-import Modal from "../components/Modal";
 import PageHeader from "../components/PageHeader";
-import SearchBar from "../components/SearchBar";
 import StatCard from "../components/StatCard";
 import StatusBadge from "../components/StatusBadge";
-import { getCashMovements } from "../services/cashStorage";
-import { getPurchases } from "../services/purchaseStorage";
-import { getProducts, type Product } from "../services/productStorage";
-import { getSales, type Sale } from "../services/salesStorage";
-import { getSettings } from "../services/settingsStorage";
-import { getUsers } from "../services/userStorage";
+import { authService } from "../services/authService";
+import { dashboardService, type DashboardResumen } from "../services/dashboardService";
+import { ventaService, type FacturaVentaResponse } from "../services/VentaService";
+import { cajaService, type MovimientoCajaResponse } from "../services/cajaService";
+import { productoService, type Producto } from "../services/ProductoService";
 import "./DashboardPage.css";
-
-const DEFAULT_STOCK_MIN = 5;
 
 function formatCurrency(value: number) {
 	return value.toLocaleString("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 });
@@ -25,73 +21,153 @@ function formatDateTime(value: string) {
 	return Number.isNaN(d.getTime()) ? value : d.toLocaleString("es-CO");
 }
 
-type UserMetricRow = {
-	label: string;
-	value: string;
-};
+function formatDayLabel(value: Date) {
+	return value.toLocaleDateString("es-CO", { weekday: "long", day: "numeric", month: "long" });
+}
 
 export default function DashboardPage() {
-	const sales = getSales();
-	const purchases = getPurchases();
-	const products = getProducts();
-	const cashMovements = getCashMovements();
-	const users = getUsers();
-	const stockMinimo = getSettings()?.system.defaultMinStock ?? DEFAULT_STOCK_MIN;
+	const usuario = authService.getUsuario();
+	const empresaId = usuario?.empresaId;
 
-	const saldoCaja = cashMovements.reduce((acc, m) => (m.tipo === "Ingreso" ? acc + m.valor : acc - m.valor), 0);
+	const [loading, setLoading] = useState(true);
+	const [error, setError] = useState<string | null>(null);
+	const [resumen, setResumen] = useState<DashboardResumen | null>(null);
+	const [recentSales, setRecentSales] = useState<FacturaVentaResponse[]>([]);
+	const [lowStockProducts, setLowStockProducts] = useState<Producto[]>([]);
+	const [recentCashMovements, setRecentCashMovements] = useState<MovimientoCajaResponse[]>([]);
 
-	const recentSales = [...sales]
-		.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-		.slice(0, 5);
+	useEffect(() => {
+		if (!empresaId) {
+			setError("No se encontró la empresa del usuario. Inicia sesión nuevamente.");
+			setLoading(false);
+			return;
+		}
 
-	const lowStockProducts = [...products].filter((p) => p.stock <= stockMinimo);
+		const empresaIdActual: number = empresaId;
+		let cancelled = false;
 
-	const recentCashMovements = [...cashMovements]
-		.sort((a, b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime())
-		.slice(0, 5);
+		async function load() {
+			setLoading(true);
+			setError(null);
+			try {
+				const [resumenData, ventasData, stockBajoData, cajaData] = await Promise.all([
+					dashboardService.obtenerResumen(empresaIdActual),
+					ventaService.listarPorEmpresa(empresaIdActual, 0, 5),
+					productoService.obtenerStockBajo(empresaIdActual),
+					cajaService.listarMovimientosPorEmpresa(empresaIdActual, 0, 5)
+				]);
 
-	const usersActive = users.filter((u) => u.estado === "Activo").length;
-	const usersInactive = users.filter((u) => u.estado === "Inactivo").length;
+				if (cancelled) return;
 
-	const salesColumns: Array<DataTableColumn<Sale>> = [
-		{ key: "number", header: "Número", render: (r) => `#${r.number}` },
-		{ key: "date", header: "Fecha", render: (r) => formatDateTime(r.date) },
+				setResumen(resumenData);
+				setRecentSales(
+					[...ventasData.content].sort(
+						(a, b) => new Date(b.fechaEmision).getTime() - new Date(a.fechaEmision).getTime()
+					)
+				);
+				setLowStockProducts(stockBajoData);
+				setRecentCashMovements(
+					[...cajaData.content].sort((a, b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime())
+				);
+			} catch (err) {
+				if (!cancelled) {
+					setError("No se pudo cargar la información del dashboard. Verifica tu conexión con el servidor.");
+				}
+			} finally {
+				if (!cancelled) setLoading(false);
+			}
+		}
+
+		load();
+		return () => {
+			cancelled = true;
+		};
+	}, [empresaId]);
+
+	const salesColumns: Array<DataTableColumn<FacturaVentaResponse>> = [
+		{ key: "numero", header: "Número", render: (r) => `#${r.numero}` },
+		{ key: "fechaEmision", header: "Fecha", render: (r) => formatDateTime(r.fechaEmision) },
 		{ key: "total", header: "Total", align: "right", render: (r) => formatCurrency(r.total) },
-		{ key: "paymentMethod", header: "Método de pago", render: (r) => r.paymentMethod }
+		{ key: "formaPagoNombre", header: "Método de pago", render: (r) => r.formaPagoNombre }
 	];
 
-	const lowStockColumns: Array<DataTableColumn<Product>> = [
+	const lowStockColumns: Array<DataTableColumn<Producto>> = [
 		{ key: "producto", header: "Producto", render: (r) => r.nombre },
-		{ key: "categoria", header: "Categoría", render: (r) => r.categoria },
-		{ key: "stock", header: "Stock", align: "right", render: (r) => r.stock.toLocaleString("es-CO") },
-		{ key: "estado", header: "Estado", render: (r) => <StatusBadge status={r.estado} /> }
+		{ key: "categoria", header: "Categoría", render: (r) => r.categoriaNombre },
+		{ key: "stock", header: "Stock", align: "right", render: (r) => r.stockActual.toLocaleString("es-CO") },
+		{ key: "estado", header: "Estado", render: () => <StatusBadge status="Pendiente" /> }
 	];
 
-	const cashColumns: Array<DataTableColumn<(typeof cashMovements)[number]>> = [
+	const cashColumns: Array<DataTableColumn<MovimientoCajaResponse>> = [
 		{ key: "fecha", header: "Fecha", render: (r) => formatDateTime(r.fecha) },
-		{ key: "tipo", header: "Tipo", render: (r) => r.tipo },
-		{ key: "concepto", header: "Concepto", render: (r) => r.concepto },
-		{ key: "valor", header: "Valor", align: "right", render: (r) => formatCurrency(r.valor) }
+		{ key: "tipo", header: "Tipo", render: (r) => (r.tipo === "INGRESO" ? "Ingreso" : "Egreso") },
+		{ key: "concepto", header: "Concepto", render: (r) => r.descripcion },
+		{ key: "valor", header: "Valor", align: "right", render: (r) => formatCurrency(r.monto) }
 	];
 
-	const usersRows: UserMetricRow[] = [
-		{ label: "Usuarios registrados", value: users.length.toLocaleString("es-CO") },
-		{ label: "Usuarios activos", value: usersActive.toLocaleString("es-CO") },
-		{ label: "Usuarios inactivos", value: usersInactive.toLocaleString("es-CO") }
+	type CajaRow = { label: string; value: string };
+
+	const cajasRows: CajaRow[] = (resumen?.cajas ?? []).map((c) => ({
+		label: c.cajaNombre,
+		value: formatCurrency(c.saldoActual)
+	}));
+
+	const cajasColumns: Array<DataTableColumn<CajaRow>> = [
+		{ key: "label", header: "Caja", render: (r) => r.label },
+		{ key: "value", header: "Saldo", align: "right", render: (r) => r.value }
 	];
 
-	const usersColumns: Array<DataTableColumn<UserMetricRow>> = [
-		{ key: "label", header: "Métrica", render: (r) => r.label },
-		{ key: "value", header: "Valor", align: "right", render: (r) => r.value }
-	];
+	if (loading) {
+		return (
+			<div className="db">
+				<div className="db__state">Cargando dashboard...</div>
+			</div>
+		);
+	}
+
+	if (error) {
+		return (
+			<div className="db">
+				<div className="db__state db__state--error">{error}</div>
+			</div>
+		);
+	}
+
+	const nombreUsuario = usuario?.username ?? "";
+	const stockBajo = resumen?.productosStockBajo ?? 0;
 
 	return (
 		<div className="db">
+			<div className="db__greeting">
+				<h1 className="db__greetingTitle">Hola, {nombreUsuario}</h1>
+				<p className="db__greetingSubtitle">{formatDayLabel(new Date())}</p>
+			</div>
+
 			<section className="db__metrics" aria-label="Indicadores">
-				<StatCard icon="💳" title="Ventas registradas" value={sales.length.toLocaleString("es-CO")} />
-				<StatCard icon="🧾" title="Compras registradas" value={purchases.length.toLocaleString("es-CO")} />
-				<StatCard icon="📦" title="Productos registrados" value={products.length.toLocaleString("es-CO")} />
-				<StatCard icon="💰" title="Saldo actual de Caja" value={formatCurrency(saldoCaja)} />
+				<StatCard
+					icon={<Users size={20} strokeWidth={1.8} />}
+					title="Clientes registrados"
+					value={(resumen?.totalClientes ?? 0).toLocaleString("es-CO")}
+					color="blue"
+				/>
+				<StatCard
+					icon={<Package size={20} strokeWidth={1.8} />}
+					title="Productos registrados"
+					value={(resumen?.totalProductos ?? 0).toLocaleString("es-CO")}
+					color="blue"
+				/>
+				<StatCard
+					icon={<AlertTriangle size={20} strokeWidth={1.8} />}
+					title="Productos con stock bajo"
+					value={stockBajo.toLocaleString("es-CO")}
+					color={stockBajo > 0 ? "amber" : "green"}
+				/>
+				<StatCard
+					icon={<Wallet size={20} strokeWidth={1.8} />}
+					title="Saldo total en cajas"
+					value={formatCurrency(resumen?.saldoTotalCajas ?? 0)}
+					color="green"
+				/>
 			</section>
 
 			<section className="db__panels" aria-label="Paneles">
@@ -129,7 +205,7 @@ export default function DashboardPage() {
 
 				<article className="db__panel">
 					<div className="db__panelHead">
-						<PageHeader title="Movimientos recientes" />
+						<PageHeader title="Movimientos recientes de caja" />
 					</div>
 
 					<DataTable
@@ -145,29 +221,20 @@ export default function DashboardPage() {
 
 				<article className="db__panel">
 					<div className="db__panelHead">
-						<PageHeader title="Usuarios" />
+						<PageHeader title="Cajas" />
 					</div>
 
 					<DataTable
-						columns={usersColumns}
-						data={usersRows}
+						columns={cajasColumns}
+						data={cajasRows}
 						emptyState={
 							<div>
-								<div>No hay usuarios registrados.</div>
+								<div>No hay cajas registradas.</div>
 							</div>
 						}
 					/>
 				</article>
 			</section>
-
-			<div className="db__hidden">
-				<SearchBar placeholder="Buscar..." />
-				<StatusBadge status="Activo" />
-				<Modal open={false} title="Modal">
-					Contenido
-				</Modal>
-				<ConfirmDialog open={false} title="Confirmar" message="¿Deseas continuar?" />
-			</div>
 		</div>
 	);
 }

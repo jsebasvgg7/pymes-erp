@@ -1,11 +1,12 @@
+import { ReactNode } from "react";
 import "./StatCard.css";
 
 type StatCardProps = {
-	icon: string;
+	icon: ReactNode;
 	title: string;
 	value: string;
 	color?: "blue" | "green" | "amber" | "red";
-	footnote?: string;
+	footnote?: ReactNode;
 };
 
 const colorClass: Record<NonNullable<StatCardProps["color"]>, string> = {
@@ -15,7 +16,7 @@ const colorClass: Record<NonNullable<StatCardProps["color"]>, string> = {
 	red: "ui-statCard__icon--red"
 };
 
-export default function StatCard({ icon, title, value, color = "blue", footnote = "Ejemplo" }: StatCardProps) {
+export default function StatCard({ icon, title, value, color = "blue", footnote }: StatCardProps) {
 	return (
 		<article className="ui-statCard">
 			<div className="ui-statCard__top">
@@ -27,8 +28,7 @@ export default function StatCard({ icon, title, value, color = "blue", footnote 
 					<div className="ui-statCard__value">{value}</div>
 				</div>
 			</div>
-			<div className="ui-statCard__foot">{footnote}</div>
+			{footnote ? <div className="ui-statCard__foot">{footnote}</div> : null}
 		</article>
 	);
 }
-

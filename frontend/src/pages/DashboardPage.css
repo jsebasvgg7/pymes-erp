@@ -1,6 +1,26 @@
 .db {
 	display: grid;
-	gap: 18px;
+	gap: 20px;
+}
+
+.db__greeting {
+	display: grid;
+	gap: 2px;
+}
+
+.db__greetingTitle {
+	font-size: 24px;
+	font-weight: 700;
+	letter-spacing: -0.01em;
+	color: #f5f5f5;
+	margin: 0;
+}
+
+.db__greetingSubtitle {
+	font-size: 13.5px;
+	color: rgba(245, 245, 245, 0.48);
+	margin: 0;
+	text-transform: capitalize;
 }
 
 .db__metrics {
@@ -16,38 +36,172 @@
 }
 
 .db__panel {
-	background: #ffffff;
-	border-radius: 18px;
-	border: 1px solid rgba(10, 18, 34, 0.08);
-	box-shadow: 0 18px 45px rgba(10, 16, 32, 0.10);
-	padding: 14px;
+	background: #1c1c1c;
+	border-radius: 14px;
+	border: 1px solid rgba(255, 255, 255, 0.07);
+	padding: 16px;
 	min-height: 320px;
-	transition: transform 180ms ease, box-shadow 180ms ease;
+	transition: border-color 160ms ease;
 }
 
 .db__panel:hover {
-	transform: translateY(-1px);
-	box-shadow: 0 22px 55px rgba(10, 16, 32, 0.12);
+	border-color: rgba(255, 255, 255, 0.12);
 }
 
 .db__panelHead {
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
-	margin-bottom: 12px;
+	margin-bottom: 14px;
 }
 
 .db__panelHint {
 	font-size: 12px;
-	color: rgba(10, 18, 34, 0.56);
-	background: rgba(11, 74, 166, 0.08);
-	border: 1px solid rgba(11, 74, 166, 0.12);
+	color: rgba(245, 245, 245, 0.5);
+	background: rgba(99, 102, 241, 0.12);
+	border: 1px solid rgba(99, 102, 241, 0.2);
 	padding: 6px 10px;
 	border-radius: 999px;
 }
 
 .db__hidden {
 	display: none;
+}
+
+.db__state {
+	padding: 48px 24px;
+	text-align: center;
+	color: rgba(245, 245, 245, 0.5);
+	background: #1c1c1c;
+	border-radius: 14px;
+	border: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.db__state--error {
+	color: #fca5a5;
+	background: rgba(248, 113, 113, 0.06);
+	border-color: rgba(248, 113, 113, 0.18);
+}
+
+/* Overrides scoped al Dashboard para componentes compartidos (StatCard, PageHeader, DataTable, StatusBadge).
+   No se tocan los archivos CSS originales de estos componentes: siguen en modo claro
+   para el resto de páginas que aún no se han migrado al tema oscuro. */
+
+.db .ui-statCard {
+	background: #1c1c1c;
+	border: 1px solid rgba(255, 255, 255, 0.07);
+	box-shadow: none;
+}
+
+.db .ui-statCard:hover {
+	transform: none;
+	box-shadow: none;
+	border-color: rgba(255, 255, 255, 0.12);
+}
+
+.db .ui-statCard__icon,
+.db .ui-statCard__icon--blue {
+	border-color: rgba(99, 102, 241, 0.28);
+	background: rgba(99, 102, 241, 0.14);
+	color: #a5b4fc;
+}
+
+.db .ui-statCard__icon--green {
+	border-color: rgba(74, 222, 128, 0.28);
+	background: rgba(74, 222, 128, 0.12);
+	color: #86efac;
+}
+
+.db .ui-statCard__icon--amber {
+	border-color: rgba(251, 191, 36, 0.28);
+	background: rgba(251, 191, 36, 0.12);
+	color: #fcd34d;
+}
+
+.db .ui-statCard__icon--red {
+	border-color: rgba(248, 113, 113, 0.28);
+	background: rgba(248, 113, 113, 0.12);
+	color: #fca5a5;
+}
+
+.db .ui-statCard__label {
+	color: rgba(245, 245, 245, 0.55);
+}
+
+.db .ui-statCard__value {
+	color: #f5f5f5;
+}
+
+.db .ui-statCard__foot {
+	color: rgba(245, 245, 245, 0.35);
+}
+
+.db .ui-pageHeader__title {
+	color: #f5f5f5;
+}
+
+.db .ui-pageHeader__subtitle {
+	color: rgba(245, 245, 245, 0.5);
+}
+
+.db .ui-table__row {
+	border-color: rgba(255, 255, 255, 0.07);
+	background: rgba(255, 255, 255, 0.02);
+}
+
+.db .ui-table__row--head {
+	background: rgba(99, 102, 241, 0.08);
+	border-color: rgba(99, 102, 241, 0.16);
+}
+
+.db .ui-table__cell {
+	color: rgba(245, 245, 245, 0.82);
+}
+
+.db .ui-table__cell--head {
+	color: rgba(245, 245, 245, 0.6);
+}
+
+.db .ui-table__empty {
+	border-color: rgba(255, 255, 255, 0.14);
+	color: rgba(245, 245, 245, 0.4);
+	background: rgba(255, 255, 255, 0.02);
+}
+
+.db .ui-badge {
+	color: rgba(245, 245, 245, 0.6);
+	background: rgba(99, 102, 241, 0.1);
+	border-color: rgba(99, 102, 241, 0.2);
+}
+
+.db .ui-badge--active {
+	color: #86efac;
+	background: rgba(74, 222, 128, 0.12);
+	border-color: rgba(74, 222, 128, 0.24);
+}
+
+.db .ui-badge--inactive {
+	color: rgba(245, 245, 245, 0.55);
+	background: rgba(255, 255, 255, 0.06);
+	border-color: rgba(255, 255, 255, 0.12);
+}
+
+.db .ui-badge--pending {
+	color: #fcd34d;
+	background: rgba(251, 191, 36, 0.12);
+	border-color: rgba(251, 191, 36, 0.24);
+}
+
+.db .ui-badge--paid {
+	color: #93c5fd;
+	background: rgba(99, 102, 241, 0.12);
+	border-color: rgba(99, 102, 241, 0.24);
+}
+
+.db .ui-badge--void {
+	color: #fca5a5;
+	background: rgba(248, 113, 113, 0.12);
+	border-color: rgba(248, 113, 113, 0.24);
 }
 
 @media (max-width: 1100px) {
@@ -63,5 +217,9 @@
 @media (max-width: 520px) {
 	.db__metrics {
 		grid-template-columns: 1fr;
+	}
+
+	.db__greetingTitle {
+		font-size: 20px;
 	}
 }
