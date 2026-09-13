@@ -9,6 +9,8 @@ import org.springframework.data.domain.Pageable;
 public interface RolService {
 	Page<RolResponse> listar(Pageable pageable);
 
+	Page<RolResponse> listarPorEmpresa(Long empresaId, Pageable pageable);
+
 	RolResponse obtenerPorId(Long id);
 
 	RolResponse crear(RolCreateRequest request);

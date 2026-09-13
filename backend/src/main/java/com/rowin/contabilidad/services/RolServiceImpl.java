@@ -35,6 +35,18 @@ public class RolServiceImpl extends BaseCrudService implements RolService {
 
 	@Override
 	@Transactional(readOnly = true)
+	public Page<RolResponse> listarPorEmpresa(Long empresaId, Pageable pageable) {
+    Empresa empresa = getByIdOrThrow(empresaRepository, empresaId, "Empresa");
+    if (!isActive(empresa)) {
+        throw new ResourceNotFoundException("Empresa no encontrada: " + empresaId);
+    }
+
+    return rolRepository.findByActiveTrueAndEmpresaId(pageable, empresaId)
+        .map(rolMapper::toResponse);
+	}
+
+	@Override
+	@Transactional(readOnly = true)
 	public RolResponse obtenerPorId(Long id) {
 		Rol entity = getByIdOrThrow(rolRepository, id, "Rol");
 		if (!isActive(entity)) {

@@ -12,23 +12,31 @@ import org.mapstruct.MappingTarget;
 
 @Mapper(componentModel = "spring")
 public interface CategoriaProductoMapper {
-	default CategoriaProducto toEntity(CategoriaProductoCreateRequest request) {
-		return toEntity(request, null);
-	}
 
-	@Mapping(target = "nombre", source = "request.nombre")
-	@Mapping(target = "empresa", source = "empresa")
-	@Mapping(target = "id", ignore = true)
-	@Mapping(target = "createdAt", ignore = true)
-	@Mapping(target = "updatedAt", ignore = true)
-	@Mapping(target = "active", ignore = true)
-	@Mapping(target = "productos", ignore = true)
-	CategoriaProducto toEntity(CategoriaProductoCreateRequest request, Empresa empresa);
+    default CategoriaProducto toEntity(CategoriaProductoCreateRequest request) {
+        return toEntity(request, null);
+    }
 
-	void updateEntity(CategoriaProductoUpdateRequest request, @MappingTarget CategoriaProducto entity);
+    @Mapping(target = "nombre", source = "request.nombre")
+    @Mapping(target = "empresa", source = "empresa")
+    @Mapping(target = "id", ignore = true)
+    @Mapping(target = "createdAt", ignore = true)
+    @Mapping(target = "updatedAt", ignore = true)
+    @Mapping(target = "active", ignore = true)
+    @Mapping(target = "productos", ignore = true)
+    CategoriaProducto toEntity(CategoriaProductoCreateRequest request, Empresa empresa);
 
-	@Mapping(target = "empresaId", source = "empresa.id")
-	CategoriaProductoResponse toResponse(CategoriaProducto entity);
+    @Mapping(target = "id", ignore = true)
+    @Mapping(target = "createdAt", ignore = true)
+    @Mapping(target = "updatedAt", ignore = true)
+    @Mapping(target = "active", ignore = true)
+    @Mapping(target = "empresa", ignore = true)
+    @Mapping(target = "productos", ignore = true)
+    @Mapping(target = "nombre", source = "request.nombre")
+    void updateEntity(CategoriaProductoUpdateRequest request, @MappingTarget CategoriaProducto entity);
 
-	List<CategoriaProductoResponse> toResponseList(List<CategoriaProducto> entities);
+    @Mapping(target = "empresaId", source = "empresa.id")
+    CategoriaProductoResponse toResponse(CategoriaProducto entity);
+
+    List<CategoriaProductoResponse> toResponseList(List<CategoriaProducto> entities);
 }

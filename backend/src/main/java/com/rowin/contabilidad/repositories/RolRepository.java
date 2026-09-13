@@ -7,4 +7,6 @@ import org.springframework.data.domain.Pageable;
 
 public interface RolRepository extends JpaRepository<Rol, Long> {
 	Page<Rol> findByActiveTrue(Pageable pageable);
+
+	Page<Rol> findByActiveTrueAndEmpresaId(Pageable pageable, Long empresaId);
 }

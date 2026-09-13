@@ -76,7 +76,15 @@ public class CategoriaProductoServiceImpl extends BaseCrudService implements Cat
 		if (!isActive(entity)) {
 			throw new ResourceNotFoundException("Categoría no encontrada: " + id);
 		}
-		categoriaProductoMapper.updateEntity(request, entity);
+
+		// Actualizar nombre
+		entity.setNombre(request.nombre());
+
+		// Actualizar active solo si se envía explícitamente
+		if (request.active() != null) {
+			entity.setActive(request.active());
+		}
+
 		CategoriaProducto saved = categoriaProductoRepository.save(entity);
 		return categoriaProductoMapper.toResponse(saved);
 	}

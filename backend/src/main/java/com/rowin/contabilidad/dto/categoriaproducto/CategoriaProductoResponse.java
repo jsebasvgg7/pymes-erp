@@ -1,6 +1,7 @@
 package com.rowin.contabilidad.dto.categoriaproducto;
 
 import java.time.LocalDateTime;
+import jakarta.validation.constraints.NotBlank;
 
 public record CategoriaProductoResponse(
 	Long id,
@@ -8,7 +9,6 @@ public record CategoriaProductoResponse(
 	LocalDateTime updatedAt,
 	boolean active,
 	Long empresaId,
-	String nombre
+	@NotBlank String nombre
 ) {
 }
-

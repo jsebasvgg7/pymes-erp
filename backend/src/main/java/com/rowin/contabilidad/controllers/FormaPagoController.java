@@ -33,6 +33,14 @@ public class FormaPagoController {
 		return ResponseEntity.ok(formaPagoService.listar(pageable));
 	}
 
+	@GetMapping("/listar-por-empresa/{empresaId}")
+	public ResponseEntity<Page<FormaPagoResponse>> listarPorEmpresa(
+    @PathVariable Long empresaId,
+    @ParameterObject Pageable pageable
+	) {
+    return ResponseEntity.ok(formaPagoService.listarPorEmpresa(empresaId, pageable));
+	}
+
 	@GetMapping("/{id}")
 	public ResponseEntity<FormaPagoResponse> obtenerPorId(@PathVariable Long id) {
 		return ResponseEntity.ok(formaPagoService.obtenerPorId(id));

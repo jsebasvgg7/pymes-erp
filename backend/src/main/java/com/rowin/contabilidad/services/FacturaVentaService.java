@@ -3,7 +3,6 @@ package com.rowin.contabilidad.services;
 import com.rowin.contabilidad.dto.factura.FacturaVentaCreateRequest;
 import com.rowin.contabilidad.dto.factura.FacturaVentaResponse;
 import com.rowin.contabilidad.dto.factura.FacturaVentaUpdateRequest;
-import com.rowin.contabilidad.entities.FacturaEstado;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 

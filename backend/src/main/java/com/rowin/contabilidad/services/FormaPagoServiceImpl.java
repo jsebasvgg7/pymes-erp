@@ -39,6 +39,18 @@ public class FormaPagoServiceImpl extends BaseCrudService implements FormaPagoSe
 
 	@Override
 	@Transactional(readOnly = true)
+	public Page<FormaPagoResponse> listarPorEmpresa(Long empresaId, Pageable pageable) {
+    Empresa empresa = getByIdOrThrow(empresaRepository, empresaId, "Empresa");
+    if (!isActive(empresa)) {
+        throw new ResourceNotFoundException("Empresa no encontrada: " + empresaId);
+    }
+
+    return formaPagoRepository.findByActiveTrueAndEmpresaId(pageable, empresaId)
+        .map(formaPagoMapper::toResponse);
+	}
+
+	@Override
+	@Transactional(readOnly = true)
 	public FormaPagoResponse obtenerPorId(Long id) {
 		FormaPago entity = getByIdOrThrow(formaPagoRepository, id, "Forma de pago");
 		if (!isActive(entity)) {

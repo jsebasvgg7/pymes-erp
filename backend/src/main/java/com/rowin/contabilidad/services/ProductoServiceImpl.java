@@ -148,32 +148,6 @@ public class ProductoServiceImpl extends BaseCrudService implements ProductoServ
         return productoMapper.toResponse(savedProducto);
     }
 
-    @Override
-    public ProductoResponse actualizar(Long id, ProductoUpdateRequest request) {
-        // 1. Validar producto existe
-        Producto entity = productoRepository.findByIdAndActiveTrue(id)
-            .orElseThrow(() -> new ResourceNotFoundException("Producto no encontrado: " + id));
-
-        // 2. Actualizar campos básicos
-        productoMapper.updateEntity(request, entity);
-
-        // 3. Actualizar impuestos (opcional)
-        if (request.impuestoIds() != null) {
-            Set<Impuesto> impuestos = new HashSet<>();
-            for (Long impuestoId : request.impuestoIds()) {
-                Impuesto impuesto = getByIdOrThrow(impuestoRepository, impuestoId, "Impuesto");
-                if (!isActive(impuesto)) {
-                    throw new ResourceNotFoundException("Impuesto no encontrado: " + impuestoId);
-                }
-                impuestos.add(impuesto);
-            }
-            entity.setImpuestos(impuestos);
-        }
-
-        // 4. Guardar producto
-        Producto saved = productoRepository.save(entity);
-        return productoMapper.toResponse(saved);
-    }
 
     @Override
     public void eliminar(Long id) {
@@ -218,5 +192,41 @@ public class ProductoServiceImpl extends BaseCrudService implements ProductoServ
             .stream()
             .map(productoMapper::toResponse)
             .toList();
+    }
+
+    @Override
+    public ProductoResponse actualizar(Long id, ProductoUpdateRequest request) {
+        // 1. Validar producto existe
+        Producto entity = productoRepository.findByIdAndActiveTrue(id)
+            .orElseThrow(() -> new ResourceNotFoundException("Producto no encontrado: " + id));
+
+        // 2. Actualizar campos básicos (nombre, descripción, unidad, precios, etc.)
+        productoMapper.updateEntity(request, entity);
+
+        // 3. Actualizar categoría si se envía explícitamente
+        if (request.categoriaId() != null) {
+            CategoriaProducto categoria = getByIdOrThrow(categoriaProductoRepository, request.categoriaId(), "CategoriaProducto");
+            if (!isActive(categoria)) {
+                throw new ResourceNotFoundException("Categoría no encontrada: " + request.categoriaId());
+            }
+            entity.setCategoria(categoria);
+        }
+
+        // 4. Actualizar impuestos (opcional)
+        if (request.impuestoIds() != null) {
+            Set<Impuesto> impuestos = new HashSet<>();
+            for (Long impuestoId : request.impuestoIds()) {
+                Impuesto impuesto = getByIdOrThrow(impuestoRepository, impuestoId, "Impuesto");
+                if (!isActive(impuesto)) {
+                    throw new ResourceNotFoundException("Impuesto no encontrado: " + impuestoId);
+                }
+                impuestos.add(impuesto);
+            }
+            entity.setImpuestos(impuestos);
+        }
+
+        // 5. Guardar producto
+        Producto saved = productoRepository.save(entity);
+        return productoMapper.toResponse(saved);
     }
 }

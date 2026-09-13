@@ -33,6 +33,14 @@ public class RolController {
 		return ResponseEntity.ok(rolService.listar(pageable));
 	}
 
+	@GetMapping("/listar-por-empresa/{empresaId}")
+	public ResponseEntity<Page<RolResponse>> listarPorEmpresa(
+    @PathVariable Long empresaId,
+    @ParameterObject Pageable pageable
+	) {
+    return ResponseEntity.ok(rolService.listarPorEmpresa(empresaId, pageable));
+	}
+
 	@GetMapping("/{id}")
 	public ResponseEntity<RolResponse> obtenerPorId(@PathVariable Long id) {
 		return ResponseEntity.ok(rolService.obtenerPorId(id));

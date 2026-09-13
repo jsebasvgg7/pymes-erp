@@ -7,4 +7,6 @@ import org.springframework.data.domain.Pageable;
 
 public interface FormaPagoRepository extends JpaRepository<FormaPago, Long> {
 	Page<FormaPago> findByActiveTrue(Pageable pageable);
+
+	Page<FormaPago> findByActiveTrueAndEmpresaId(Pageable pageable, Long empresaId);
 }

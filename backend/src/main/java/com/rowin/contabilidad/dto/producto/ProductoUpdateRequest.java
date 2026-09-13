@@ -13,6 +13,7 @@ public record ProductoUpdateRequest(
     @NotBlank @Size(max = 200) String nombre,
     @Size(max = 500) String descripcion,
     UnidadMedida unidadMedida,
+    Long categoriaId,
     @DecimalMin(value = "0.0") BigDecimal precioVenta,
     @DecimalMin(value = "0.0") BigDecimal costo,
     @Min(0) BigDecimal stockMinimo,

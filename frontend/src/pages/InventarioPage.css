@@ -305,6 +305,23 @@
 	box-shadow: none;
 }
 
+/* Botones de acción en la tabla */
+.inv .inv__actions .inv__actionBtn {
+  height: 38px;
+  padding: 0 14px;
+  border-radius: 10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.inv .ui-modal__body .inv__select {
+  height: 40px;
+  font-size: 13px;
+}
+
 @media (max-width: 860px) {
 	.inv__controls {
 		grid-template-columns: 1fr;

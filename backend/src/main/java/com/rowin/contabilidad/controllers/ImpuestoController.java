@@ -1,14 +1,12 @@
 package com.rowin.contabilidad.controllers;
 
 import com.rowin.contabilidad.dto.impuesto.ImpuestoCreateRequest;
-import com.rowin.contabilidad.dto.impuesto.ImpuestoResponse;
 import com.rowin.contabilidad.dto.impuesto.ImpuestoUpdateRequest;
 import com.rowin.contabilidad.exceptions.ApiErrorResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import java.time.LocalDateTime;
 import org.springdoc.core.annotations.ParameterObject;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;

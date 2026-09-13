@@ -9,6 +9,8 @@ import org.springframework.data.domain.Pageable;
 public interface FormaPagoService {
 	Page<FormaPagoResponse> listar(Pageable pageable);
 
+	Page<FormaPagoResponse> listarPorEmpresa(Long empresaId, Pageable pageable);
+
 	FormaPagoResponse obtenerPorId(Long id);
 
 	FormaPagoResponse crear(FormaPagoCreateRequest request);

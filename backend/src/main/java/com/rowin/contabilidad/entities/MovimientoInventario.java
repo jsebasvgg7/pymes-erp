@@ -2,7 +2,6 @@ package com.rowin.contabilidad.entities;
 
 import jakarta.persistence.*;
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "movimiento_inventario")
