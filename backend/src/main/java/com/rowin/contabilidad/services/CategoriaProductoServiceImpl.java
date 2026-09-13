@@ -39,6 +39,18 @@ public class CategoriaProductoServiceImpl extends BaseCrudService implements Cat
 
 	@Override
 	@Transactional(readOnly = true)
+	public Page<CategoriaProductoResponse> listarPorEmpresa(Long empresaId, Pageable pageable) {
+		Empresa empresa = getByIdOrThrow(empresaRepository, empresaId, "Empresa");
+		if (!isActive(empresa)) {
+			throw new ResourceNotFoundException("Empresa no encontrada: " + empresaId);
+		}
+
+		return categoriaProductoRepository.findByActiveTrueAndEmpresaId(pageable, empresaId)
+			.map(categoriaProductoMapper::toResponse);
+	}
+
+	@Override
+	@Transactional(readOnly = true)
 	public CategoriaProductoResponse obtenerPorId(Long id) {
 		CategoriaProducto entity = getByIdOrThrow(categoriaProductoRepository, id, "CategoriaProducto");
 		if (!isActive(entity)) {
@@ -79,4 +91,3 @@ public class CategoriaProductoServiceImpl extends BaseCrudService implements Cat
 		categoriaProductoRepository.save(entity);
 	}
 }
-

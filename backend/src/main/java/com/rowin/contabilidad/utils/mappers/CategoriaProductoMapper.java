@@ -16,8 +16,13 @@ public interface CategoriaProductoMapper {
 		return toEntity(request, null);
 	}
 
-	@Mapping(target = "empresa", source = "empresa")
 	@Mapping(target = "nombre", source = "request.nombre")
+	@Mapping(target = "empresa", source = "empresa")
+	@Mapping(target = "id", ignore = true)
+	@Mapping(target = "createdAt", ignore = true)
+	@Mapping(target = "updatedAt", ignore = true)
+	@Mapping(target = "active", ignore = true)
+	@Mapping(target = "productos", ignore = true)
 	CategoriaProducto toEntity(CategoriaProductoCreateRequest request, Empresa empresa);
 
 	void updateEntity(CategoriaProductoUpdateRequest request, @MappingTarget CategoriaProducto entity);
@@ -27,4 +32,3 @@ public interface CategoriaProductoMapper {
 
 	List<CategoriaProductoResponse> toResponseList(List<CategoriaProducto> entities);
 }
-

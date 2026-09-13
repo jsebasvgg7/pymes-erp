@@ -6,6 +6,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface CategoriaProductoRepository extends JpaRepository<CategoriaProducto, Long> {
-	Page<CategoriaProducto> findByActiveTrue(Pageable pageable);
-}
 
+	Page<CategoriaProducto> findByActiveTrue(Pageable pageable);
+
+	Page<CategoriaProducto> findByActiveTrueAndEmpresaId(Pageable pageable, Long empresaId);
+}

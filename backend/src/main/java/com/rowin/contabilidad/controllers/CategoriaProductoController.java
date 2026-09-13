@@ -33,6 +33,14 @@ public class CategoriaProductoController {
 		return ResponseEntity.ok(categoriaProductoService.listar(pageable));
 	}
 
+	@GetMapping("/listar-por-empresa/{empresaId}")
+	public ResponseEntity<Page<CategoriaProductoResponse>> listarPorEmpresa(
+		@PathVariable Long empresaId,
+		@ParameterObject Pageable pageable
+	) {
+		return ResponseEntity.ok(categoriaProductoService.listarPorEmpresa(empresaId, pageable));
+	}
+
 	@GetMapping("/{id}")
 	public ResponseEntity<CategoriaProductoResponse> obtenerPorId(@PathVariable Long id) {
 		return ResponseEntity.ok(categoriaProductoService.obtenerPorId(id));
@@ -58,4 +66,3 @@ public class CategoriaProductoController {
 		return ResponseEntity.noContent().build();
 	}
 }
-

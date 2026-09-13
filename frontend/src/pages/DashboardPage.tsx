@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Users, Package, AlertTriangle, Wallet } from "lucide-react";
 import DataTable, { DataTableColumn } from "../components/DataTable";
+import LoadingState from "../components/LoadingState";
 import PageHeader from "../components/PageHeader";
 import StatCard from "../components/StatCard";
 import StatusBadge from "../components/StatusBadge";
@@ -120,7 +121,7 @@ export default function DashboardPage() {
 	if (loading) {
 		return (
 			<div className="db">
-				<div className="db__state">Cargando dashboard...</div>
+				<LoadingState label="Cargando dashboard..." />
 			</div>
 		);
 	}

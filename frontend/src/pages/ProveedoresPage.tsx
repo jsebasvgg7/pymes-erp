@@ -1,91 +1,260 @@
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Plus, Pencil, Trash2 } from "lucide-react";
 import ConfirmDialog from "../components/ConfirmDialog";
 import DataTable, { DataTableColumn } from "../components/DataTable";
+import LoadingState from "../components/LoadingState";
 import Modal from "../components/Modal";
 import PageHeader from "../components/PageHeader";
 import PrimaryButton from "../components/PrimaryButton";
 import SearchBar from "../components/SearchBar";
 import SecondaryButton from "../components/SecondaryButton";
 import StatusBadge from "../components/StatusBadge";
-import { addProvider, getProviders, updateProvider, type CreateProviderInput, type Provider } from "../services/providerStorage";
+import { authService } from "../services/authService";
+import { proveedorService, type Proveedor } from "../services/proveedorService";
 import "./ProveedoresPage.css";
 
-type ProveedorModalMode = "create" | "edit";
+type ProveedorFormState = {
+	nombre: string;
+	documento: string;
+	telefono: string;
+	email: string;
+	direccion: string;
+};
+
+const defaultFormState: ProveedorFormState = {
+	nombre: "",
+	documento: "",
+	telefono: "",
+	email: "",
+	direccion: ""
+};
 
 export default function ProveedoresPage() {
+	const empresaId = authService.getUsuario()?.empresaId;
+
+	const [proveedores, setProveedores] = useState<Proveedor[]>([]);
+	const [loading, setLoading] = useState(true);
+	const [error, setError] = useState<string | null>(null);
+
+	const [searchQuery, setSearchQuery] = useState("");
+	const searchRef = useRef<HTMLDivElement | null>(null);
+
 	const [modalOpen, setModalOpen] = useState(false);
-	const [modalMode, setModalMode] = useState<ProveedorModalMode>("create");
-	const [editingId, setEditingId] = useState<string | null>(null);
+	const [editingProveedorId, setEditingProveedorId] = useState<number | null>(null);
+	const [form, setForm] = useState<ProveedorFormState>(defaultFormState);
+	const [saving, setSaving] = useState(false);
+	const [formError, setFormError] = useState<string | null>(null);
+
 	const [confirmOpen, setConfirmOpen] = useState(false);
-	const [confirmProviderId, setConfirmProviderId] = useState<string | null>(null);
+	const [confirmTarget, setConfirmTarget] = useState<Proveedor | null>(null);
+	const [deleting, setDeleting] = useState(false);
 
-	const [proveedores, setProveedores] = useState<Provider[]>(() => getProviders());
-	const [form, setForm] = useState<CreateProviderInput>({
-		empresa: "",
-		nit: "",
-		contacto: "",
-		telefono: "",
-		correo: "",
-		direccion: "",
-		estado: "Activo"
-	});
+	const loadProveedores = useCallback(async () => {
+		if (!empresaId) {
+			setError("No se encontró la empresa del usuario. Inicia sesión nuevamente.");
+			setLoading(false);
+			return;
+		}
 
-	const providerById = useMemo(() => {
-		const map = new Map<string, Provider>();
-		proveedores.forEach((p) => map.set(p.id, p));
-		return map;
-	}, [proveedores]);
+		setLoading(true);
+		setError(null);
+		try {
+			const data = await proveedorService.listarPorEmpresa(empresaId);
+			setProveedores(data);
+		} catch {
+			setError("No se pudo cargar los proveedores. Verifica tu conexión con el servidor.");
+		} finally {
+			setLoading(false);
+		}
+	}, [empresaId]);
 
-	const columns: Array<DataTableColumn<Provider>> = useMemo(
+	useEffect(() => {
+		loadProveedores();
+	}, [loadProveedores]);
+
+	const closeModal = useCallback(() => {
+		setModalOpen(false);
+		setEditingProveedorId(null);
+		setFormError(null);
+	}, []);
+
+	const openCreateModal = useCallback(() => {
+		setForm(defaultFormState);
+		setEditingProveedorId(null);
+		setFormError(null);
+		setModalOpen(true);
+	}, []);
+
+	const openEditModal = useCallback((proveedor: Proveedor) => {
+		setEditingProveedorId(proveedor.id);
+		setForm({
+			nombre: proveedor.nombre,
+			documento: proveedor.documento ?? "",
+			telefono: proveedor.telefono ?? "",
+			email: proveedor.email ?? "",
+			direccion: proveedor.direccion ?? ""
+		});
+		setFormError(null);
+		setModalOpen(true);
+	}, []);
+
+	const handleSave = useCallback(async () => {
+		if (!form.nombre.trim()) {
+			setFormError("El nombre es obligatorio.");
+			return;
+		}
+
+		if (!empresaId) {
+			setFormError("No se encontró la empresa del usuario.");
+			return;
+		}
+
+		setSaving(true);
+		setFormError(null);
+		try {
+			const payload = {
+				nombre: form.nombre.trim(),
+				documento: form.documento.trim() || undefined,
+				telefono: form.telefono.trim() || undefined,
+				email: form.email.trim() || undefined,
+				direccion: form.direccion.trim() || undefined
+			};
+
+			if (editingProveedorId) {
+				const updated = await proveedorService.actualizar(editingProveedorId, payload);
+				setProveedores((prev) => prev.map((p) => (p.id === updated.id ? updated : p)));
+			} else {
+				const created = await proveedorService.crear({ empresaId, ...payload });
+				setProveedores((prev) => [...prev, created]);
+			}
+			closeModal();
+		} catch {
+			setFormError("No se pudo guardar el proveedor. Intenta nuevamente.");
+		} finally {
+			setSaving(false);
+		}
+	}, [closeModal, editingProveedorId, empresaId, form]);
+
+	const openConfirmDelete = useCallback((proveedor: Proveedor) => {
+		setConfirmTarget(proveedor);
+		setConfirmOpen(true);
+	}, []);
+
+	const closeConfirm = useCallback(() => {
+		setConfirmOpen(false);
+		setConfirmTarget(null);
+	}, []);
+
+	const confirmDelete = useCallback(async () => {
+		if (!confirmTarget) return;
+
+		setDeleting(true);
+		try {
+			await proveedorService.eliminar(confirmTarget.id);
+			setProveedores((prev) => prev.filter((p) => p.id !== confirmTarget.id));
+			closeConfirm();
+		} catch {
+			setError("No se pudo eliminar el proveedor. Intenta nuevamente.");
+			closeConfirm();
+		} finally {
+			setDeleting(false);
+		}
+	}, [closeConfirm, confirmTarget]);
+
+	useEffect(() => {
+		const el = searchRef.current;
+		if (!el) return;
+
+		const input = el.querySelector("input");
+		if (!input) return;
+
+		const onInput = (e: Event) => {
+			const target = e.target as HTMLInputElement | null;
+			setSearchQuery(target?.value ?? "");
+		};
+
+		input.addEventListener("input", onInput);
+		return () => {
+			input.removeEventListener("input", onInput);
+		};
+	}, []);
+
+	const filteredProveedores = useMemo(() => {
+		const q = searchQuery.trim().toLowerCase();
+		if (!q) return proveedores;
+		return proveedores.filter(
+			(p) =>
+				p.nombre.toLowerCase().includes(q) ||
+				(p.documento ?? "").toLowerCase().includes(q) ||
+				(p.email ?? "").toLowerCase().includes(q)
+		);
+	}, [proveedores, searchQuery]);
+
+	const columns: Array<DataTableColumn<Proveedor>> = useMemo(
 		() => [
-			{ key: "empresa", header: "Empresa", render: (r) => r.empresa },
-			{ key: "nit", header: "NIT", render: (r) => r.nit },
-			{ key: "contacto", header: "Contacto", render: (r) => r.contacto },
-			{ key: "telefono", header: "Teléfono", render: (r) => r.telefono },
-			{ key: "correo", header: "Correo", render: (r) => r.correo },
-			{ key: "estado", header: "Estado", render: (r) => <StatusBadge status={r.estado} /> },
+			{ key: "nombre", header: "Empresa", render: (r) => r.nombre },
+			{ key: "documento", header: "NIT", render: (r) => r.documento || "—" },
+			{ key: "telefono", header: "Teléfono", render: (r) => r.telefono || "—" },
+			{ key: "email", header: "Correo", render: (r) => r.email || "—" },
+			{ key: "estado", header: "Estado", render: (r) => <StatusBadge status={r.active ? "Activo" : "Inactivo"} /> },
 			{
 				key: "acciones",
 				header: "Acciones",
 				align: "right",
 				render: (r) => (
 					<div className="prov__actions">
-						<SecondaryButton
-							type="button"
-							className="prov__actionBtn"
-							onClick={() => {
-								setModalMode("edit");
-								setEditingId(r.id);
-								setForm({
-									empresa: r.empresa,
-									nit: r.nit,
-									contacto: r.contacto,
-									telefono: r.telefono,
-									correo: r.correo,
-									direccion: r.direccion,
-									estado: r.estado
-								});
-								setModalOpen(true);
-							}}
-						>
-							Editar
+						<SecondaryButton type="button" className="prov__actionBtn" onClick={() => openEditModal(r)}>
+							<Pencil size={14} strokeWidth={2} />
+							<span>Editar</span>
 						</SecondaryButton>
 						<SecondaryButton
 							type="button"
-							className={["prov__actionBtn", r.estado === "Activo" ? "prov__actionBtn--danger" : ""].join(" ")}
-							onClick={() => {
-								setConfirmProviderId(r.id);
-								setConfirmOpen(true);
-							}}
+							className="prov__actionBtn prov__actionBtn--danger"
+							onClick={() => openConfirmDelete(r)}
 						>
-							{r.estado === "Activo" ? "Desactivar" : "Activar"}
+							<Trash2 size={14} strokeWidth={2} />
+							<span>Eliminar</span>
 						</SecondaryButton>
 					</div>
 				)
 			}
 		],
-		[]
+		[openConfirmDelete, openEditModal]
 	);
+
+	const emptyState = useMemo(() => {
+		if (proveedores.length === 0) {
+			return (
+				<div className="prov__empty">
+					<div className="prov__emptyTitle">No hay proveedores registrados.</div>
+					<div className="prov__emptySubtitle">Crea el primer proveedor para gestionar tus compras.</div>
+				</div>
+			);
+		}
+
+		return (
+			<div className="prov__empty">
+				<div className="prov__emptyTitle">No se encontraron proveedores.</div>
+				<div className="prov__emptySubtitle">Prueba modificando la búsqueda.</div>
+			</div>
+		);
+	}, [proveedores.length]);
+
+	if (loading) {
+		return (
+			<div className="prov">
+				<LoadingState label="Cargando proveedores..." />
+			</div>
+		);
+	}
+
+	if (error) {
+		return (
+			<div className="prov">
+				<div className="prov__state prov__state--error">{error}</div>
+			</div>
+		);
+	}
 
 	return (
 		<div className="prov">
@@ -93,75 +262,36 @@ export default function ProveedoresPage() {
 				title="Proveedores"
 				subtitle="Administración de proveedores registrados."
 				actions={
-					<PrimaryButton
-						type="button"
-						onClick={() => {
-							setModalMode("create");
-							setEditingId(null);
-							setForm({
-								empresa: "",
-								nit: "",
-								contacto: "",
-								telefono: "",
-								correo: "",
-								direccion: "",
-								estado: "Activo"
-							});
-							setModalOpen(true);
-						}}
-					>
-						Nuevo Proveedor
+					<PrimaryButton type="button" onClick={openCreateModal}>
+						<Plus size={16} strokeWidth={2.2} />
+						<span>Nuevo Proveedor</span>
 					</PrimaryButton>
 				}
 			/>
 
 			<div className="prov__controls">
 				<div className="prov__search">
-					<SearchBar placeholder="Buscar proveedor..." />
-				</div>
-				<div className="prov__filters" aria-label="Filtro visual">
-					<SecondaryButton type="button" className="prov__filterBtn prov__filterBtn--active">
-						Todos
-					</SecondaryButton>
-					<SecondaryButton type="button" className="prov__filterBtn">
-						Activos
-					</SecondaryButton>
-					<SecondaryButton type="button" className="prov__filterBtn">
-						Inactivos
-					</SecondaryButton>
+					<div ref={searchRef}>
+						<SearchBar placeholder="Buscar proveedor..." />
+					</div>
 				</div>
 			</div>
 
 			<div className="prov__table">
-				<DataTable columns={columns} data={proveedores} emptyState="No hay proveedores." />
+				<DataTable columns={columns} data={filteredProveedores} emptyState={emptyState} />
 			</div>
 
 			<Modal
 				open={modalOpen}
-				title={modalMode === "create" ? "Nuevo Proveedor" : "Editar Proveedor"}
-				onClose={() => setModalOpen(false)}
+				title={editingProveedorId ? "Editar Proveedor" : "Nuevo Proveedor"}
+				onClose={closeModal}
 				footer={
 					<div className="prov__modalActions">
-						<SecondaryButton type="button" onClick={() => setModalOpen(false)}>
+						<SecondaryButton type="button" onClick={closeModal} disabled={saving}>
 							Cancelar
 						</SecondaryButton>
-						<PrimaryButton
-							type="button"
-							onClick={() => {
-								if (modalMode === "create") {
-									addProvider(form);
-									setProveedores(getProviders());
-									setModalOpen(false);
-									return;
-								}
-
-								if (!editingId) return;
-								updateProvider(editingId, form);
-								setProveedores(getProviders());
-								setModalOpen(false);
-							}}
-						>
-							Guardar
+						<PrimaryButton type="button" onClick={handleSave} disabled={saving}>
+							{saving ? "Guardando..." : "Guardar"}
 						</PrimaryButton>
 					</div>
 				}
@@ -174,8 +304,8 @@ export default function ProveedoresPage() {
 								className="prov__input"
 								type="text"
 								placeholder="Nombre de la empresa"
-								value={form.empresa}
-								onChange={(e) => setForm((prev) => ({ ...prev, empresa: e.target.value }))}
+								value={form.nombre}
+								onChange={(e) => setForm((prev) => ({ ...prev, nombre: e.target.value }))}
 							/>
 						</div>
 						<div className="prov__field">
@@ -184,18 +314,8 @@ export default function ProveedoresPage() {
 								className="prov__input"
 								type="text"
 								placeholder="NIT"
-								value={form.nit}
-								onChange={(e) => setForm((prev) => ({ ...prev, nit: e.target.value }))}
-							/>
-						</div>
-						<div className="prov__field">
-							<label className="prov__label">Contacto</label>
-							<input
-								className="prov__input"
-								type="text"
-								placeholder="Nombre del contacto"
-								value={form.contacto}
-								onChange={(e) => setForm((prev) => ({ ...prev, contacto: e.target.value }))}
+								value={form.documento}
+								onChange={(e) => setForm((prev) => ({ ...prev, documento: e.target.value }))}
 							/>
 						</div>
 						<div className="prov__field">
@@ -214,8 +334,8 @@ export default function ProveedoresPage() {
 								className="prov__input"
 								type="email"
 								placeholder="correo@proveedor.com"
-								value={form.correo}
-								onChange={(e) => setForm((prev) => ({ ...prev, correo: e.target.value }))}
+								value={form.email}
+								onChange={(e) => setForm((prev) => ({ ...prev, email: e.target.value }))}
 							/>
 						</div>
 						<div className="prov__field prov__field--full">
@@ -228,42 +348,21 @@ export default function ProveedoresPage() {
 								onChange={(e) => setForm((prev) => ({ ...prev, direccion: e.target.value }))}
 							/>
 						</div>
-						<div className="prov__field">
-							<label className="prov__label">Estado</label>
-							<select
-								className="prov__select"
-								value={form.estado}
-								onChange={(e) => setForm((prev) => ({ ...prev, estado: e.target.value === "Inactivo" ? "Inactivo" : "Activo" }))}
-							>
-								<option value="Activo">Activo</option>
-								<option value="Inactivo">Inactivo</option>
-							</select>
-						</div>
+
+						{formError ? <div className="prov__field prov__field--full prov__formError">{formError}</div> : null}
 					</div>
 				</form>
 			</Modal>
 
 			<ConfirmDialog
 				open={confirmOpen}
-				title={(confirmProviderId && providerById.get(confirmProviderId)?.estado === "Activo") ? "Desactivar proveedor" : "Activar proveedor"}
-				message={(confirmProviderId && providerById.get(confirmProviderId)?.estado === "Activo") ? "¿Deseas desactivar este proveedor?" : "¿Deseas volver a activar este proveedor?"}
-				confirmText={(confirmProviderId && providerById.get(confirmProviderId)?.estado === "Activo") ? "Desactivar" : "Activar"}
+				title="Eliminar proveedor"
+				message={`¿Deseas eliminar el proveedor "${confirmTarget?.nombre ?? ""}"? Esta acción no se puede deshacer desde aquí.`}
+				confirmText={deleting ? "Eliminando..." : "Eliminar"}
 				cancelText="Cancelar"
-				onConfirm={() => {
-					if (!confirmProviderId) return;
-					const current = providerById.get(confirmProviderId);
-					if (!current) return;
-					updateProvider(confirmProviderId, { estado: current.estado === "Activo" ? "Inactivo" : "Activo" });
-					setProveedores(getProviders());
-					setConfirmProviderId(null);
-					setConfirmOpen(false);
-				}}
-				onCancel={() => {
-					setConfirmProviderId(null);
-					setConfirmOpen(false);
-				}}
+				onConfirm={confirmDelete}
+				onCancel={closeConfirm}
 			/>
 		</div>
 	);
 }
-

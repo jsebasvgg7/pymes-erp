@@ -9,6 +9,8 @@ import org.springframework.data.domain.Pageable;
 public interface CategoriaProductoService {
 	Page<CategoriaProductoResponse> listar(Pageable pageable);
 
+	Page<CategoriaProductoResponse> listarPorEmpresa(Long empresaId, Pageable pageable);
+
 	CategoriaProductoResponse obtenerPorId(Long id);
 
 	CategoriaProductoResponse crear(CategoriaProductoCreateRequest request);
@@ -17,4 +19,3 @@ public interface CategoriaProductoService {
 
 	void eliminar(Long id);
 }
-

@@ -38,8 +38,16 @@ export const categoriaProductoService = {
 	},
 
 	async listarPorEmpresa(empresaId: number, pageable?: { page?: number; size?: number }): Promise<CategoriaProducto[]> {
-		const page = await this.listar(pageable);
-		return page.content.filter((c) => c.empresaId === empresaId);
+		const response = await http.get<Page<CategoriaProducto>>(
+			`/api/categorias-producto/listar-por-empresa/${empresaId}`,
+			{
+				params: {
+					page: pageable?.page ?? 0,
+					size: pageable?.size ?? 200
+				}
+			}
+		);
+		return response.data.content;
 	},
 
 	async obtenerPorId(id: number): Promise<CategoriaProducto> {

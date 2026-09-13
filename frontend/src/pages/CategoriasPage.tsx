@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Plus, Pencil, Trash2 } from "lucide-react";
 import ConfirmDialog from "../components/ConfirmDialog";
 import DataTable, { DataTableColumn } from "../components/DataTable";
+import LoadingState from "../components/LoadingState";
 import Modal from "../components/Modal";
 import PageHeader from "../components/PageHeader";
 import PrimaryButton from "../components/PrimaryButton";
@@ -219,7 +220,7 @@ export default function CategoriasPage() {
 	if (loading) {
 		return (
 			<div className="cat">
-				<div className="cat__state">Cargando categorías...</div>
+				<LoadingState label="Cargando categorías..." />
 			</div>
 		);
 	}
