@@ -1,21 +1,23 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import LoadingState from "../components/LoadingState";
 import Modal from "../components/Modal";
 import PageHeader from "../components/PageHeader";
 import PrimaryButton from "../components/PrimaryButton";
 import SearchBar from "../components/SearchBar";
 import SecondaryButton from "../components/SecondaryButton";
-import { addCashMovement } from "../services/cashStorage";
-import { getProducts, saveProducts, type Product } from "../services/productStorage";
-import { addSale, type PaymentMethod, type Sale } from "../services/salesStorage";
+import { authService } from "../services/authService";
+import { clienteService, type Cliente } from "../services/clienteService";
+import { formaPagoService, type FormaPago } from "../services/formaPagoService";
+import { productoService, type Producto } from "../services/ProductoService";
+import { ventaService, type FacturaVentaResponse } from "../services/VentaService";
 import "./PosPage.css";
 
 type CartItem = {
-	productId: string;
+	productId: number;
 	name: string;
 	price: number;
 	quantity: number;
 	stock: number;
-	image?: string;
 };
 
 function formatCurrency(value: number) {
@@ -27,17 +29,66 @@ function formatDateTime(value: string) {
 	return Number.isNaN(d.getTime()) ? value : d.toLocaleString("es-CO");
 }
 
+function extractErrorMessage(err: unknown, fallback: string): string {
+	if (err && typeof err === "object" && "response" in err) {
+		const response = (err as { response?: { data?: { message?: string } } }).response;
+		if (response?.data?.message) return response.data.message;
+	}
+	return fallback;
+}
+
 export default function PosPage() {
-	const [products, setProducts] = useState<Product[]>(() => getProducts().filter((p) => p.estado === "Activo"));
+	const empresaId = authService.getUsuario()?.empresaId;
+
+	const [products, setProducts] = useState<Producto[]>([]);
+	const [formasPago, setFormasPago] = useState<FormaPago[]>([]);
+	const [clientes, setClientes] = useState<Cliente[]>([]);
+	const [loading, setLoading] = useState(true);
+	const [error, setError] = useState<string | null>(null);
+
 	const [cart, setCart] = useState<CartItem[]>([]);
-	const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("Efectivo");
+	const [formaPagoId, setFormaPagoId] = useState<string>("");
+	const [clienteId, setClienteId] = useState<string>("");
+
 	const [receiptOpen, setReceiptOpen] = useState(false);
-	const [lastSale, setLastSale] = useState<Sale | null>(null);
-	const [stockErrorOpen, setStockErrorOpen] = useState(false);
-	const [stockErrorMessage, setStockErrorMessage] = useState<string>("");
+	const [lastSale, setLastSale] = useState<FacturaVentaResponse | null>(null);
+
+	const [saleErrorOpen, setSaleErrorOpen] = useState(false);
+	const [saleErrorMessage, setSaleErrorMessage] = useState<string>("");
+	const [saving, setSaving] = useState(false);
 
 	const [searchQuery, setSearchQuery] = useState("");
 	const searchRef = useRef<HTMLDivElement | null>(null);
+
+	const loadData = useCallback(async () => {
+		if (!empresaId) {
+			setError("No se encontró la empresa del usuario. Inicia sesión nuevamente.");
+			setLoading(false);
+			return;
+		}
+
+		setLoading(true);
+		setError(null);
+		try {
+			const [productosData, formasPagoData, clientesData] = await Promise.all([
+				productoService.listarPorEmpresa(empresaId, 0, 200),
+				formaPagoService.listarPorEmpresa(empresaId, 0, 50),
+				clienteService.listarPorEmpresa(empresaId, 0, 200)
+			]);
+			setProducts(productosData.content);
+			setFormasPago(formasPagoData.content.filter((f) => f.active));
+			setClientes(clientesData.content.filter((c) => c.active));
+			setFormaPagoId((prev) => prev || String(formasPagoData.content.find((f) => f.active)?.id ?? ""));
+		} catch {
+			setError("No se pudo cargar el punto de venta. Verifica tu conexión con el servidor.");
+		} finally {
+			setLoading(false);
+		}
+	}, [empresaId]);
+
+	useEffect(() => {
+		loadData();
+	}, [loadData]);
 
 	useEffect(() => {
 		const el = searchRef.current;
@@ -57,13 +108,15 @@ export default function PosPage() {
 		};
 	}, []);
 
+	const activeProducts = useMemo(() => products.filter((p) => p.active), [products]);
+
 	const filteredProducts = useMemo(() => {
 		const q = searchQuery.trim().toLowerCase();
-		if (!q) return products;
-		return products.filter((p) => p.nombre.toLowerCase().includes(q));
-	}, [products, searchQuery]);
+		if (!q) return activeProducts;
+		return activeProducts.filter((p) => p.nombre.toLowerCase().includes(q));
+	}, [activeProducts, searchQuery]);
 
-	const addToCart = (p: Product) => {
+	const addToCart = (p: Producto) => {
 		setCart((prev) => {
 			const idx = prev.findIndex((i) => i.productId === p.id);
 			if (idx === -1) {
@@ -74,33 +127,26 @@ export default function PosPage() {
 						name: p.nombre,
 						price: p.precioVenta,
 						quantity: 1,
-						stock: p.stock,
-						image: p.imagen
+						stock: p.stockActual
 					}
 				];
 			}
 
-			return prev.map((i) => {
-				if (i.productId !== p.id) return i;
-				return { ...i, quantity: i.quantity + 1 };
-			});
+			return prev.map((i) => (i.productId !== p.id ? i : { ...i, quantity: i.quantity + 1 }));
 		});
 	};
 
-	const incQty = (productId: string) => {
+	const incQty = (productId: number) => {
 		setCart((prev) => prev.map((i) => (i.productId === productId ? { ...i, quantity: i.quantity + 1 } : i)));
 	};
 
-	const decQty = (productId: string) => {
+	const decQty = (productId: number) => {
 		setCart((prev) =>
-			prev.map((i) => {
-				if (i.productId !== productId) return i;
-				return { ...i, quantity: Math.max(1, i.quantity - 1) };
-			})
+			prev.map((i) => (i.productId !== productId ? i : { ...i, quantity: Math.max(1, i.quantity - 1) }))
 		);
 	};
 
-	const removeItem = (productId: string) => {
+	const removeItem = (productId: number) => {
 		setCart((prev) => prev.filter((i) => i.productId !== productId));
 	};
 
@@ -109,72 +155,70 @@ export default function PosPage() {
 
 	const cancelOrder = () => {
 		setCart([]);
-		setPaymentMethod("Efectivo");
+		setClienteId("");
 	};
 
-	const canFinalize = cart.length > 0;
+	const canFinalize = cart.length > 0 && Boolean(formaPagoId) && !saving;
 
-	const finalizeSale = () => {
-		if (!canFinalize) return;
+	const finalizeSale = useCallback(async () => {
+		if (!canFinalize || !empresaId) return;
 
-		const qtyByProductId = new Map<string, number>();
-		cart.forEach((i) => qtyByProductId.set(i.productId, (qtyByProductId.get(i.productId) ?? 0) + i.quantity));
-
-		const currentProducts = getProducts();
-		const productById = new Map<string, Product>();
-		currentProducts.forEach((p) => productById.set(p.id, p));
-
-		const insufficient: Array<{ name: string; available: number; requested: number }> = [];
-		qtyByProductId.forEach((requested, productId) => {
-			const p = productById.get(productId);
-			const available = p?.stock ?? 0;
-			if (available < requested) {
-				insufficient.push({ name: p?.nombre ?? "Producto", available, requested });
-			}
-		});
-
+		const insufficient = cart.filter((i) => i.stock < i.quantity);
 		if (insufficient.length > 0) {
 			const message = insufficient
-				.map((x) => `Stock insuficiente para "${x.name}". Disponible: ${x.available}. Solicitado: ${x.requested}.`)
+				.map((x) => `Stock insuficiente para "${x.name}". Disponible: ${x.stock}. Solicitado: ${x.quantity}.`)
 				.join("\n");
-			setStockErrorMessage(message);
-			setStockErrorOpen(true);
+			setSaleErrorMessage(message);
+			setSaleErrorOpen(true);
 			return;
 		}
 
-		const sale = addSale({
-			paymentMethod,
-			items: cart.map((i) => ({
-				productId: i.productId,
-				productName: i.name,
-				quantity: i.quantity,
-				unitPrice: i.price
-			}))
-		});
+		setSaving(true);
+		try {
+			const created = await ventaService.crear({
+				empresaId,
+				clienteId: clienteId ? Number(clienteId) : undefined,
+				formaPagoId: Number(formaPagoId),
+				detalles: cart.map((i) => ({
+					productoId: i.productId,
+					descripcion: i.name,
+					cantidad: i.quantity,
+					precioUnitario: i.price
+				}))
+			});
 
-		let changed = false;
-		const nextProducts = currentProducts.map((p) => {
-			const dec = qtyByProductId.get(p.id);
-			if (!dec) return p;
-			changed = true;
-			return { ...p, stock: p.stock - dec };
-		});
-		if (changed) {
-			saveProducts(nextProducts);
-			setProducts(nextProducts.filter((p) => p.estado === "Activo"));
+			setLastSale(created);
+			setReceiptOpen(true);
+			cancelOrder();
+
+			// Refrescar productos: el backend ajustó el stock al crear la factura.
+			productoService
+				.listarPorEmpresa(empresaId, 0, 200)
+				.then((data) => setProducts(data.content))
+				.catch(() => {});
+		} catch (err) {
+			setSaleErrorMessage(extractErrorMessage(err, "No se pudo registrar la venta. Intenta nuevamente."));
+			setSaleErrorOpen(true);
+		} finally {
+			setSaving(false);
 		}
+	}, [canFinalize, cart, clienteId, empresaId, formaPagoId]);
 
-		addCashMovement({
-			tipo: "Ingreso",
-			concepto: `Venta POS #${String(sale.number).padStart(6, "0")}`,
-			valor: sale.total,
-			observacion: "Venta registrada automáticamente desde Punto de Venta."
-		});
+	if (loading) {
+		return (
+			<div className="posWrap">
+				<LoadingState label="Cargando punto de venta..." />
+			</div>
+		);
+	}
 
-		setLastSale(sale);
-		setReceiptOpen(true);
-		cancelOrder();
-	};
+	if (error) {
+		return (
+			<div className="posWrap">
+				<div className="pos__state pos__state--error">{error}</div>
+			</div>
+		);
+	}
 
 	return (
 		<div className="posWrap">
@@ -190,7 +234,7 @@ export default function PosPage() {
 							</div>
 						</div>
 						<div className="pos__panelBody">
-							{products.length === 0 ? (
+							{activeProducts.length === 0 ? (
 								<div className="pos__empty">
 									<div className="pos__emptyTitle">No hay productos registrados.</div>
 									<div className="pos__emptySubtitle">Crea productos para comenzar a vender.</div>
@@ -200,21 +244,17 @@ export default function PosPage() {
 									{filteredProducts.map((p) => (
 										<div key={p.id} className="pos__productCard">
 											<div className="pos__productTop">
-												<div
-													className="pos__productImg"
-													aria-hidden="true"
-													style={p.imagen ? { backgroundImage: `url(${p.imagen})` } : undefined}
-												/>
+												<div className="pos__productImg" aria-hidden="true" />
 												<div className="pos__productName">{p.nombre}</div>
 											</div>
 
 											<div className="pos__productMeta">
 												<div className="pos__productPrice">{formatCurrency(p.precioVenta)}</div>
-												<div className="pos__productStock">Stock: {p.stock.toLocaleString("es-CO")}</div>
+												<div className="pos__productStock">Stock: {p.stockActual.toLocaleString("es-CO")}</div>
 											</div>
 
 											<div className="pos__productActions">
-												<PrimaryButton type="button" onClick={() => addToCart(p)}>
+												<PrimaryButton type="button" onClick={() => addToCart(p)} disabled={p.stockActual <= 0}>
 													Agregar
 												</PrimaryButton>
 											</div>
@@ -281,20 +321,35 @@ export default function PosPage() {
 							</div>
 
 							<div className="pos__pay">
+								<label className="pos__label">Cliente (opcional)</label>
+								<select className="pos__select" value={clienteId} onChange={(e) => setClienteId(e.target.value)}>
+									<option value="">Sin cliente</option>
+									{clientes.map((c) => (
+										<option key={c.id} value={c.id}>
+											{c.nombre}
+										</option>
+									))}
+								</select>
+							</div>
+
+							<div className="pos__pay">
 								<label className="pos__label">Método de pago</label>
-								<select className="pos__select" value={paymentMethod} onChange={(e) => setPaymentMethod(e.target.value as PaymentMethod)}>
-									<option value="Efectivo">Efectivo</option>
-									<option value="Tarjeta">Tarjeta</option>
-									<option value="Transferencia">Transferencia</option>
+								<select className="pos__select" value={formaPagoId} onChange={(e) => setFormaPagoId(e.target.value)}>
+									{formasPago.length === 0 ? <option value="">Sin formas de pago</option> : null}
+									{formasPago.map((f) => (
+										<option key={f.id} value={f.id}>
+											{f.nombre}
+										</option>
+									))}
 								</select>
 							</div>
 
 							<div className="pos__actions">
-								<SecondaryButton type="button" onClick={cancelOrder}>
+								<SecondaryButton type="button" onClick={cancelOrder} disabled={saving}>
 									Cancelar
 								</SecondaryButton>
 								<PrimaryButton type="button" onClick={finalizeSale} disabled={!canFinalize}>
-									Finalizar Venta
+									{saving ? "Procesando..." : "Finalizar Venta"}
 								</PrimaryButton>
 							</div>
 						</div>
@@ -304,7 +359,7 @@ export default function PosPage() {
 
 			<Modal
 				open={receiptOpen}
-				title={lastSale ? `Recibo — Venta #${lastSale.number}` : "Recibo"}
+				title={lastSale ? `Recibo — Venta ${lastSale.numero}` : "Recibo"}
 				onClose={() => setReceiptOpen(false)}
 				footer={
 					<div className="pos__receiptActions">
@@ -320,23 +375,29 @@ export default function PosPage() {
 						<div className="pos__receiptMeta">
 							<div className="pos__receiptLine">
 								<div className="pos__receiptLabel">Fecha</div>
-								<div className="pos__receiptValue">{formatDateTime(lastSale.date)}</div>
+								<div className="pos__receiptValue">{formatDateTime(lastSale.fechaEmision)}</div>
 							</div>
 							<div className="pos__receiptLine">
 								<div className="pos__receiptLabel">Método de pago</div>
-								<div className="pos__receiptValue">{lastSale.paymentMethod}</div>
+								<div className="pos__receiptValue">{lastSale.formaPagoNombre}</div>
 							</div>
+							{lastSale.clienteNombre ? (
+								<div className="pos__receiptLine">
+									<div className="pos__receiptLabel">Cliente</div>
+									<div className="pos__receiptValue">{lastSale.clienteNombre}</div>
+								</div>
+							) : null}
 						</div>
 
 						<div className="pos__receiptLine">
 							<div className="pos__receiptLabel">Productos</div>
 							<div className="pos__receiptItems">
-								{lastSale.items.map((i) => (
-									<div className="pos__receiptItem" key={i.productId}>
+								{lastSale.detalles.map((d) => (
+									<div className="pos__receiptItem" key={d.id}>
 										<span>
-											{i.quantity} × {i.productName}
+											{d.cantidad} × {d.productoNombre || d.descripcion}
 										</span>
-										<span>{formatCurrency(i.subtotal)}</span>
+										<span>{formatCurrency(d.totalLinea)}</span>
 									</div>
 								))}
 								<div className="pos__receiptTotal">
@@ -350,21 +411,21 @@ export default function PosPage() {
 			</Modal>
 
 			<Modal
-				open={stockErrorOpen}
-				title="Stock insuficiente"
-				onClose={() => setStockErrorOpen(false)}
+				open={saleErrorOpen}
+				title="No se pudo completar la venta"
+				onClose={() => setSaleErrorOpen(false)}
 				footer={
 					<div className="pos__receiptActions">
-						<PrimaryButton type="button" onClick={() => setStockErrorOpen(false)}>
+						<PrimaryButton type="button" onClick={() => setSaleErrorOpen(false)}>
 							Cerrar
 						</PrimaryButton>
 					</div>
 				}
 			>
 				<div className="pos__empty">
-					<div className="pos__emptyTitle">No existe suficiente inventario.</div>
+					<div className="pos__emptyTitle">Revisa el pedido e intenta de nuevo.</div>
 					<div className="pos__emptySubtitle">
-						{stockErrorMessage.split("\n").map((line, idx) => (
+						{saleErrorMessage.split("\n").map((line, idx) => (
 							<div key={idx}>{line}</div>
 						))}
 					</div>
