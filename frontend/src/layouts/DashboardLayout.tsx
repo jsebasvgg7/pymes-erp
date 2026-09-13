@@ -20,6 +20,7 @@ import {
 	X
 } from "lucide-react";
 import { authService } from "../services/authService";
+import logo from "../assets/logo.png";
 import "./DashboardLayout.css";
 
 type MenuItem = {
@@ -100,7 +101,7 @@ export default function DashboardLayout() {
 			<div className="dash__sidebarHeader">
 				<div className="dash__brand">
 					<div className="dash__brandMark" aria-hidden="true">
-						<ShoppingCart size={18} strokeWidth={2} />
+						<img src={logo} alt="" className="dash__brandLogo" />
 					</div>
 					<div className="dash__brandText">
 						<div className="dash__brandTitle">Contabilidad PYMES</div>

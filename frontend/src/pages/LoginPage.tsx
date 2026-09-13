@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import PrimaryButton from "../components/PrimaryButton";
 import { authService } from "../services/authService";
 import posIllustration from "../assets/pos-illustration.png";
+import logo from "../assets/logo.png";
 import "./LoginPage.css";
 
 export default function LoginPage() {
@@ -39,18 +40,7 @@ export default function LoginPage() {
         <section className="login__left" aria-hidden="true">
           <div className="login__brandRow">
             <div className="login__brandLogo">
-              <svg viewBox="0 0 24 24" width="22" height="22" focusable="false" aria-hidden="true">
-                <path
-                  d="M4 5h2l1.6 9.6a2 2 0 0 0 2 1.65h7.1a2 2 0 0 0 1.97-1.64L20 8.5H7"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.8"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-                <circle cx="10" cy="20" r="1.4" fill="currentColor" />
-                <circle cx="16.5" cy="20" r="1.4" fill="currentColor" />
-              </svg>
+              <img src={logo} alt="" className="login__brandLogoImg" />
             </div>
             <div>
               <p className="login__brandName">
