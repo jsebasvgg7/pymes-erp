@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { Receipt, TrendingDown, TrendingUp, Wallet } from "lucide-react";
 import DataTable, { DataTableColumn } from "../components/DataTable";
 import LoadingState from "../components/LoadingState";
 import Modal from "../components/Modal";
@@ -337,28 +338,28 @@ export default function CajaPage() {
 
 			<section className="cash__metrics" aria-label="Resumen">
 				<StatCard
-					icon="💰"
+					icon={<Wallet size={20} strokeWidth={1.8} />}
 					title="Saldo Actual"
 					value={formatCurrency(cajaActual?.saldoActual ?? 0)}
 					color="blue"
 					footnote={cajaActual?.cajaNombre}
 				/>
 				<StatCard
-					icon="🟢"
+					icon={<TrendingUp size={20} strokeWidth={1.8} />}
 					title="Total ingresos"
 					value={formatCurrency(cajaActual?.totalIngresos ?? 0)}
 					color="green"
 					footnote="Histórico de la caja"
 				/>
 				<StatCard
-					icon="🔴"
+					icon={<TrendingDown size={20} strokeWidth={1.8} />}
 					title="Total egresos"
 					value={formatCurrency(cajaActual?.totalEgresos ?? 0)}
 					color="red"
 					footnote="Histórico de la caja"
 				/>
 				<StatCard
-					icon="🧾"
+					icon={<Receipt size={20} strokeWidth={1.8} />}
 					title="Movimientos registrados"
 					value={(cajaActual?.totalMovimientos ?? 0).toLocaleString("es-CO")}
 					color="amber"

@@ -1,16 +1,16 @@
-import { useMemo } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { CreditCard, Package, Receipt, Wallet } from "lucide-react";
 import DataTable, { DataTableColumn } from "../components/DataTable";
+import LoadingState from "../components/LoadingState";
 import PageHeader from "../components/PageHeader";
 import StatCard from "../components/StatCard";
 import StatusBadge from "../components/StatusBadge";
-import { getCashMovements, type CashMovement } from "../services/cashStorage";
-import { getPurchases, type Purchase } from "../services/purchaseStorage";
-import { getSales, type Sale } from "../services/salesStorage";
-import { getProducts, type Product } from "../services/productStorage";
-import { getSettings } from "../services/settingsStorage";
+import { authService } from "../services/authService";
+import { cajaService, type MovimientoCajaResponse } from "../services/cajaService";
+import { compraService, type CompraResponse } from "../services/compraService";
+import { productoService, type Producto } from "../services/ProductoService";
+import { ventaService, type FacturaVentaResponse } from "../services/VentaService";
 import "./ReportesPage.css";
-
-const DEFAULT_STOCK_MIN = 5;
 
 function formatCurrency(value: number) {
 	return value.toLocaleString("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 });
@@ -24,140 +24,183 @@ function formatDateTime(value: string) {
 
 function formatDate(value: string) {
 	if (!value) return "";
-	const d = new Date(`${value}T00:00:00`);
+	const d = new Date(value.length <= 10 ? `${value}T00:00:00` : value);
 	return Number.isNaN(d.getTime()) ? value : d.toLocaleDateString("es-CO");
 }
 
-function getLocalDateKey(d: Date) {
-	const y = d.getFullYear();
-	const m = String(d.getMonth() + 1).padStart(2, "0");
-	const day = String(d.getDate()).padStart(2, "0");
-	return `${y}-${m}-${day}`;
+function sumCantidad(detalles: Array<{ cantidad: number }>) {
+	return detalles.reduce((acc, d) => acc + d.cantidad, 0);
 }
 
 export default function ReportesPage() {
-	const sales = useMemo(() => getSales(), []);
-	const purchases = useMemo(() => getPurchases(), []);
-	const products = useMemo(() => getProducts(), []);
-	const cashMovements = useMemo(() => getCashMovements(), []);
-	const stockMinimo = useMemo(() => getSettings()?.system.defaultMinStock ?? DEFAULT_STOCK_MIN, []);
+	const empresaId = authService.getUsuario()?.empresaId;
 
-	const computed = useMemo(() => {
-		const saldo = cashMovements.reduce((acc, m) => (m.tipo === "Ingreso" ? acc + m.valor : acc - m.valor), 0);
-		return {
+	const [loading, setLoading] = useState(true);
+	const [error, setError] = useState<string | null>(null);
+
+	const [sales, setSales] = useState<FacturaVentaResponse[]>([]);
+	const [purchases, setPurchases] = useState<CompraResponse[]>([]);
+	const [products, setProducts] = useState<Producto[]>([]);
+	const [cashMovements, setCashMovements] = useState<MovimientoCajaResponse[]>([]);
+	const [saldoCaja, setSaldoCaja] = useState(0);
+
+	const loadData = useCallback(async () => {
+		if (!empresaId) {
+			setError("No se encontró la empresa del usuario. Inicia sesión nuevamente.");
+			setLoading(false);
+			return;
+		}
+
+		setLoading(true);
+		setError(null);
+		try {
+			const [ventasData, comprasData, productosData, movimientosData, resumenes] = await Promise.all([
+				ventaService.listarPorEmpresa(empresaId, 0, 100),
+				compraService.listarPorEmpresa(empresaId, 0, 100),
+				productoService.listarPorEmpresa(empresaId, 0, 200),
+				cajaService.listarMovimientosPorEmpresa(empresaId, 0, 100),
+				cajaService.obtenerResumenTodas(empresaId)
+			]);
+
+			setSales(ventasData.content);
+			setPurchases(comprasData.content);
+			setProducts(productosData.content);
+			setCashMovements(movimientosData.content);
+			setSaldoCaja(resumenes.reduce((acc, r) => acc + r.saldoActual, 0));
+		} catch {
+			setError("No se pudo cargar la información de reportes. Verifica tu conexión con el servidor.");
+		} finally {
+			setLoading(false);
+		}
+	}, [empresaId]);
+
+	useEffect(() => {
+		loadData();
+	}, [loadData]);
+
+	const computed = useMemo(
+		() => ({
 			ventasRegistradas: sales.length,
 			comprasRegistradas: purchases.length,
 			productosRegistrados: products.length,
-			saldoCaja: saldo
-		};
-	}, [cashMovements, products.length, purchases.length, sales.length]);
+			saldoCaja
+		}),
+		[sales.length, purchases.length, products.length, saldoCaja]
+	);
 
 	const recentSales = useMemo(() => {
-		return [...sales].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+		return [...sales].sort((a, b) => new Date(b.fechaEmision).getTime() - new Date(a.fechaEmision).getTime());
 	}, [sales]);
 
 	const recentPurchases = useMemo(() => {
-		return [...purchases].sort((a, b) => {
-			const byDate = new Date(`${b.date}T00:00:00`).getTime() - new Date(`${a.date}T00:00:00`).getTime();
-			return byDate !== 0 ? byDate : b.number - a.number;
-		});
+		return [...purchases].sort((a, b) => new Date(b.fechaCompra).getTime() - new Date(a.fechaCompra).getTime());
 	}, [purchases]);
 
 	const lowStockProducts = useMemo(() => {
 		return products
-			.filter((p) => p.stock <= stockMinimo)
-			.sort((a, b) => a.stock - b.stock);
-	}, [products, stockMinimo]);
+			.filter((p) => p.stockActual <= p.stockMinimo)
+			.sort((a, b) => a.stockActual - b.stockActual);
+	}, [products]);
 
 	const recentCash = useMemo(() => {
 		return [...cashMovements].sort((a, b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime());
 	}, [cashMovements]);
 
-	const salesColumns: Array<DataTableColumn<Sale>> = useMemo(
+	const salesColumns: Array<DataTableColumn<FacturaVentaResponse>> = useMemo(
 		() => [
-			{ key: "number", header: "Número", render: (r) => `#${r.number}` },
-			{ key: "date", header: "Fecha", render: (r) => formatDateTime(r.date) },
+			{ key: "numero", header: "Número", render: (r) => r.numero },
+			{ key: "fechaEmision", header: "Fecha", render: (r) => formatDateTime(r.fechaEmision) },
 			{
 				key: "items",
 				header: "Cantidad de productos",
 				align: "right",
-				render: (r) => r.items.reduce((acc, i) => acc + i.quantity, 0).toLocaleString("es-CO")
+				render: (r) => sumCantidad(r.detalles).toLocaleString("es-CO")
 			},
-			{ key: "paymentMethod", header: "Método de pago", render: (r) => r.paymentMethod },
+			{ key: "formaPagoNombre", header: "Método de pago", render: (r) => r.formaPagoNombre },
 			{ key: "total", header: "Total", align: "right", render: (r) => formatCurrency(r.total) }
 		],
 		[]
 	);
 
-	const purchasesColumns: Array<DataTableColumn<Purchase>> = useMemo(
+	const purchasesColumns: Array<DataTableColumn<CompraResponse>> = useMemo(
 		() => [
-			{ key: "number", header: "Número", render: (r) => `#${r.number}` },
-			{ key: "provider", header: "Proveedor", render: (r) => r.providerName },
-			{ key: "date", header: "Fecha", render: (r) => formatDate(r.date) },
+			{ key: "numeroDocumento", header: "Número", render: (r) => r.numeroDocumento },
+			{ key: "proveedorNombre", header: "Proveedor", render: (r) => r.proveedorNombre },
+			{ key: "fechaCompra", header: "Fecha", render: (r) => formatDate(r.fechaCompra) },
 			{
 				key: "items",
 				header: "Cantidad de productos",
 				align: "right",
-				render: (r) => r.totalQuantity.toLocaleString("es-CO")
+				render: (r) => sumCantidad(r.detalles).toLocaleString("es-CO")
 			},
 			{ key: "total", header: "Total", align: "right", render: (r) => formatCurrency(r.total) }
 		],
 		[]
 	);
 
-	const lowStockColumns: Array<DataTableColumn<Product>> = useMemo(
+	const lowStockColumns: Array<DataTableColumn<Producto>> = useMemo(
 		() => [
-			{ key: "producto", header: "Producto", render: (r) => r.nombre },
-			{ key: "categoria", header: "Categoría", render: (r) => r.categoria },
-			{ key: "stock", header: "Stock", align: "right", render: (r) => r.stock.toLocaleString("es-CO") },
+			{ key: "nombre", header: "Producto", render: (r) => r.nombre },
+			{ key: "stockActual", header: "Stock", align: "right", render: (r) => r.stockActual.toLocaleString("es-CO") },
 			{
-				key: "stockMin",
+				key: "stockMinimo",
 				header: "Stock mínimo",
 				align: "right",
-				render: () => stockMinimo.toLocaleString("es-CO")
+				render: (r) => r.stockMinimo.toLocaleString("es-CO")
 			},
 			{
 				key: "estado",
 				header: "Estado",
-				render: (r) => <StatusBadge status={r.estado} />
+				render: (r) => <StatusBadge status={r.active ? "Activo" : "Inactivo"} />
 			}
 		],
-		[stockMinimo]
+		[]
 	);
 
-	const cashColumns: Array<DataTableColumn<CashMovement>> = useMemo(
+	const cashColumns: Array<DataTableColumn<MovimientoCajaResponse>> = useMemo(
 		() => [
 			{ key: "fecha", header: "Fecha", render: (r) => formatDateTime(r.fecha) },
 			{
 				key: "tipo",
 				header: "Tipo",
 				render: (r) => (
-					<span className={["rep__typeBadge", r.tipo === "Ingreso" ? "rep__typeBadge--in" : "rep__typeBadge--out"].join(" ")}>
-						<StatusBadge status={r.tipo === "Ingreso" ? "Pagado" : "Anulado"} />
+					<span className={["rep__typeBadge", r.tipo === "INGRESO" ? "rep__typeBadge--in" : "rep__typeBadge--out"].join(" ")}>
+						<StatusBadge status={r.tipo === "INGRESO" ? "Pagado" : "Anulado"} />
 					</span>
 				)
 			},
-			{ key: "concepto", header: "Concepto", render: (r) => r.concepto },
-			{ key: "valor", header: "Valor", align: "right", render: (r) => formatCurrency(r.valor) },
-			{ key: "observacion", header: "Observación", render: (r) => r.observacion ?? "" }
+			{ key: "descripcion", header: "Concepto", render: (r) => r.descripcion ?? "" },
+			{ key: "cajaNombre", header: "Caja", render: (r) => r.cajaNombre },
+			{ key: "monto", header: "Valor", align: "right", render: (r) => formatCurrency(r.monto) }
 		],
 		[]
 	);
 
-	const lowStockHint = useMemo(() => {
-		const key = getLocalDateKey(new Date());
-		return `Mínimo: ${stockMinimo} — ${key}`;
-	}, [stockMinimo]);
+	if (loading) {
+		return (
+			<div className="rep">
+				<LoadingState label="Cargando reportes..." />
+			</div>
+		);
+	}
+
+	if (error) {
+		return (
+			<div className="rep">
+				<div className="rep__state rep__state--error">{error}</div>
+			</div>
+		);
+	}
 
 	return (
 		<div className="rep">
 			<PageHeader title="Reportes" subtitle="Consulta la información general del negocio." />
 
 			<section className="rep__metrics" aria-label="Resumen">
-				<StatCard icon="💳" title="Ventas registradas" value={computed.ventasRegistradas.toLocaleString("es-CO")} color="blue" footnote="LocalStorage" />
-				<StatCard icon="🧾" title="Compras registradas" value={computed.comprasRegistradas.toLocaleString("es-CO")} color="amber" footnote="LocalStorage" />
-				<StatCard icon="📦" title="Productos registrados" value={computed.productosRegistrados.toLocaleString("es-CO")} color="green" footnote="LocalStorage" />
-				<StatCard icon="💰" title="Saldo actual de Caja" value={formatCurrency(computed.saldoCaja)} color="blue" footnote="Ingresos - Egresos" />
+				<StatCard icon={<CreditCard size={20} strokeWidth={1.8} />} title="Ventas registradas" value={computed.ventasRegistradas.toLocaleString("es-CO")} color="blue" />
+				<StatCard icon={<Receipt size={20} strokeWidth={1.8} />} title="Compras registradas" value={computed.comprasRegistradas.toLocaleString("es-CO")} color="amber" />
+				<StatCard icon={<Package size={20} strokeWidth={1.8} />} title="Productos registrados" value={computed.productosRegistrados.toLocaleString("es-CO")} color="green" />
+				<StatCard icon={<Wallet size={20} strokeWidth={1.8} />} title="Saldo actual de Caja" value={formatCurrency(computed.saldoCaja)} color="blue" footnote="Suma de todas las cajas activas" />
 			</section>
 
 			<section className="rep__panels" aria-label="Secciones">
@@ -195,7 +238,7 @@ export default function ReportesPage() {
 
 				<article className="rep__panel">
 					<div className="rep__panelHead">
-						<PageHeader title="Productos con poco inventario" subtitle={lowStockHint} />
+						<PageHeader title="Productos con poco inventario" />
 					</div>
 					<DataTable
 						columns={lowStockColumns}

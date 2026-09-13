@@ -16,6 +16,11 @@ public interface RolMapper {
 		return toEntity(request, null);
 	}
 
+	@Mapping(target = "id", ignore = true)
+	@Mapping(target = "createdAt", ignore = true)
+	@Mapping(target = "updatedAt", ignore = true)
+	@Mapping(target = "active", ignore = true)
+	@Mapping(target = "usuarios", ignore = true)
 	@Mapping(target = "empresa", source = "empresa")
 	@Mapping(target = "nombre", source = "request.nombre")
 	Rol toEntity(RolCreateRequest request, Empresa empresa);

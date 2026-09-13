@@ -1,135 +1,129 @@
-import { useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import LoadingState from "../components/LoadingState";
 import PageHeader from "../components/PageHeader";
 import PrimaryButton from "../components/PrimaryButton";
 import SecondaryButton from "../components/SecondaryButton";
-import { getSettings, saveSettings, type ReceiptWidth, type Settings } from "../services/settingsStorage";
+import StatusBadge from "../components/StatusBadge";
+import { authService } from "../services/authService";
+import { empresaService, type Empresa } from "../services/empresaService";
 import "./ConfiguracionPage.css";
 
 type SettingsFormState = {
-	companyName: string;
+	nombre: string;
 	nit: string;
-	address: string;
-	city: string;
-	phone: string;
+	direccion: string;
+	telefono: string;
 	email: string;
-	logoUrl: string;
-	barcodeEnabled: boolean;
-	currency: string;
-	symbol: string;
-	defaultMinStock: string;
-	receiptWidth: ReceiptWidth;
-	receiptBusinessName: string;
-	receiptFooterMessage: string;
-	internalNotes: string;
 };
 
-function toFormState(settings: Settings): SettingsFormState {
+function toFormState(empresa: Empresa): SettingsFormState {
 	return {
-		companyName: settings.company.name,
-		nit: settings.company.nit,
-		address: settings.company.address,
-		city: settings.company.city,
-		phone: settings.company.phone,
-		email: settings.company.email,
-		logoUrl: settings.company.logoUrl,
-		barcodeEnabled: settings.system.barcodeEnabled,
-		currency: settings.system.currency,
-		symbol: settings.system.symbol,
-		defaultMinStock: String(settings.system.defaultMinStock),
-		receiptWidth: settings.printing.receiptWidth,
-		receiptBusinessName: settings.printing.receiptBusinessName,
-		receiptFooterMessage: settings.printing.receiptFooterMessage,
-		internalNotes: settings.additional.internalNotes
+		nombre: empresa.nombre ?? "",
+		nit: empresa.nit ?? "",
+		direccion: empresa.direccion ?? "",
+		telefono: empresa.telefono ?? "",
+		email: empresa.email ?? ""
 	};
 }
 
-function parseIntegerInput(value: string) {
-	const normalized = value.replace(/[^\d-]/g, "");
-	const n = Number(normalized);
-	return Number.isFinite(n) ? Math.trunc(n) : 0;
-}
-
-function toSettings(form: SettingsFormState): Settings {
-	return {
-		company: {
-			name: form.companyName.trim(),
-			nit: form.nit.trim(),
-			address: form.address.trim(),
-			city: form.city.trim(),
-			phone: form.phone.trim(),
-			email: form.email.trim(),
-			logoUrl: form.logoUrl.trim()
-		},
-		system: {
-			barcodeEnabled: form.barcodeEnabled,
-			currency: form.currency.trim(),
-			symbol: form.symbol.trim(),
-			defaultMinStock: parseIntegerInput(form.defaultMinStock)
-		},
-		printing: {
-			receiptWidth: form.receiptWidth,
-			receiptBusinessName: form.receiptBusinessName.trim(),
-			receiptFooterMessage: form.receiptFooterMessage.trim()
-		},
-		additional: {
-			internalNotes: form.internalNotes
-		}
-	};
-}
-
-function getDefaultSettings(): Settings {
-	return {
-		company: {
-			name: "",
-			nit: "",
-			address: "",
-			city: "",
-			phone: "",
-			email: "",
-			logoUrl: ""
-		},
-		system: {
-			barcodeEnabled: false,
-			currency: "COP",
-			symbol: "$",
-			defaultMinStock: 5
-		},
-		printing: {
-			receiptWidth: "58mm",
-			receiptBusinessName: "",
-			receiptFooterMessage: ""
-		},
-		additional: {
-			internalNotes: ""
-		}
-	};
+function extractErrorMessage(err: unknown, fallback: string): string {
+	if (err && typeof err === "object" && "response" in err) {
+		const response = (err as { response?: { data?: { message?: string } } }).response;
+		if (response?.data?.message) return response.data.message;
+	}
+	return fallback;
 }
 
 export default function ConfiguracionPage() {
-	const initialSettings = useMemo(() => getSettings() ?? getDefaultSettings(), []);
-	const initialRef = useRef<Settings>(initialSettings);
-	const [form, setForm] = useState<SettingsFormState>(() => toFormState(initialSettings));
+	const empresaId = authService.getUsuario()?.empresaId;
+
+	const [loading, setLoading] = useState(true);
+	const [error, setError] = useState<string | null>(null);
+	const [saving, setSaving] = useState(false);
+	const [saveError, setSaveError] = useState<string | null>(null);
+	const [saveSuccess, setSaveSuccess] = useState(false);
+
+	const initialRef = useRef<SettingsFormState | null>(null);
+	const [form, setForm] = useState<SettingsFormState>({ nombre: "", nit: "", direccion: "", telefono: "", email: "" });
+
+	const loadData = useCallback(async () => {
+		if (!empresaId) {
+			setError("No se encontró la empresa del usuario. Inicia sesión nuevamente.");
+			setLoading(false);
+			return;
+		}
+
+		setLoading(true);
+		setError(null);
+		try {
+			const empresa = await empresaService.obtenerPorId(empresaId);
+			const state = toFormState(empresa);
+			initialRef.current = state;
+			setForm(state);
+		} catch {
+			setError("No se pudo cargar la información de la empresa. Verifica tu conexión con el servidor.");
+		} finally {
+			setLoading(false);
+		}
+	}, [empresaId]);
+
+	useEffect(() => {
+		loadData();
+	}, [loadData]);
 
 	const validations = useMemo(() => {
-		const nameOk = form.companyName.trim().length > 0;
-		const currencyOk = form.currency.trim().length > 0;
-		const symbolOk = form.symbol.trim().length > 0;
-		const minStockValue = parseIntegerInput(form.defaultMinStock);
-		const minStockOk = minStockValue >= 0;
-		return { nameOk, currencyOk, symbolOk, minStockOk, ok: nameOk && currencyOk && symbolOk && minStockOk };
-	}, [form.companyName, form.currency, form.defaultMinStock, form.symbol]);
+		const nombreOk = form.nombre.trim().length > 0;
+		return { nombreOk, ok: nombreOk };
+	}, [form.nombre]);
 
 	const handleCancel = () => {
-		setForm(toFormState(initialRef.current));
+		if (initialRef.current) {
+			setForm(initialRef.current);
+		}
+		setSaveError(null);
+		setSaveSuccess(false);
 	};
 
-	const handleSave = () => {
-		if (!validations.ok) return;
-		const settings = toSettings(form);
-		saveSettings(settings);
-		initialRef.current = settings;
-		setForm(toFormState(settings));
+	const handleSave = async () => {
+		if (!validations.ok || !empresaId) return;
+
+		setSaving(true);
+		setSaveError(null);
+		setSaveSuccess(false);
+		try {
+			const updated = await empresaService.actualizar(empresaId, {
+				nombre: form.nombre.trim(),
+				nit: form.nit.trim(),
+				direccion: form.direccion.trim(),
+				telefono: form.telefono.trim(),
+				email: form.email.trim()
+			});
+			const state = toFormState(updated);
+			initialRef.current = state;
+			setForm(state);
+			setSaveSuccess(true);
+		} catch (err) {
+			setSaveError(extractErrorMessage(err, "No se pudo guardar la configuración. Intenta nuevamente."));
+		} finally {
+			setSaving(false);
+		}
 	};
+
+	if (loading) {
+		return (
+			<div className="set">
+				<LoadingState label="Cargando configuración..." />
+			</div>
+		);
+	}
+
+	if (error) {
+		return (
+			<div className="set">
+				<div className="set__state set__state--error">{error}</div>
+			</div>
+		);
+	}
 
 	return (
 		<div className="set">
@@ -139,16 +133,19 @@ export default function ConfiguracionPage() {
 			/>
 
 			<div className="set__card">
+				{saveError ? <div className="set__formError">{saveError}</div> : null}
+				{saveSuccess ? <div className="set__formSuccess">Configuración guardada correctamente.</div> : null}
+
 				<div className="set__section">
 					<div className="set__sectionTitle">1. Información de la empresa</div>
 					<div className="set__grid">
 						<div className="set__field">
-							<label className="set__label">Nombre de la empresa</label>
+							<label className="set__label">Nombre de la empresa *</label>
 							<input
 								className="set__input"
 								type="text"
-								value={form.companyName}
-								onChange={(e) => setForm((v) => ({ ...v, companyName: e.target.value }))}
+								value={form.nombre}
+								onChange={(e) => setForm((v) => ({ ...v, nombre: e.target.value }))}
 							/>
 						</div>
 						<div className="set__field">
@@ -160,49 +157,43 @@ export default function ConfiguracionPage() {
 							<input
 								className="set__input"
 								type="text"
-								value={form.address}
-								onChange={(e) => setForm((v) => ({ ...v, address: e.target.value }))}
+								value={form.direccion}
+								onChange={(e) => setForm((v) => ({ ...v, direccion: e.target.value }))}
 							/>
 						</div>
 						<div className="set__field">
-							<label className="set__label">Ciudad</label>
-							<input className="set__input" type="text" value={form.city} onChange={(e) => setForm((v) => ({ ...v, city: e.target.value }))} />
-						</div>
-						<div className="set__field">
 							<label className="set__label">Teléfono</label>
-							<input className="set__input" type="text" value={form.phone} onChange={(e) => setForm((v) => ({ ...v, phone: e.target.value }))} />
-						</div>
-						<div className="set__field">
-							<label className="set__label">Correo electrónico</label>
-							<input className="set__input" type="email" value={form.email} onChange={(e) => setForm((v) => ({ ...v, email: e.target.value }))} />
-						</div>
-						<div className="set__field set__field--full">
-							<label className="set__label">Logo (URL)</label>
 							<input
 								className="set__input"
 								type="text"
-								placeholder="https://..."
-								value={form.logoUrl}
-								onChange={(e) => setForm((v) => ({ ...v, logoUrl: e.target.value }))}
+								value={form.telefono}
+								onChange={(e) => setForm((v) => ({ ...v, telefono: e.target.value }))}
+							/>
+						</div>
+						<div className="set__field">
+							<label className="set__label">Correo electrónico</label>
+							<input
+								className="set__input"
+								type="email"
+								value={form.email}
+								onChange={(e) => setForm((v) => ({ ...v, email: e.target.value }))}
 							/>
 						</div>
 					</div>
 				</div>
 
 				<div className="set__section">
-					<div className="set__sectionTitle">2. Configuración del sistema</div>
+					<div className="set__sectionTitle set__sectionTitle--soon">
+						2. Configuración del sistema <StatusBadge status="Pendiente" />
+					</div>
+					<div className="set__soonHint">Estos ajustes todavía no tienen soporte en el backend. Próximamente podrás configurarlos aquí.</div>
 
-					<div className="set__row">
+					<div className="set__row set__row--disabled">
 						<div>
 							<div className="set__rowLabel">Activar código de barras</div>
 							<div className="set__rowHint">Si está desactivado, el ERP ocultará esa funcionalidad.</div>
 						</div>
-						<button
-							type="button"
-							className={["set__toggle", form.barcodeEnabled ? "set__toggle--on" : ""].join(" ")}
-							onClick={() => setForm((v) => ({ ...v, barcodeEnabled: !v.barcodeEnabled }))}
-							aria-label="Activar código de barras"
-						>
+						<button type="button" className="set__toggle" disabled aria-label="Activar código de barras (no disponible)">
 							<span className="set__toggleKnob" aria-hidden="true" />
 						</button>
 					</div>
@@ -210,95 +201,65 @@ export default function ConfiguracionPage() {
 					<div className="set__grid">
 						<div className="set__field">
 							<label className="set__label">Moneda</label>
-							<input
-								className="set__input"
-								type="text"
-								value={form.currency}
-								onChange={(e) => setForm((v) => ({ ...v, currency: e.target.value }))}
-							/>
+							<input className="set__input" type="text" value="COP" disabled />
 						</div>
 						<div className="set__field">
 							<label className="set__label">Símbolo</label>
-							<input
-								className="set__input"
-								type="text"
-								value={form.symbol}
-								onChange={(e) => setForm((v) => ({ ...v, symbol: e.target.value }))}
-							/>
+							<input className="set__input" type="text" value="$" disabled />
 						</div>
 						<div className="set__field">
 							<label className="set__label">Stock mínimo por defecto</label>
-							<input
-								className="set__input"
-								type="text"
-								inputMode="numeric"
-								value={form.defaultMinStock}
-								onChange={(e) => setForm((v) => ({ ...v, defaultMinStock: e.target.value }))}
-							/>
+							<input className="set__input" type="text" value="Configurable por producto" disabled />
 						</div>
 					</div>
 				</div>
 
 				<div className="set__section">
-					<div className="set__sectionTitle">3. Impresión</div>
+					<div className="set__sectionTitle set__sectionTitle--soon">
+						3. Impresión <StatusBadge status="Pendiente" />
+					</div>
+					<div className="set__soonHint">Estos ajustes todavía no tienen soporte en el backend. Próximamente podrás configurarlos aquí.</div>
+
 					<div className="set__grid">
 						<div className="set__field">
 							<label className="set__label">Ancho del recibo</label>
-							<select
-								className="set__select"
-								value={form.receiptWidth}
-								onChange={(e) => setForm((v) => ({ ...v, receiptWidth: e.target.value as ReceiptWidth }))}
-							>
+							<select className="set__select" value="58mm" disabled>
 								<option value="58mm">58 mm</option>
-								<option value="80mm">80 mm</option>
 							</select>
 						</div>
 						<div className="set__field">
 							<label className="set__label">Nombre del negocio en el recibo</label>
-							<input
-								className="set__input"
-								type="text"
-								value={form.receiptBusinessName}
-								onChange={(e) => setForm((v) => ({ ...v, receiptBusinessName: e.target.value }))}
-							/>
+							<input className="set__input" type="text" value="" disabled placeholder="No disponible todavía" />
 						</div>
 						<div className="set__field set__field--full">
 							<label className="set__label">Mensaje al pie del recibo</label>
-							<input
-								className="set__input"
-								type="text"
-								value={form.receiptFooterMessage}
-								onChange={(e) => setForm((v) => ({ ...v, receiptFooterMessage: e.target.value }))}
-							/>
+							<input className="set__input" type="text" value="" disabled placeholder="No disponible todavía" />
 						</div>
 					</div>
 				</div>
 
 				<div className="set__section">
-					<div className="set__sectionTitle">4. Información adicional</div>
+					<div className="set__sectionTitle set__sectionTitle--soon">
+						4. Información adicional <StatusBadge status="Pendiente" />
+					</div>
+					<div className="set__soonHint">Estos ajustes todavía no tienen soporte en el backend. Próximamente podrás configurarlos aquí.</div>
 					<div className="set__grid">
 						<div className="set__field set__field--full">
 							<label className="set__label">Notas internas</label>
-							<textarea
-								className="set__textarea"
-								rows={4}
-								value={form.internalNotes}
-								onChange={(e) => setForm((v) => ({ ...v, internalNotes: e.target.value }))}
-							/>
+							<textarea className="set__textarea" rows={4} value="" disabled placeholder="No disponible todavía" />
 						</div>
 					</div>
 				</div>
 
 				<div className="set__actions">
-					<SecondaryButton type="button" onClick={handleCancel}>
+					<SecondaryButton type="button" onClick={handleCancel} disabled={saving}>
 						Cancelar
 					</SecondaryButton>
-					<PrimaryButton type="button" onClick={handleSave} disabled={!validations.ok}>
-						Guardar Configuración
+					<PrimaryButton type="button" onClick={handleSave} disabled={!validations.ok || saving}>
+						{saving ? "Guardando..." : "Guardar Configuración"}
 					</PrimaryButton>
 				</div>
 			</div>
 		</div>
 	);
 }
-
