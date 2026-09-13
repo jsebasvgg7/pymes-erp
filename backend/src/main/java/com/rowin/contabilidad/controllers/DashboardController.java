@@ -10,6 +10,8 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -43,9 +45,10 @@ public class DashboardController {
         Map<String, Object> dashboard = new HashMap<>();
 
         // Totales
-        dashboard.put("totalClientes", clienteService.listarPorEmpresa(empresaId, null).getTotalElements());
-        dashboard.put("totalProveedores", proveedorService.listarPorEmpresa(empresaId, null).getTotalElements());
-        dashboard.put("totalProductos", productoService.listarPorEmpresa(empresaId, null).getTotalElements());
+        Pageable firstPage = PageRequest.of(0, 1);
+        dashboard.put("totalClientes", clienteService.listarPorEmpresa(empresaId, firstPage).getTotalElements());
+        dashboard.put("totalProveedores", proveedorService.listarPorEmpresa(empresaId, firstPage).getTotalElements());
+        dashboard.put("totalProductos", productoService.listarPorEmpresa(empresaId, firstPage).getTotalElements());
 
         // Stock bajo
         dashboard.put("productosStockBajo", productoService.obtenerProductosConStockBajo(empresaId).size());
