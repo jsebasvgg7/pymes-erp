@@ -1,5 +1,7 @@
 package com.rowin.contabilidad.controllers;
 
+import com.rowin.contabilidad.dto.caja.CajaCreateRequest;
+import com.rowin.contabilidad.dto.caja.CajaResponse;
 import com.rowin.contabilidad.dto.caja.CajaResumenResponse;
 import com.rowin.contabilidad.dto.caja.MovimientoCajaRequest;
 import com.rowin.contabilidad.dto.caja.MovimientoCajaResponse;
@@ -23,6 +25,17 @@ public class CajaController {
 
     public CajaController(CajaService cajaService) {
         this.cajaService = cajaService;
+    }
+
+    @PostMapping("/crear")
+    public ResponseEntity<CajaResponse> crear(@Valid @RequestBody CajaCreateRequest request) {
+        CajaResponse created = cajaService.crear(request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(created);
+    }
+
+    @GetMapping("/listar-por-empresa/{empresaId}")
+    public ResponseEntity<List<CajaResponse>> listarCajasPorEmpresa(@PathVariable Long empresaId) {
+        return ResponseEntity.ok(cajaService.listarCajasPorEmpresa(empresaId));
     }
 
     @GetMapping("/movimientos/listar")

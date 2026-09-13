@@ -1,5 +1,22 @@
 import { http } from "./http";
 
+export type CajaCreateRequest = {
+  empresaId: number;
+  nombre: string;
+  saldoInicial?: number;
+};
+
+export type Caja = {
+  id: number;
+  createdAt: string;
+  updatedAt: string;
+  active: boolean;
+  empresaId: number;
+  nombre: string;
+  saldoInicial: number;
+  saldoActual: number;
+};
+
 export type MovimientoCajaRequest = {
   empresaId: number;
   cajaId: number;
@@ -40,6 +57,16 @@ export type CajaResumen = {
 };
 
 export const cajaService = {
+  async crear(data: CajaCreateRequest): Promise<Caja> {
+    const response = await http.post("/api/caja/crear", data);
+    return response.data;
+  },
+
+  async listarPorEmpresa(empresaId: number): Promise<Caja[]> {
+    const response = await http.get(`/api/caja/listar-por-empresa/${empresaId}`);
+    return response.data;
+  },
+
   async listarMovimientos(page: number = 0, size: number = 20): Promise<{ content: MovimientoCajaResponse[]; totalElements: number }> {
     const response = await http.get(`/api/caja/movimientos/listar?page=${page}&size=${size}`);
     return response.data;

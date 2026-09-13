@@ -1,5 +1,7 @@
 package com.rowin.contabilidad.utils.mappers;
 
+import com.rowin.contabilidad.dto.caja.CajaCreateRequest;
+import com.rowin.contabilidad.dto.caja.CajaResponse;
 import com.rowin.contabilidad.dto.caja.MovimientoCajaRequest;
 import com.rowin.contabilidad.dto.caja.MovimientoCajaResponse;
 import com.rowin.contabilidad.entities.Caja;
@@ -13,6 +15,20 @@ import java.util.List;
 
 @Mapper(componentModel = "spring")
 public interface CajaMapper {
+
+    @Mapping(target = "id", ignore = true)
+    @Mapping(target = "createdAt", ignore = true)
+    @Mapping(target = "updatedAt", ignore = true)
+    @Mapping(target = "active", ignore = true)
+    @Mapping(target = "empresa", source = "empresa")
+    @Mapping(target = "nombre", source = "request.nombre")
+    @Mapping(target = "saldoInicial", source = "request.saldoInicial")
+    @Mapping(target = "saldoActual", source = "request.saldoInicial")
+    @Mapping(target = "movimientos", ignore = true)
+    Caja toEntity(CajaCreateRequest request, Empresa empresa);
+
+    @Mapping(target = "empresaId", source = "empresa.id")
+    CajaResponse toCajaResponse(Caja entity);
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "createdAt", ignore = true)

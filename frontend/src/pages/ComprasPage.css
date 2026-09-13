@@ -22,12 +22,27 @@
 .pur__emptyTitle {
 	font-size: 14px;
 	font-weight: 650;
-	color: rgba(10, 18, 34, 0.86);
+	color: rgba(245, 245, 245, 0.86);
 }
 
 .pur__emptySubtitle {
 	font-size: 13px;
-	color: rgba(10, 18, 34, 0.62);
+	color: rgba(245, 245, 245, 0.55);
+}
+
+.pur__state {
+	padding: 48px 24px;
+	text-align: center;
+	color: rgba(245, 245, 245, 0.5);
+	background: #1c1c1c;
+	border-radius: 14px;
+	border: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.pur__state--error {
+	color: #fca5a5;
+	background: rgba(248, 113, 113, 0.06);
+	border-color: rgba(248, 113, 113, 0.18);
 }
 
 .pur__modalActions {
@@ -55,37 +70,43 @@
 
 .pur__label {
 	font-size: 13px;
-	color: rgba(10, 18, 34, 0.72);
+	color: rgba(245, 245, 245, 0.68);
 }
 
 .pur__select,
 .pur__input {
+	box-sizing: border-box;
 	width: 100%;
 	height: 44px;
 	padding: 0 12px;
 	border-radius: 12px;
-	border: 1px solid rgba(10, 18, 34, 0.14);
-	background: rgba(255, 255, 255, 1);
-	color: #0a1222;
+	border: 1px solid rgba(255, 255, 255, 0.12);
+	background: #171717;
+	color: #f5f5f5;
 	outline: none;
 	transition: border-color 160ms ease, box-shadow 160ms ease;
 }
 
 .pur__input::placeholder {
-	color: rgba(10, 18, 34, 0.38);
+	color: rgba(245, 245, 245, 0.34);
 }
 
 .pur__select:focus,
 .pur__input:focus {
-	border-color: rgba(11, 74, 166, 0.45);
-	box-shadow: 0 0 0 4px rgba(11, 74, 166, 0.12);
+	border-color: rgba(99, 102, 241, 0.5);
+	box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.14);
+}
+
+.pur__select option {
+	background: #171717;
+	color: #f5f5f5;
 }
 
 .pur__itemsCard {
-	border: 1px solid rgba(10, 18, 34, 0.10);
+	border: 1px solid rgba(255, 255, 255, 0.08);
 	border-radius: 16px;
 	overflow: hidden;
-	background: rgba(255, 255, 255, 1);
+	background: #1c1c1c;
 }
 
 .pur__itemsHead,
@@ -98,19 +119,19 @@
 }
 
 .pur__itemsHead {
-	background: rgba(10, 18, 34, 0.03);
+	background: rgba(99, 102, 241, 0.08);
 	font-size: 12px;
 	font-weight: 650;
-	color: rgba(10, 18, 34, 0.72);
+	color: rgba(245, 245, 245, 0.6);
 }
 
 .pur__itemsRow {
-	border-top: 1px solid rgba(10, 18, 34, 0.08);
+	border-top: 1px solid rgba(255, 255, 255, 0.07);
 }
 
 .pur__cellRight {
 	text-align: right;
-	color: rgba(10, 18, 34, 0.78);
+	color: rgba(245, 245, 245, 0.82);
 	font-weight: 650;
 }
 
@@ -125,6 +146,15 @@
 	justify-content: flex-start;
 }
 
+.pur__formError {
+	font-size: 13px;
+	color: #fca5a5;
+	background: rgba(248, 113, 113, 0.1);
+	border: 1px solid rgba(248, 113, 113, 0.22);
+	border-radius: 10px;
+	padding: 10px 12px;
+}
+
 .pur__totals {
 	display: flex;
 	justify-content: flex-end;
@@ -133,8 +163,8 @@
 .pur__totalBox {
 	min-width: 240px;
 	border-radius: 16px;
-	border: 1px solid rgba(10, 18, 34, 0.10);
-	background: rgba(10, 18, 34, 0.02);
+	border: 1px solid rgba(255, 255, 255, 0.08);
+	background: rgba(255, 255, 255, 0.02);
 	padding: 12px 14px;
 	display: grid;
 	gap: 6px;
@@ -142,14 +172,106 @@
 
 .pur__totalLabel {
 	font-size: 12px;
-	color: rgba(10, 18, 34, 0.62);
+	color: rgba(245, 245, 245, 0.55);
 }
 
 .pur__totalValue {
 	font-size: 18px;
 	font-weight: 760;
-	color: rgba(10, 18, 34, 0.92);
+	color: #f5f5f5;
 	text-align: right;
+}
+
+/* Overrides scoped al tema oscuro para componentes compartidos (PageHeader, DataTable,
+   Modal, ConfirmDialog, SecondaryButton). Mismo patrón que ProveedoresPage.css. */
+
+.pur .ui-pageHeader__title {
+	color: #f5f5f5;
+}
+
+.pur .ui-pageHeader__subtitle {
+	color: rgba(245, 245, 245, 0.5);
+}
+
+.pur .ui-table__row {
+	border-color: rgba(255, 255, 255, 0.07);
+	background: rgba(255, 255, 255, 0.02);
+	padding: 16px 18px;
+	align-items: center;
+}
+
+.pur .ui-table__row--head {
+	background: rgba(99, 102, 241, 0.08);
+	border-color: rgba(99, 102, 241, 0.16);
+	padding: 12px 18px;
+	align-items: center;
+}
+
+.pur .ui-table__cell {
+	color: rgba(245, 245, 245, 0.82);
+	display: flex;
+	align-items: center;
+}
+
+.pur .ui-table__cell--head {
+	color: rgba(245, 245, 245, 0.6);
+	display: flex;
+	align-items: center;
+}
+
+.pur .ui-table__empty {
+	border-color: rgba(255, 255, 255, 0.14);
+	color: rgba(245, 245, 245, 0.4);
+	background: rgba(255, 255, 255, 0.02);
+}
+
+.pur .ui-modal__backdrop {
+	background: rgba(0, 0, 0, 0.6);
+}
+
+.pur .ui-modal__panel {
+	background: #1c1c1c;
+	border: 1px solid rgba(255, 255, 255, 0.08);
+	box-shadow: 0 22px 55px rgba(0, 0, 0, 0.4);
+}
+
+.pur .ui-modal__title {
+	color: #f5f5f5;
+}
+
+.pur .ui-modal__body {
+	color: rgba(245, 245, 245, 0.75);
+}
+
+.pur .ui-confirm__message {
+	color: rgba(245, 245, 245, 0.72);
+}
+
+.pur .ui-btnPrimary,
+.pur .ui-btnSecondary {
+	height: 44px;
+	padding: 0 20px;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 8px;
+}
+
+.pur .ui-btnSecondary {
+	background: transparent;
+	border: 1px solid rgba(255, 255, 255, 0.12);
+	color: rgba(245, 245, 245, 0.8);
+	box-shadow: none;
+}
+
+.pur .ui-btnSecondary:hover {
+	background: rgba(255, 255, 255, 0.06);
+	transform: none;
+	box-shadow: none;
+}
+
+.pur .ui-btnSecondary:disabled {
+	opacity: 0.5;
 }
 
 @media (max-width: 860px) {
@@ -164,4 +286,3 @@
 		grid-template-columns: 1.4fr 0.7fr 0.9fr 0.9fr auto;
 	}
 }
-

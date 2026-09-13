@@ -1,21 +1,22 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import ConfirmDialog from "../components/ConfirmDialog";
 import DataTable, { DataTableColumn } from "../components/DataTable";
+import LoadingState from "../components/LoadingState";
 import Modal from "../components/Modal";
 import PageHeader from "../components/PageHeader";
 import PrimaryButton from "../components/PrimaryButton";
 import SecondaryButton from "../components/SecondaryButton";
-import StatusBadge from "../components/StatusBadge";
-import { getProducts, saveProducts, type Product } from "../services/productStorage";
-import { getProviders, type Provider } from "../services/providerStorage";
-import { addPurchase, getPurchases, type Purchase } from "../services/purchaseStorage";
+import { authService } from "../services/authService";
+import { compraService, type CompraResponse } from "../services/compraService";
+import { productoService, type Producto } from "../services/ProductoService";
+import { proveedorService, type Proveedor } from "../services/proveedorService";
 import "./ComprasPage.css";
 
 type PurchaseLine = {
 	rowId: string;
-	productId: string;
-	quantity: string;
-	purchasePrice: string;
+	productoId: string;
+	cantidad: string;
+	costoUnitario: string;
 };
 
 type ConfirmRemove = { rowId: string } | null;
@@ -46,44 +47,92 @@ function formatCurrency(value: number) {
 
 function formatDateLabel(value: string) {
 	if (!value) return "";
-	const d = new Date(`${value}T00:00:00`);
+	const d = new Date(value);
 	return Number.isNaN(d.getTime()) ? value : d.toLocaleDateString("es-CO");
 }
 
+function extractErrorMessage(err: unknown, fallback: string): string {
+	if (err && typeof err === "object" && "response" in err) {
+		const response = (err as { response?: { data?: { message?: string } } }).response;
+		if (response?.data?.message) return response.data.message;
+	}
+	return fallback;
+}
+
 export default function ComprasPage() {
+	const empresaId = authService.getUsuario()?.empresaId;
+
+	const [compras, setCompras] = useState<CompraResponse[]>([]);
+	const [loading, setLoading] = useState(true);
+	const [error, setError] = useState<string | null>(null);
+
+	const [productos, setProductos] = useState<Producto[]>([]);
+	const [proveedores, setProveedores] = useState<Proveedor[]>([]);
+
 	const [modalOpen, setModalOpen] = useState(false);
-	const [providerId, setProviderId] = useState("");
+	const [proveedorId, setProveedorId] = useState("");
 	const [purchaseDate, setPurchaseDate] = useState(() => new Date().toISOString().slice(0, 10));
 	const [lines, setLines] = useState<PurchaseLine[]>([]);
 	const [confirmRemove, setConfirmRemove] = useState<ConfirmRemove>(null);
+	const [saving, setSaving] = useState(false);
+	const [formError, setFormError] = useState<string | null>(null);
 
-	const [purchases, setPurchases] = useState<Purchase[]>(() => getPurchases());
+	const loadCompras = useCallback(async () => {
+		if (!empresaId) {
+			setError("No se encontró la empresa del usuario. Inicia sesión nuevamente.");
+			setLoading(false);
+			return;
+		}
 
-	const activeProducts = useMemo(() => getProducts().filter((p) => p.estado === "Activo"), []);
-	const activeProviders = useMemo(() => getProviders().filter((p) => p.estado === "Activo"), []);
+		setLoading(true);
+		setError(null);
+		try {
+			const [comprasData, productosData, proveedoresData] = await Promise.all([
+				compraService.listarPorEmpresa(empresaId),
+				productoService.listarPorEmpresa(empresaId),
+				proveedorService.listarPorEmpresa(empresaId)
+			]);
+			setCompras(comprasData.content);
+			setProductos(productosData.content);
+			setProveedores(proveedoresData);
+		} catch {
+			setError("No se pudo cargar las compras. Verifica tu conexión con el servidor.");
+		} finally {
+			setLoading(false);
+		}
+	}, [empresaId]);
 
-	const providerById = useMemo(() => {
-		const map = new Map<string, Provider>();
-		activeProviders.forEach((p) => map.set(p.id, p));
+	useEffect(() => {
+		loadCompras();
+	}, [loadCompras]);
+
+	const activeProductos = useMemo(() => productos.filter((p) => p.active), [productos]);
+	const activeProveedores = useMemo(() => proveedores.filter((p) => p.active), [proveedores]);
+
+	const proveedorById = useMemo(() => {
+		const map = new Map<string, Proveedor>();
+		activeProveedores.forEach((p) => map.set(String(p.id), p));
 		return map;
-	}, [activeProviders]);
+	}, [activeProveedores]);
 
-	const productById = useMemo(() => {
-		const map = new Map<string, Product>();
-		activeProducts.forEach((p) => map.set(p.id, p));
+	const productoById = useMemo(() => {
+		const map = new Map<string, Producto>();
+		activeProductos.forEach((p) => map.set(String(p.id), p));
 		return map;
-	}, [activeProducts]);
+	}, [activeProductos]);
 
 	const openModal = useCallback(() => {
-		setProviderId("");
+		setProveedorId("");
 		setPurchaseDate(new Date().toISOString().slice(0, 10));
 		setLines([]);
+		setFormError(null);
 		setModalOpen(true);
 	}, []);
 
 	const closeModal = useCallback(() => {
 		setModalOpen(false);
 		setConfirmRemove(null);
+		setFormError(null);
 	}, []);
 
 	const addLine = useCallback(() => {
@@ -91,9 +140,9 @@ export default function ComprasPage() {
 			...prev,
 			{
 				rowId: generateRowId(),
-				productId: "",
-				quantity: "",
-				purchasePrice: ""
+				productoId: "",
+				cantidad: "",
+				costoUnitario: ""
 			}
 		]);
 	}, []);
@@ -103,17 +152,17 @@ export default function ComprasPage() {
 	}, []);
 
 	const updateLine = useCallback(
-		(rowId: string, patch: Partial<Pick<PurchaseLine, "productId" | "quantity" | "purchasePrice">>) => {
+		(rowId: string, patch: Partial<Pick<PurchaseLine, "productoId" | "cantidad" | "costoUnitario">>) => {
 			setLines((prev) =>
 				prev.map((l) => {
 					if (l.rowId !== rowId) return l;
 
 					const next: PurchaseLine = { ...l, ...patch };
-					if (patch.productId && patch.productId !== l.productId) {
-						const p = productById.get(patch.productId);
+					if (patch.productoId && patch.productoId !== l.productoId) {
+						const p = productoById.get(patch.productoId);
 						if (p) {
-							next.purchasePrice = String(p.precioCompra);
-							next.quantity = next.quantity || "1";
+							next.costoUnitario = String(p.costo);
+							next.cantidad = next.cantidad || "1";
 						}
 					}
 
@@ -121,7 +170,7 @@ export default function ComprasPage() {
 				})
 			);
 		},
-		[productById]
+		[productoById]
 	);
 
 	const computed = useMemo(() => {
@@ -129,8 +178,8 @@ export default function ComprasPage() {
 		let total = 0;
 
 		lines.forEach((l) => {
-			const qty = parseIntegerInput(l.quantity);
-			const price = parseDecimalInput(l.purchasePrice);
+			const qty = parseIntegerInput(l.cantidad);
+			const price = parseDecimalInput(l.costoUnitario);
 			const subtotal = qty > 0 && price > 0 ? qty * price : 0;
 			rowSubtotals.set(l.rowId, subtotal);
 			total += subtotal;
@@ -140,74 +189,95 @@ export default function ComprasPage() {
 	}, [lines]);
 
 	const validation = useMemo(() => {
-		if (activeProviders.length === 0) return { ok: false, reason: "no_providers" as const };
-		if (activeProducts.length === 0) return { ok: false, reason: "no_products" as const };
-		if (!providerId) return { ok: false, reason: "missing_provider" as const };
+		if (activeProveedores.length === 0) return { ok: false, reason: "no_providers" as const };
+		if (activeProductos.length === 0) return { ok: false, reason: "no_products" as const };
+		if (!proveedorId) return { ok: false, reason: "missing_provider" as const };
 		if (lines.length === 0) return { ok: false, reason: "no_lines" as const };
 
 		const hasInvalid = lines.some((l) => {
-			const qty = parseIntegerInput(l.quantity);
-			const price = parseDecimalInput(l.purchasePrice);
-			return !l.productId || qty <= 0 || price <= 0;
+			const qty = parseIntegerInput(l.cantidad);
+			const price = parseDecimalInput(l.costoUnitario);
+			return !l.productoId || qty <= 0 || price <= 0;
 		});
 
 		if (hasInvalid) return { ok: false, reason: "invalid_lines" as const };
 
 		return { ok: true as const };
-	}, [activeProducts.length, activeProviders.length, lines, providerId]);
+	}, [activeProductos.length, activeProveedores.length, lines, proveedorId]);
 
-	const handleSave = useCallback(() => {
-		if (!validation.ok) return;
+	const handleSave = useCallback(async () => {
+		if (!validation.ok || !empresaId) return;
 
-		const provider = providerById.get(providerId);
-		if (!provider) return;
+		const proveedor = proveedorById.get(proveedorId);
+		if (!proveedor) return;
 
-		const items = lines.map((l) => {
-			const product = productById.get(l.productId);
-			return {
-				productId: l.productId,
-				productName: product?.nombre ?? "Producto",
-				quantity: parseIntegerInput(l.quantity),
-				purchasePrice: parseDecimalInput(l.purchasePrice)
-			};
-		});
+		setSaving(true);
+		setFormError(null);
+		try {
+			const detalles = lines.map((l) => {
+				const producto = productoById.get(l.productoId);
+				return {
+					productoId: Number(l.productoId),
+					descripcion: producto?.nombre ?? "Producto",
+					cantidad: parseIntegerInput(l.cantidad),
+					costoUnitario: parseDecimalInput(l.costoUnitario)
+				};
+			});
 
-		const created = addPurchase({
-			providerId: provider.id,
-			providerName: provider.empresa,
-			date: purchaseDate,
-			items
-		});
+			const created = await compraService.crear({
+				empresaId,
+				proveedorId: proveedor.id,
+				fechaCompra: `${purchaseDate}T00:00:00`,
+				detalles
+			});
 
-		const purchasedQtyByProductId = new Map<string, number>();
-		items.forEach((i) => {
-			purchasedQtyByProductId.set(i.productId, (purchasedQtyByProductId.get(i.productId) ?? 0) + i.quantity);
-		});
+			setCompras((prev) => [created, ...prev]);
 
-		const currentProducts = getProducts();
-		let changed = false;
-		const nextProducts = currentProducts.map((p) => {
-			const inc = purchasedQtyByProductId.get(p.id);
-			if (!inc) return p;
-			changed = true;
-			return { ...p, stock: p.stock + inc };
-		});
-		if (changed) saveProducts(nextProducts);
+			// Refrescar productos: el backend ajustó stock/costoPromedio al crear la compra.
+			productoService
+				.listarPorEmpresa(empresaId)
+				.then((data) => setProductos(data.content))
+				.catch(() => {});
 
-		setPurchases((prev) => [...prev, created]);
-		closeModal();
-	}, [closeModal, lines, productById, providerById, providerId, purchaseDate, validation.ok]);
+			closeModal();
+		} catch (err) {
+			setFormError(extractErrorMessage(err, "No se pudo registrar la compra. Intenta nuevamente."));
+		} finally {
+			setSaving(false);
+		}
+	}, [closeModal, empresaId, lines, productoById, proveedorById, proveedorId, purchaseDate, validation.ok]);
 
-	const listColumns: Array<DataTableColumn<Purchase>> = useMemo(
+	const listColumns: Array<DataTableColumn<CompraResponse>> = useMemo(
 		() => [
-			{ key: "number", header: "Número", render: (r) => `#${r.number}` },
-			{ key: "provider", header: "Proveedor", render: (r) => r.providerName },
-			{ key: "date", header: "Fecha", render: (r) => formatDateLabel(r.date) },
-			{ key: "items", header: "Cantidad de productos", align: "right", render: (r) => r.totalQuantity.toLocaleString("es-CO") },
+			{ key: "numero", header: "Número", render: (r) => r.numeroDocumento },
+			{ key: "proveedor", header: "Proveedor", render: (r) => r.proveedorNombre },
+			{ key: "fecha", header: "Fecha", render: (r) => formatDateLabel(r.fechaCompra) },
+			{
+				key: "items",
+				header: "Cantidad de productos",
+				align: "right",
+				render: (r) => r.detalles.reduce((acc, d) => acc + d.cantidad, 0).toLocaleString("es-CO")
+			},
 			{ key: "total", header: "Total", align: "right", render: (r) => formatCurrency(r.total) }
 		],
 		[]
 	);
+
+	if (loading) {
+		return (
+			<div className="pur">
+				<LoadingState label="Cargando compras..." />
+			</div>
+		);
+	}
+
+	if (error) {
+		return (
+			<div className="pur">
+				<div className="pur__state pur__state--error">{error}</div>
+			</div>
+		);
+	}
 
 	return (
 		<div className="pur">
@@ -224,7 +294,7 @@ export default function ComprasPage() {
 			<div className="pur__list">
 				<DataTable
 					columns={listColumns}
-					data={purchases}
+					data={compras}
 					emptyState={
 						<div className="pur__empty">
 							<div className="pur__emptyTitle">No hay compras registradas.</div>
@@ -240,11 +310,11 @@ export default function ComprasPage() {
 				onClose={closeModal}
 				footer={
 					<div className="pur__modalActions">
-						<SecondaryButton type="button" onClick={closeModal}>
+						<SecondaryButton type="button" onClick={closeModal} disabled={saving}>
 							Cancelar
 						</SecondaryButton>
-						<PrimaryButton type="button" onClick={handleSave} disabled={!validation.ok}>
-							Guardar
+						<PrimaryButton type="button" onClick={handleSave} disabled={!validation.ok || saving}>
+							{saving ? "Guardando..." : "Guardar"}
 						</PrimaryButton>
 					</div>
 				}
@@ -253,13 +323,13 @@ export default function ComprasPage() {
 					<div className="pur__topGrid">
 						<div className="pur__field">
 							<label className="pur__label">Proveedor</label>
-							<select className="pur__select" value={providerId} onChange={(e) => setProviderId(e.target.value)}>
+							<select className="pur__select" value={proveedorId} onChange={(e) => setProveedorId(e.target.value)}>
 								<option value="" disabled>
 									Seleccionar...
 								</option>
-								{activeProviders.map((p) => (
+								{activeProveedores.map((p) => (
 									<option key={p.id} value={p.id}>
-										{p.empresa}
+										{p.nombre}
 									</option>
 								))}
 							</select>
@@ -286,7 +356,7 @@ export default function ComprasPage() {
 						<div className="pur__itemsHead">
 							<div>Producto</div>
 							<div>Cantidad</div>
-							<div>Precio compra</div>
+							<div>Costo unitario</div>
 							<div className="pur__cellRight">Subtotal</div>
 							<div />
 						</div>
@@ -295,13 +365,13 @@ export default function ComprasPage() {
 							<div className="pur__itemsRow" key={l.rowId}>
 								<select
 									className="pur__select"
-									value={l.productId}
-									onChange={(e) => updateLine(l.rowId, { productId: e.target.value })}
+									value={l.productoId}
+									onChange={(e) => updateLine(l.rowId, { productoId: e.target.value })}
 								>
 									<option value="" disabled>
 										Seleccionar...
 									</option>
-									{activeProducts.map((p) => (
+									{activeProductos.map((p) => (
 										<option key={p.id} value={p.id}>
 											{p.nombre}
 										</option>
@@ -313,8 +383,8 @@ export default function ComprasPage() {
 									type="text"
 									inputMode="numeric"
 									placeholder="0"
-									value={l.quantity}
-									onChange={(e) => updateLine(l.rowId, { quantity: e.target.value })}
+									value={l.cantidad}
+									onChange={(e) => updateLine(l.rowId, { cantidad: e.target.value })}
 								/>
 
 								<input
@@ -322,8 +392,8 @@ export default function ComprasPage() {
 									type="text"
 									inputMode="decimal"
 									placeholder="$0"
-									value={l.purchasePrice}
-									onChange={(e) => updateLine(l.rowId, { purchasePrice: e.target.value })}
+									value={l.costoUnitario}
+									onChange={(e) => updateLine(l.rowId, { costoUnitario: e.target.value })}
 								/>
 
 								<div className="pur__cellRight">{formatCurrency(computed.rowSubtotals.get(l.rowId) ?? 0)}</div>
@@ -340,6 +410,8 @@ export default function ComprasPage() {
 							+ Agregar Producto
 						</SecondaryButton>
 					</div>
+
+					{formError ? <div className="pur__formError">{formError}</div> : null}
 
 					<div className="pur__totals">
 						<div className="pur__totalBox" aria-label="Total">

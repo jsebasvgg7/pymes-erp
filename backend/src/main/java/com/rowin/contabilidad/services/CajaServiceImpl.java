@@ -1,5 +1,7 @@
 package com.rowin.contabilidad.services;
 
+import com.rowin.contabilidad.dto.caja.CajaCreateRequest;
+import com.rowin.contabilidad.dto.caja.CajaResponse;
 import com.rowin.contabilidad.dto.caja.CajaResumenResponse;
 import com.rowin.contabilidad.dto.caja.MovimientoCajaRequest;
 import com.rowin.contabilidad.dto.caja.MovimientoCajaResponse;
@@ -45,6 +47,36 @@ public class CajaServiceImpl extends BaseCrudService implements CajaService {
         this.empresaRepository = empresaRepository;
         this.formaPagoRepository = formaPagoRepository;
         this.cajaMapper = cajaMapper;
+    }
+
+    @Override
+    public CajaResponse crear(CajaCreateRequest request) {
+        Empresa empresa = getByIdOrThrow(empresaRepository, request.empresaId(), "Empresa");
+        if (!isActive(empresa)) {
+            throw new ResourceNotFoundException("Empresa no encontrada: " + request.empresaId());
+        }
+
+        CajaCreateRequest normalizado = request.saldoInicial() != null
+            ? request
+            : new CajaCreateRequest(request.empresaId(), request.nombre(), BigDecimal.ZERO);
+
+        Caja entity = cajaMapper.toEntity(normalizado, empresa);
+        Caja saved = cajaRepository.save(entity);
+        return cajaMapper.toCajaResponse(saved);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<CajaResponse> listarCajasPorEmpresa(Long empresaId) {
+        Empresa empresa = getByIdOrThrow(empresaRepository, empresaId, "Empresa");
+        if (!isActive(empresa)) {
+            throw new ResourceNotFoundException("Empresa no encontrada: " + empresaId);
+        }
+
+        return cajaRepository.findByEmpresaIdAndActiveTrue(empresaId)
+            .stream()
+            .map(cajaMapper::toCajaResponse)
+            .collect(Collectors.toList());
     }
 
     @Override
