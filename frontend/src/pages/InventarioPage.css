@@ -6,8 +6,20 @@
 .inv__controls {
 	display: grid;
 	grid-template-columns: 1fr auto;
-	align-items: center;
+	align-items: end;
 	gap: 12px;
+}
+
+.inv__search {
+	display: grid;
+	gap: 8px;
+}
+
+.inv__searchLabel {
+	font-size: 13px;
+	color: rgba(245, 245, 245, 0.68);
+	line-height: 1.2;
+	visibility: hidden;
 }
 
 .inv__filters {
@@ -23,24 +35,32 @@
 
 .inv__filterLabel {
 	font-size: 13px;
-	color: rgba(10, 18, 34, 0.72);
+	color: rgba(245, 245, 245, 0.68);
 }
 
 .inv__select {
+	box-sizing: border-box;
 	width: 100%;
 	height: 44px;
 	padding: 0 12px;
 	border-radius: 12px;
-	border: 1px solid rgba(10, 18, 34, 0.14);
-	background: rgba(255, 255, 255, 1);
-	color: #0a1222;
+	border: 1px solid rgba(255, 255, 255, 0.12);
+	background: #171717;
+	color: #f5f5f5;
 	outline: none;
 	transition: border-color 160ms ease, box-shadow 160ms ease;
+	font: inherit;
+	font-size: 14px;
 }
 
 .inv__select:focus {
-	border-color: rgba(11, 74, 166, 0.45);
-	box-shadow: 0 0 0 4px rgba(11, 74, 166, 0.12);
+	border-color: rgba(99, 102, 241, 0.5);
+	box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.14);
+}
+
+.inv__select option {
+	background: #171717;
+	color: #f5f5f5;
 }
 
 .inv__table {
@@ -53,30 +73,43 @@
 	justify-content: flex-end;
 }
 
-.inv__actionBtn {
-	height: 36px;
-	padding: 0 12px;
-	border-radius: 12px;
+.inv .inv__actions .inv__actionBtn {
+	height: 38px;
+	padding: 0 16px;
+	border-radius: 10px;
+	display: inline-flex;
+	align-items: center;
+	gap: 7px;
+	font-size: 13px;
+	white-space: nowrap;
 }
 
-.inv__stockBadge .ui-badge {
-	font-size: 0;
-}
-
-.inv__stockBadge .ui-badge::after {
+.inv__stockBadge {
+	display: inline-flex;
+	align-items: center;
 	font-size: 12px;
+	padding: 6px 10px;
+	border-radius: 999px;
+	white-space: nowrap;
+	border: 1px solid transparent;
 }
 
-.inv__stockBadge--out .ui-badge::after {
-	content: "🔴 Agotado";
+.inv__stockBadge--out {
+	color: #fca5a5;
+	background: rgba(248, 113, 113, 0.1);
+	border-color: rgba(248, 113, 113, 0.22);
 }
 
-.inv__stockBadge--low .ui-badge::after {
-	content: "🟡 Stock Bajo";
+.inv__stockBadge--low {
+	color: #fcd34d;
+	background: rgba(245, 158, 11, 0.12);
+	border-color: rgba(245, 158, 11, 0.24);
 }
 
-.inv__stockBadge--ok .ui-badge::after {
-	content: "🟢 Disponible";
+.inv__stockBadge--ok {
+	color: #86efac;
+	background: rgba(74, 222, 128, 0.12);
+	border-color: rgba(74, 222, 128, 0.24);
 }
 
 .inv__empty {
@@ -89,12 +122,12 @@
 .inv__emptyTitle {
 	font-size: 14px;
 	font-weight: 650;
-	color: rgba(10, 18, 34, 0.86);
+	color: rgba(245, 245, 245, 0.86);
 }
 
 .inv__emptySubtitle {
 	font-size: 13px;
-	color: rgba(10, 18, 34, 0.62);
+	color: rgba(245, 245, 245, 0.55);
 }
 
 .inv__modalActions {
@@ -120,8 +153,8 @@
 	gap: 6px;
 	padding: 12px;
 	border-radius: 14px;
-	border: 1px solid rgba(10, 18, 34, 0.10);
-	background: rgba(255, 255, 255, 1);
+	border: 1px solid rgba(255, 255, 255, 0.08);
+	background: #171717;
 }
 
 .inv__detail--full {
@@ -130,23 +163,146 @@
 
 .inv__detailLabel {
 	font-size: 12px;
-	color: rgba(10, 18, 34, 0.62);
+	color: rgba(245, 245, 245, 0.55);
 }
 
 .inv__detailValue {
 	font-size: 13px;
 	font-weight: 650;
-	color: rgba(10, 18, 34, 0.86);
+	color: rgba(245, 245, 245, 0.9);
 	word-break: break-word;
 }
 
-.inv__imagePreview {
-	height: 140px;
-	border-radius: 16px;
-	border: 1px solid rgba(10, 18, 34, 0.12);
-	background: linear-gradient(135deg, rgba(11, 74, 166, 0.10), rgba(11, 74, 166, 0.04));
-	background-size: cover;
-	background-position: center;
+.inv__state {
+	padding: 48px 24px;
+	text-align: center;
+	color: rgba(245, 245, 245, 0.5);
+	background: #1c1c1c;
+	border-radius: 14px;
+	border: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.inv__state--error {
+	color: #fca5a5;
+	background: rgba(248, 113, 113, 0.06);
+	border-color: rgba(248, 113, 113, 0.18);
+}
+
+/* Overrides scoped al tema oscuro para componentes compartidos (PageHeader, SearchBar,
+   DataTable, StatusBadge, Modal, SecondaryButton).
+   Mismo patrón que CategoriasPage.css / ProveedoresPage.css / ProductosPage.css. */
+
+.inv .ui-pageHeader__title {
+	color: #f5f5f5;
+}
+
+.inv .ui-pageHeader__subtitle {
+	color: rgba(245, 245, 245, 0.5);
+}
+
+.inv .ui-search {
+	background: #1c1c1c;
+	border: 1px solid rgba(255, 255, 255, 0.1);
+	box-shadow: none;
+}
+
+.inv .ui-search__icon {
+	color: rgba(245, 245, 245, 0.4);
+}
+
+.inv .ui-search__input {
+	color: #f5f5f5;
+}
+
+.inv .ui-search__input::placeholder {
+	color: rgba(245, 245, 245, 0.4);
+}
+
+.inv .ui-table__row {
+	border-color: rgba(255, 255, 255, 0.07);
+	background: rgba(255, 255, 255, 0.02);
+	padding: 16px 18px;
+	align-items: center;
+}
+
+.inv .ui-table__row--head {
+	background: rgba(99, 102, 241, 0.08);
+	border-color: rgba(99, 102, 241, 0.16);
+	padding: 12px 18px;
+	align-items: center;
+}
+
+.inv .ui-table__cell {
+	color: rgba(245, 245, 245, 0.82);
+	display: flex;
+	align-items: center;
+}
+
+.inv .ui-table__cell--head {
+	color: rgba(245, 245, 245, 0.6);
+	display: flex;
+	align-items: center;
+}
+
+.inv .ui-table__empty {
+	border-color: rgba(255, 255, 255, 0.14);
+	color: rgba(245, 245, 245, 0.4);
+	background: rgba(255, 255, 255, 0.02);
+}
+
+.inv .ui-badge {
+	color: rgba(245, 245, 245, 0.6);
+	background: rgba(99, 102, 241, 0.1);
+	border-color: rgba(99, 102, 241, 0.2);
+}
+
+.inv .ui-badge--active {
+	color: #86efac;
+	background: rgba(74, 222, 128, 0.12);
+	border-color: rgba(74, 222, 128, 0.24);
+}
+
+.inv .ui-badge--inactive {
+	color: rgba(245, 245, 245, 0.55);
+	background: rgba(255, 255, 255, 0.06);
+	border-color: rgba(255, 255, 255, 0.12);
+}
+
+.inv .ui-modal__backdrop {
+	background: rgba(0, 0, 0, 0.6);
+}
+
+.inv .ui-modal__panel {
+	background: #1c1c1c;
+	border: 1px solid rgba(255, 255, 255, 0.08);
+	box-shadow: 0 22px 55px rgba(0, 0, 0, 0.4);
+}
+
+.inv .ui-modal__title {
+	color: #f5f5f5;
+}
+
+.inv .ui-modal__body {
+	color: rgba(245, 245, 245, 0.75);
+}
+
+.inv .ui-btnSecondary {
+	height: 44px;
+	padding: 0 20px;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 8px;
+	background: transparent;
+	border: 1px solid rgba(255, 255, 255, 0.12);
+	color: rgba(245, 245, 245, 0.8);
+	box-shadow: none;
+}
+
+.inv .ui-btnSecondary:hover {
+	background: rgba(255, 255, 255, 0.06);
+	transform: none;
+	box-shadow: none;
 }
 
 @media (max-width: 860px) {
@@ -169,4 +325,3 @@
 		flex-wrap: wrap;
 	}
 }
-

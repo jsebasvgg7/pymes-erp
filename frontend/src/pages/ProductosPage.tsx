@@ -1,36 +1,43 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Plus, Pencil, Trash2 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import ConfirmDialog from "../components/ConfirmDialog";
 import DataTable, { DataTableColumn } from "../components/DataTable";
+import LoadingState from "../components/LoadingState";
 import Modal from "../components/Modal";
 import PageHeader from "../components/PageHeader";
 import PrimaryButton from "../components/PrimaryButton";
 import SearchBar from "../components/SearchBar";
 import SecondaryButton from "../components/SecondaryButton";
 import StatusBadge from "../components/StatusBadge";
-import { useNavigate } from "react-router-dom";
-import { getCategories } from "../services/categoryStorage";
-import { addProduct, getProducts, updateProduct, type Product, type ProductStatus } from "../services/productStorage";
+import { authService } from "../services/authService";
+import { categoriaProductoService, type CategoriaProducto } from "../services/CategoriaProductoService";
+import { productoService, type Producto, type ProductoCreateRequest, type ProductoUpdateRequest } from "../services/ProductoService";
 import "./ProductosPage.css";
+
+const UNIDADES_MEDIDA = ["UNIDAD", "KILOGRAMO", "GRAMO", "LITRO", "MILILITRO", "CAJA", "PAQUETE"] as const;
 
 type ProductFormState = {
 	nombre: string;
-	categoria: string;
-	precioCompra: string;
+	sku: string;
+	categoriaId: string;
+	unidadMedida: string;
+	costo: string;
 	precioVenta: string;
-	stock: string;
-	estado: ProductStatus;
-	imagen: string;
+	stockMinimo: string;
+	stockInicial: string;
 	descripcion: string;
 };
 
 const defaultFormState: ProductFormState = {
 	nombre: "",
-	categoria: "",
-	precioCompra: "",
+	sku: "",
+	categoriaId: "",
+	unidadMedida: "UNIDAD",
+	costo: "",
 	precioVenta: "",
-	stock: "",
-	estado: "Activo",
-	imagen: "",
+	stockMinimo: "",
+	stockInicial: "",
 	descripcion: ""
 };
 
@@ -40,60 +47,144 @@ function parseDecimalInput(value: string) {
 	return Number.isFinite(n) ? n : 0;
 }
 
-function parseIntegerInput(value: string) {
-	const normalized = value.replace(/[^\d-]/g, "");
-	const n = Number(normalized);
-	return Number.isFinite(n) ? Math.trunc(n) : 0;
-}
-
 function formatCurrency(value: number) {
 	return value.toLocaleString("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 });
 }
 
 export default function ProductosPage() {
 	const navigate = useNavigate();
-	const [modalOpen, setModalOpen] = useState(false);
-	const [products, setProducts] = useState<Product[]>(() => getProducts());
-	const [form, setForm] = useState<ProductFormState>(defaultFormState);
-	const [editingProductId, setEditingProductId] = useState<string | null>(null);
+	const empresaId = authService.getUsuario()?.empresaId;
+
+	const [products, setProducts] = useState<Producto[]>([]);
+	const [categories, setCategories] = useState<CategoriaProducto[]>([]);
+	const [loading, setLoading] = useState(true);
+	const [error, setError] = useState<string | null>(null);
+
 	const [searchQuery, setSearchQuery] = useState("");
-	const [selectedCategory, setSelectedCategory] = useState("Todos");
-	const [selectedStatus, setSelectedStatus] = useState<ProductStatus | "Todos">("Todos");
+	const [selectedCategory, setSelectedCategory] = useState<string>("Todos");
 	const searchRef = useRef<HTMLDivElement | null>(null);
+
+	const [modalOpen, setModalOpen] = useState(false);
+	const [editingProduct, setEditingProduct] = useState<Producto | null>(null);
+	const [form, setForm] = useState<ProductFormState>(defaultFormState);
+	const [saving, setSaving] = useState(false);
+	const [formError, setFormError] = useState<string | null>(null);
+
 	const [confirmOpen, setConfirmOpen] = useState(false);
-	const [confirmTarget, setConfirmTarget] = useState<{ id: string; nextStatus: ProductStatus } | null>(null);
+	const [confirmTarget, setConfirmTarget] = useState<Producto | null>(null);
+	const [deleting, setDeleting] = useState(false);
+
+	const loadData = useCallback(async () => {
+		if (!empresaId) {
+			setError("No se encontró la empresa del usuario. Inicia sesión nuevamente.");
+			setLoading(false);
+			return;
+		}
+
+		setLoading(true);
+		setError(null);
+		try {
+			const [productosRes, categoriasRes] = await Promise.all([
+				productoService.listarPorEmpresa(empresaId, 0, 200),
+				categoriaProductoService.listarPorEmpresa(empresaId)
+			]);
+			setProducts(productosRes.content);
+			setCategories(categoriasRes);
+		} catch {
+			setError("No se pudo cargar los productos. Verifica tu conexión con el servidor.");
+		} finally {
+			setLoading(false);
+		}
+	}, [empresaId]);
+
+	useEffect(() => {
+		loadData();
+	}, [loadData]);
+
+	const activeCategories = useMemo(() => categories.filter((c) => c.active), [categories]);
+	const hasActiveCategories = activeCategories.length > 0;
 
 	const closeModal = useCallback(() => {
 		setModalOpen(false);
-		setEditingProductId(null);
+		setEditingProduct(null);
+		setFormError(null);
 	}, []);
 
-	const openModal = useCallback(() => {
+	const openCreateModal = useCallback(() => {
 		setForm(defaultFormState);
-		setEditingProductId(null);
+		setEditingProduct(null);
+		setFormError(null);
 		setModalOpen(true);
 	}, []);
 
-	const openEditModal = useCallback((product: Product) => {
-		setEditingProductId(product.id);
+	const openEditModal = useCallback((product: Producto) => {
+		setEditingProduct(product);
 		setForm({
 			nombre: product.nombre,
-			categoria: product.categoria,
-			precioCompra: String(product.precioCompra),
-			precioVenta: String(product.precioVenta),
-			stock: String(product.stock),
-			estado: product.estado,
-			imagen: product.imagen ?? "",
+			sku: product.sku ?? "",
+			categoriaId: product.categoriaId ? String(product.categoriaId) : "",
+			unidadMedida: product.unidadMedida ?? "UNIDAD",
+			costo: String(product.costo ?? 0),
+			precioVenta: String(product.precioVenta ?? 0),
+			stockMinimo: String(product.stockMinimo ?? 0),
+			stockInicial: String(product.stockActual ?? 0),
 			descripcion: product.descripcion ?? ""
 		});
+		setFormError(null);
 		setModalOpen(true);
 	}, []);
 
-	const openConfirmStatusChange = useCallback((product: Product) => {
-		setConfirmTarget({
-			id: product.id,
-			nextStatus: product.estado === "Activo" ? "Inactivo" : "Activo"
-		});
+	const handleSave = useCallback(async () => {
+		if (!form.nombre.trim()) {
+			setFormError("El nombre es obligatorio.");
+			return;
+		}
+
+		if (!empresaId) {
+			setFormError("No se encontró la empresa del usuario.");
+			return;
+		}
+
+		setSaving(true);
+		setFormError(null);
+		try {
+			if (editingProduct) {
+				const payload: ProductoUpdateRequest = {
+					nombre: form.nombre.trim(),
+					descripcion: form.descripcion.trim() || undefined,
+					unidadMedida: form.unidadMedida,
+					precioVenta: parseDecimalInput(form.precioVenta),
+					costo: parseDecimalInput(form.costo),
+					stockMinimo: parseDecimalInput(form.stockMinimo)
+				};
+				const updated = await productoService.actualizar(editingProduct.id, payload);
+				setProducts((prev) => prev.map((p) => (p.id === updated.id ? updated : p)));
+			} else {
+				const payload: ProductoCreateRequest = {
+					empresaId,
+					categoriaId: form.categoriaId ? Number(form.categoriaId) : undefined,
+					sku: form.sku.trim() || undefined,
+					nombre: form.nombre.trim(),
+					descripcion: form.descripcion.trim() || undefined,
+					unidadMedida: form.unidadMedida,
+					precioVenta: parseDecimalInput(form.precioVenta),
+					costo: parseDecimalInput(form.costo),
+					stockMinimo: parseDecimalInput(form.stockMinimo),
+					stockInicial: parseDecimalInput(form.stockInicial)
+				};
+				const created = await productoService.crear(payload);
+				setProducts((prev) => [...prev, created]);
+			}
+			closeModal();
+		} catch {
+			setFormError("No se pudo guardar el producto. Intenta nuevamente.");
+		} finally {
+			setSaving(false);
+		}
+	}, [closeModal, editingProduct, empresaId, form]);
+
+	const openConfirmDelete = useCallback((product: Producto) => {
+		setConfirmTarget(product);
 		setConfirmOpen(true);
 	}, []);
 
@@ -102,52 +193,21 @@ export default function ProductosPage() {
 		setConfirmTarget(null);
 	}, []);
 
-	const confirmStatusChange = useCallback(() => {
+	const confirmDelete = useCallback(async () => {
 		if (!confirmTarget) return;
 
-		const updated = updateProduct(confirmTarget.id, { estado: confirmTarget.nextStatus });
-		if (updated) {
-			setProducts((prev) => prev.map((p) => (p.id === updated.id ? updated : p)));
+		setDeleting(true);
+		try {
+			await productoService.eliminar(confirmTarget.id);
+			setProducts((prev) => prev.filter((p) => p.id !== confirmTarget.id));
+			closeConfirm();
+		} catch {
+			setError("No se pudo eliminar el producto. Intenta nuevamente.");
+			closeConfirm();
+		} finally {
+			setDeleting(false);
 		}
-
-		closeConfirm();
 	}, [closeConfirm, confirmTarget]);
-
-	const handleSave = () => {
-		if (editingProductId) {
-			const updated = updateProduct(editingProductId, {
-				nombre: form.nombre,
-				categoria: form.categoria,
-				precioCompra: parseDecimalInput(form.precioCompra),
-				precioVenta: parseDecimalInput(form.precioVenta),
-				stock: parseIntegerInput(form.stock),
-				estado: form.estado,
-				imagen: form.imagen,
-				descripcion: form.descripcion
-			});
-
-			if (updated) {
-				setProducts((prev) => prev.map((p) => (p.id === updated.id ? updated : p)));
-			}
-
-			closeModal();
-			return;
-		}
-
-		const created = addProduct({
-			nombre: form.nombre,
-			categoria: form.categoria,
-			precioCompra: parseDecimalInput(form.precioCompra),
-			precioVenta: parseDecimalInput(form.precioVenta),
-			stock: parseIntegerInput(form.stock),
-			estado: form.estado,
-			imagen: form.imagen,
-			descripcion: form.descripcion
-		});
-
-		setProducts((prev) => [...prev, created]);
-		closeModal();
-	};
 
 	useEffect(() => {
 		const el = searchRef.current;
@@ -167,30 +227,13 @@ export default function ProductosPage() {
 		};
 	}, []);
 
-	const activeCategoryNames = useMemo(() => {
-		return getCategories()
-			.filter((c) => c.estado === "Activo")
-			.map((c) => c.nombre);
-	}, []);
-
-	const hasActiveCategories = activeCategoryNames.length > 0;
-
-	const categoryOptions = useMemo(() => {
-		return ["Todos", ...activeCategoryNames];
-	}, [activeCategoryNames]);
-
-	const formCategoryOptions = useMemo(() => {
-		const options = [...activeCategoryNames];
-		if (!form.categoria) return options;
-		if (options.includes(form.categoria)) return options;
-		return [...options, form.categoria];
-	}, [activeCategoryNames, form.categoria]);
+	const categoryFilterOptions = useMemo(() => ["Todos", ...categories.map((c) => c.nombre)], [categories]);
 
 	useEffect(() => {
-		if (!categoryOptions.includes(selectedCategory)) {
+		if (!categoryFilterOptions.includes(selectedCategory)) {
 			setSelectedCategory("Todos");
 		}
-	}, [categoryOptions, selectedCategory]);
+	}, [categoryFilterOptions, selectedCategory]);
 
 	const filteredProducts = useMemo(() => {
 		const q = searchQuery.trim().toLowerCase();
@@ -198,44 +241,23 @@ export default function ProductosPage() {
 			const matchesSearch =
 				q.length === 0 ||
 				p.nombre.toLowerCase().includes(q) ||
+				(p.sku?.toLowerCase().includes(q) ?? false) ||
 				(p.descripcion?.toLowerCase().includes(q) ?? false);
 
-			const matchesStatus = selectedStatus === "Todos" || p.estado === selectedStatus;
+			const matchesCategory = selectedCategory === "Todos" || p.categoriaNombre === selectedCategory;
 
-			const matchesCategory = selectedCategory === "Todos" || p.categoria === selectedCategory;
-
-			return matchesSearch && matchesStatus && matchesCategory;
+			return matchesSearch && matchesCategory;
 		});
-	}, [products, searchQuery, selectedCategory, selectedStatus]);
+	}, [products, searchQuery, selectedCategory]);
 
-	const columns: Array<DataTableColumn<Product>> = useMemo(
+	const columns: Array<DataTableColumn<Producto>> = useMemo(
 		() => [
-			{
-				key: "imagen",
-				header: "Imagen",
-				render: (r) => (
-					<div
-						className="prod__imageCell"
-						aria-hidden="true"
-						style={
-							r.imagen
-								? {
-										backgroundImage: `url(${r.imagen})`,
-										backgroundSize: "cover",
-										backgroundPosition: "center",
-										backgroundRepeat: "no-repeat"
-									}
-								: undefined
-						}
-					/>
-				)
-			},
 			{ key: "nombre", header: "Nombre", render: (r) => r.nombre },
-			{ key: "categoria", header: "Categoría", render: (r) => r.categoria },
-			{ key: "precioCompra", header: "Precio compra", align: "right", render: (r) => formatCurrency(r.precioCompra) },
+			{ key: "categoria", header: "Categoría", render: (r) => r.categoriaNombre || "—" },
+			{ key: "costo", header: "Costo", align: "right", render: (r) => formatCurrency(r.costo) },
 			{ key: "precioVenta", header: "Precio venta", align: "right", render: (r) => formatCurrency(r.precioVenta) },
-			{ key: "stock", header: "Stock", align: "right", render: (r) => r.stock.toLocaleString("es-CO") },
-			{ key: "estado", header: "Estado", render: (r) => <StatusBadge status={r.estado} /> },
+			{ key: "stockActual", header: "Stock", align: "right", render: (r) => (r.stockActual ?? 0).toLocaleString("es-CO") },
+			{ key: "estado", header: "Estado", render: (r) => <StatusBadge status={r.active ? "Activo" : "Inactivo"} /> },
 			{
 				key: "acciones",
 				header: "Acciones",
@@ -243,27 +265,59 @@ export default function ProductosPage() {
 				render: (r) => (
 					<div className="prod__actions">
 						<SecondaryButton type="button" className="prod__actionBtn" onClick={() => openEditModal(r)}>
-							Editar
+							<Pencil size={14} strokeWidth={2} />
+							<span>Editar</span>
 						</SecondaryButton>
-						{r.estado === "Activo" ? (
-							<SecondaryButton
-								type="button"
-								className="prod__actionBtn prod__actionBtn--danger"
-								onClick={() => openConfirmStatusChange(r)}
-							>
-								Desactivar
-							</SecondaryButton>
-						) : (
-							<SecondaryButton type="button" className="prod__actionBtn" onClick={() => openConfirmStatusChange(r)}>
-								Activar
-							</SecondaryButton>
-						)}
+						<SecondaryButton
+							type="button"
+							className="prod__actionBtn prod__actionBtn--danger"
+							onClick={() => openConfirmDelete(r)}
+						>
+							<Trash2 size={14} strokeWidth={2} />
+							<span>Eliminar</span>
+						</SecondaryButton>
 					</div>
 				)
 			}
 		],
-		[openConfirmStatusChange, openEditModal]
+		[openConfirmDelete, openEditModal]
 	);
+
+	const emptyState = useMemo(() => {
+		if (products.length === 0) {
+			return (
+				<div className="prod__empty">
+					<div className="prod__emptyTitle">No hay productos registrados.</div>
+					<div className="prod__emptySubtitle">
+						Presiona <span className="prod__emptyEmph">"Nuevo Producto"</span> para crear el primer producto.
+					</div>
+				</div>
+			);
+		}
+
+		return (
+			<div className="prod__empty">
+				<div className="prod__emptyTitle">No se encontraron productos.</div>
+				<div className="prod__emptySubtitle">Prueba modificando la búsqueda o los filtros.</div>
+			</div>
+		);
+	}, [products.length]);
+
+	if (loading) {
+		return (
+			<div className="prod">
+				<LoadingState label="Cargando productos..." />
+			</div>
+		);
+	}
+
+	if (error) {
+		return (
+			<div className="prod">
+				<div className="prod__state prod__state--error">{error}</div>
+			</div>
+		);
+	}
 
 	return (
 		<div className="prod">
@@ -271,14 +325,18 @@ export default function ProductosPage() {
 				title="Productos"
 				subtitle="Administración de productos del negocio."
 				actions={
-					<PrimaryButton type="button" onClick={openModal}>
-						+ Nuevo Producto
+					<PrimaryButton type="button" onClick={openCreateModal}>
+						<Plus size={16} strokeWidth={2.2} />
+						<span>Nuevo Producto</span>
 					</PrimaryButton>
 				}
 			/>
 
 			<div className="prod__controls">
 				<div className="prod__search">
+					<label className="prod__searchLabel" aria-hidden="true">
+						Buscar
+					</label>
 					<div ref={searchRef}>
 						<SearchBar placeholder="Buscar producto..." />
 					</div>
@@ -287,63 +345,41 @@ export default function ProductosPage() {
 				<div className="prod__filters" aria-label="Filtros">
 					<div className="prod__filter">
 						<label className="prod__filterLabel">Categoría</label>
-						<select className="prod__select" value={selectedCategory} onChange={(e) => setSelectedCategory(e.target.value)}>
-							{categoryOptions.map((c) => (
+						<select
+							className="prod__select"
+							value={selectedCategory}
+							onChange={(e) => setSelectedCategory(e.target.value)}
+						>
+							{categoryFilterOptions.map((c) => (
 								<option key={c} value={c}>
 									{c}
 								</option>
 							))}
 						</select>
 					</div>
-					<div className="prod__filter">
-						<label className="prod__filterLabel">Estado</label>
-						<select className="prod__select" value={selectedStatus} onChange={(e) => setSelectedStatus(e.target.value as ProductStatus | "Todos")}>
-							<option value="Todos">Todos</option>
-							<option value="Activo">Activo</option>
-							<option value="Inactivo">Inactivo</option>
-						</select>
-					</div>
 				</div>
 			</div>
 
 			<div className="prod__table">
-				<DataTable
-					columns={columns}
-					data={filteredProducts}
-					emptyState={
-						products.length === 0 ? (
-							<div className="prod__empty">
-								<div className="prod__emptyTitle">No hay productos registrados.</div>
-								<div className="prod__emptySubtitle">
-									Presiona <span className="prod__emptyEmph">"Nuevo Producto"</span> para crear el primer producto.
-								</div>
-							</div>
-						) : (
-							<div className="prod__empty">
-								<div className="prod__emptyTitle">No se encontraron productos.</div>
-								<div className="prod__emptySubtitle">Prueba modificando la búsqueda o los filtros.</div>
-							</div>
-						)
-					}
-				/>
+				<DataTable columns={columns} data={filteredProducts} emptyState={emptyState} />
 			</div>
 
 			<Modal
 				open={modalOpen}
-				title={editingProductId ? "Editar Producto" : "Nuevo Producto"}
+				title={editingProduct ? "Editar Producto" : "Nuevo Producto"}
 				onClose={closeModal}
 				footer={
 					<div className="prod__modalActions">
-						<SecondaryButton type="button" onClick={closeModal}>
+						<SecondaryButton type="button" onClick={closeModal} disabled={saving}>
 							Cancelar
 						</SecondaryButton>
-						<PrimaryButton type="button" onClick={handleSave} disabled={!hasActiveCategories}>
-							Guardar
+						<PrimaryButton type="button" onClick={handleSave} disabled={saving || (!editingProduct && !hasActiveCategories)}>
+							{saving ? "Guardando..." : "Guardar"}
 						</PrimaryButton>
 					</div>
 				}
 			>
-				{!hasActiveCategories ? (
+				{!editingProduct && !hasActiveCategories ? (
 					<div className="prod__noCats">
 						<div className="prod__noCatsTitle">Debes crear al menos una categoría antes de registrar productos.</div>
 						<div className="prod__noCatsActions">
@@ -374,36 +410,64 @@ export default function ProductosPage() {
 						</div>
 
 						<div className="prod__field">
-							<label className="prod__label">Categoría</label>
+							<label className="prod__label">SKU (opcional)</label>
+							<input
+								className="prod__input"
+								type="text"
+								placeholder="Ej: CAF-001"
+								value={form.sku}
+								onChange={(e) => setForm((v) => ({ ...v, sku: e.target.value }))}
+							/>
+						</div>
+
+						{!editingProduct ? (
+							<div className="prod__field">
+								<label className="prod__label">Categoría</label>
+								<select
+									className="prod__select"
+									value={form.categoriaId}
+									onChange={(e) => setForm((v) => ({ ...v, categoriaId: e.target.value }))}
+									disabled={!hasActiveCategories}
+								>
+									<option value="">Sin categoría</option>
+									{activeCategories.map((c) => (
+										<option key={c.id} value={c.id}>
+											{c.nombre}
+										</option>
+									))}
+								</select>
+							</div>
+						) : (
+							<div className="prod__field">
+								<label className="prod__label">Categoría</label>
+								<input className="prod__input" type="text" value={editingProduct.categoriaNombre || "—"} disabled />
+							</div>
+						)}
+
+						<div className="prod__field">
+							<label className="prod__label">Unidad de medida</label>
 							<select
 								className="prod__select"
-								value={form.categoria}
-								onChange={(e) => setForm((v) => ({ ...v, categoria: e.target.value }))}
-								disabled={!hasActiveCategories}
+								value={form.unidadMedida}
+								onChange={(e) => setForm((v) => ({ ...v, unidadMedida: e.target.value }))}
 							>
-								<option value="" disabled>
-									Seleccionar...
-								</option>
-								{formCategoryOptions.map((c) => {
-									const isCurrentNotActive = c === form.categoria && !activeCategoryNames.includes(form.categoria);
-									return (
-										<option key={c} value={c} disabled={isCurrentNotActive}>
-											{isCurrentNotActive ? `${c} (Inactiva)` : c}
-										</option>
-									);
-								})}
+								{UNIDADES_MEDIDA.map((u) => (
+									<option key={u} value={u}>
+										{u}
+									</option>
+								))}
 							</select>
 						</div>
 
 						<div className="prod__field">
-							<label className="prod__label">Precio de compra</label>
+							<label className="prod__label">Costo</label>
 							<input
 								className="prod__input"
 								type="text"
 								placeholder="$0"
 								inputMode="decimal"
-								value={form.precioCompra}
-								onChange={(e) => setForm((v) => ({ ...v, precioCompra: e.target.value }))}
+								value={form.costo}
+								onChange={(e) => setForm((v) => ({ ...v, costo: e.target.value }))}
 							/>
 						</div>
 
@@ -420,42 +484,35 @@ export default function ProductosPage() {
 						</div>
 
 						<div className="prod__field">
-							<label className="prod__label">Stock inicial</label>
+							<label className="prod__label">Stock mínimo</label>
 							<input
 								className="prod__input"
 								type="text"
 								placeholder="0"
-								inputMode="numeric"
-								value={form.stock}
-								onChange={(e) => setForm((v) => ({ ...v, stock: e.target.value }))}
+								inputMode="decimal"
+								value={form.stockMinimo}
+								onChange={(e) => setForm((v) => ({ ...v, stockMinimo: e.target.value }))}
 							/>
 						</div>
 
 						<div className="prod__field">
-							<label className="prod__label">Estado</label>
-							<select
-								className="prod__select"
-								value={form.estado}
-								onChange={(e) => setForm((v) => ({ ...v, estado: e.target.value as ProductStatus }))}
-							>
-								<option value="Activo">Activo</option>
-								<option value="Inactivo">Inactivo</option>
-							</select>
-						</div>
-
-						<div className="prod__field prod__field--full">
-							<label className="prod__label">Imagen (opcional)</label>
+							<label className="prod__label">{editingProduct ? "Stock actual" : "Stock inicial"}</label>
 							<input
 								className="prod__input"
 								type="text"
-								placeholder="URL de la imagen"
-								value={form.imagen}
-								onChange={(e) => setForm((v) => ({ ...v, imagen: e.target.value }))}
+								placeholder="0"
+								inputMode="decimal"
+								value={form.stockInicial}
+								disabled={Boolean(editingProduct)}
+								onChange={(e) => setForm((v) => ({ ...v, stockInicial: e.target.value }))}
 							/>
+							{editingProduct ? (
+								<span className="prod__hint">El stock se ajusta desde el módulo de Inventario.</span>
+							) : null}
 						</div>
 
 						<div className="prod__field prod__field--full">
-							<label className="prod__label">Descripción corta (opcional)</label>
+							<label className="prod__label">Descripción (opcional)</label>
 							<textarea
 								className="prod__textarea"
 								rows={3}
@@ -464,21 +521,19 @@ export default function ProductosPage() {
 								onChange={(e) => setForm((v) => ({ ...v, descripcion: e.target.value }))}
 							/>
 						</div>
+
+						{formError ? <div className="prod__field prod__field--full prod__formError">{formError}</div> : null}
 					</div>
 				</form>
 			</Modal>
 
 			<ConfirmDialog
 				open={confirmOpen}
-				title={confirmTarget?.nextStatus === "Inactivo" ? "Desactivar producto" : "Activar producto"}
-				message={
-					confirmTarget?.nextStatus === "Inactivo"
-						? "¿Deseas desactivar este producto?"
-						: "¿Deseas volver a activar este producto?"
-				}
-				confirmText={confirmTarget?.nextStatus === "Inactivo" ? "Desactivar" : "Activar"}
+				title="Eliminar producto"
+				message={`¿Deseas eliminar el producto "${confirmTarget?.nombre ?? ""}"? Esta acción no se puede deshacer desde aquí.`}
+				confirmText={deleting ? "Eliminando..." : "Eliminar"}
 				cancelText="Cancelar"
-				onConfirm={confirmStatusChange}
+				onConfirm={confirmDelete}
 				onCancel={closeConfirm}
 			/>
 		</div>

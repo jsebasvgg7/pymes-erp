@@ -33,22 +33,314 @@ La integración entre frontend y backend, la autenticación y el modo multiempre
 ## Estructura del repositorio
 
 ```
-pymes-erp/
-├── backend/          # Spring Boot + Java 21
-│   └── src/main/java/com/rowin/contabilidad/
-│       ├── controllers/
-│       ├── dto/
-│       ├── entities/
-│       ├── repositories/
-│       ├── services/
-│       └── utils/mappers/
-├── frontend/         # React + TypeScript + Vite
-│   └── src/
-│       ├── components/
-│       ├── pages/
-│       ├── services/
-│       └── routes/
-└── ERP_PLAN.md       # Visión, alcance y roadmap del proyecto
+Directory structure:
+└── contabilidad-pymes/
+    ├── README.md
+    ├── ERP_PLAN.md
+    ├── .directory
+    ├── backend/
+    │   ├── mvnw.cmd
+    │   ├── pom.xml
+    │   ├── src/
+    │   │   ├── main/
+    │   │   │   ├── java/
+    │   │   │   │   └── com/
+    │   │   │   │       └── rowin/
+    │   │   │   │           └── contabilidad/
+    │   │   │   │               ├── ContabilidadApplication.java
+    │   │   │   │               ├── config/
+    │   │   │   │               │   ├── CorsConfig.java
+    │   │   │   │               │   ├── JpaAuditingConfig.java
+    │   │   │   │               │   ├── JwtAuthenticationFilter.java
+    │   │   │   │               │   ├── JwtTokenProvider.java
+    │   │   │   │               │   ├── package-info.java
+    │   │   │   │               │   └── SecurityConfig.java
+    │   │   │   │               ├── controllers/
+    │   │   │   │               │   ├── AuthController.java
+    │   │   │   │               │   ├── CajaController.java
+    │   │   │   │               │   ├── CategoriaProductoController.java
+    │   │   │   │               │   ├── ClienteController.java
+    │   │   │   │               │   ├── CompraController.java
+    │   │   │   │               │   ├── DashboardController.java
+    │   │   │   │               │   ├── EmpresaController.java
+    │   │   │   │               │   ├── FacturaVentaController.java
+    │   │   │   │               │   ├── FormaPagoController.java
+    │   │   │   │               │   ├── ImpuestoController.java
+    │   │   │   │               │   ├── package-info.java
+    │   │   │   │               │   ├── ProductoController.java
+    │   │   │   │               │   ├── ProveedorController.java
+    │   │   │   │               │   ├── RolController.java
+    │   │   │   │               │   └── UsuarioController.java
+    │   │   │   │               ├── dto/
+    │   │   │   │               │   ├── package-info.java
+    │   │   │   │               │   ├── auth/
+    │   │   │   │               │   │   ├── LoginRequest.java
+    │   │   │   │               │   │   ├── LoginResponse.java
+    │   │   │   │               │   │   └── RegisterRequest.java
+    │   │   │   │               │   ├── caja/
+    │   │   │   │               │   │   ├── CajaResumenResponse.java
+    │   │   │   │               │   │   ├── MovimientoCajaRequest.java
+    │   │   │   │               │   │   └── MovimientoCajaResponse.java
+    │   │   │   │               │   ├── categoriaproducto/
+    │   │   │   │               │   │   ├── CategoriaProductoCreateRequest.java
+    │   │   │   │               │   │   ├── CategoriaProductoResponse.java
+    │   │   │   │               │   │   └── CategoriaProductoUpdateRequest.java
+    │   │   │   │               │   ├── cliente/
+    │   │   │   │               │   │   ├── ClienteCreateRequest.java
+    │   │   │   │               │   │   ├── ClienteResponse.java
+    │   │   │   │               │   │   └── ClienteUpdateRequest.java
+    │   │   │   │               │   ├── compra/
+    │   │   │   │               │   │   ├── CompraCreateRequest.java
+    │   │   │   │               │   │   ├── CompraResponse.java
+    │   │   │   │               │   │   └── CompraUpdateRequest.java
+    │   │   │   │               │   ├── detalle/
+    │   │   │   │               │   │   ├── DetalleFacturaRequest.java
+    │   │   │   │               │   │   └── DetalleFacturaResponse.java
+    │   │   │   │               │   ├── detallecompra/
+    │   │   │   │               │   │   ├── DetalleCompraRequest.java
+    │   │   │   │               │   │   └── DetalleCompraResponse.java
+    │   │   │   │               │   ├── empresa/
+    │   │   │   │               │   │   ├── EmpresaCreateRequest.java
+    │   │   │   │               │   │   ├── EmpresaResponse.java
+    │   │   │   │               │   │   └── EmpresaUpdateRequest.java
+    │   │   │   │               │   ├── factura/
+    │   │   │   │               │   │   ├── FacturaVentaCreateRequest.java
+    │   │   │   │               │   │   ├── FacturaVentaResponse.java
+    │   │   │   │               │   │   └── FacturaVentaUpdateRequest.java
+    │   │   │   │               │   ├── formapago/
+    │   │   │   │               │   │   ├── FormaPagoCreateRequest.java
+    │   │   │   │               │   │   ├── FormaPagoResponse.java
+    │   │   │   │               │   │   └── FormaPagoUpdateRequest.java
+    │   │   │   │               │   ├── impuesto/
+    │   │   │   │               │   │   ├── ImpuestoCreateRequest.java
+    │   │   │   │               │   │   ├── ImpuestoResponse.java
+    │   │   │   │               │   │   └── ImpuestoUpdateRequest.java
+    │   │   │   │               │   ├── producto/
+    │   │   │   │               │   │   ├── ProductoCreateRequest.java
+    │   │   │   │               │   │   ├── ProductoResponse.java
+    │   │   │   │               │   │   └── ProductoUpdateRequest.java
+    │   │   │   │               │   ├── proveedor/
+    │   │   │   │               │   │   ├── ProveedorCreateRequest.java
+    │   │   │   │               │   │   ├── ProveedorResponse.java
+    │   │   │   │               │   │   └── ProveedorUpdateRequest.java
+    │   │   │   │               │   ├── rol/
+    │   │   │   │               │   │   ├── RolCreateRequest.java
+    │   │   │   │               │   │   ├── RolResponse.java
+    │   │   │   │               │   │   └── RolUpdateRequest.java
+    │   │   │   │               │   └── usuario/
+    │   │   │   │               │       ├── UsuarioCreateRequest.java
+    │   │   │   │               │       ├── UsuarioResponse.java
+    │   │   │   │               │       └── UsuarioUpdateRequest.java
+    │   │   │   │               ├── entities/
+    │   │   │   │               │   ├── BaseEntity.java
+    │   │   │   │               │   ├── Caja.java
+    │   │   │   │               │   ├── CategoriaProducto.java
+    │   │   │   │               │   ├── Cliente.java
+    │   │   │   │               │   ├── Compra.java
+    │   │   │   │               │   ├── CompraEstado.java
+    │   │   │   │               │   ├── CuentaPorCobrar.java
+    │   │   │   │               │   ├── CuentaPorPagar.java
+    │   │   │   │               │   ├── DetalleCompra.java
+    │   │   │   │               │   ├── DetalleFactura.java
+    │   │   │   │               │   ├── Empresa.java
+    │   │   │   │               │   ├── EstadoCuenta.java
+    │   │   │   │               │   ├── FacturaEstado.java
+    │   │   │   │               │   ├── FacturaVenta.java
+    │   │   │   │               │   ├── FormaPago.java
+    │   │   │   │               │   ├── Impuesto.java
+    │   │   │   │               │   ├── Inventario.java
+    │   │   │   │               │   ├── MovimientoCaja.java
+    │   │   │   │               │   ├── package-info.java
+    │   │   │   │               │   ├── Producto.java
+    │   │   │   │               │   ├── Proveedor.java
+    │   │   │   │               │   ├── Rol.java
+    │   │   │   │               │   ├── TipoFormaPago.java
+    │   │   │   │               │   ├── TipoImpuesto.java
+    │   │   │   │               │   ├── TipoMovimientoCaja.java
+    │   │   │   │               │   ├── TipoReferenciaMovimientoCaja.java
+    │   │   │   │               │   ├── UnidadMedida.java
+    │   │   │   │               │   └── Usuario.java
+    │   │   │   │               ├── exceptions/
+    │   │   │   │               │   ├── ApiErrorResponse.java
+    │   │   │   │               │   ├── GlobalExceptionHandler.java
+    │   │   │   │               │   ├── package-info.java
+    │   │   │   │               │   ├── ResourceNotFoundException.java
+    │   │   │   │               │   └── ValidationErrorResponse.java
+    │   │   │   │               ├── repositories/
+    │   │   │   │               │   ├── CajaRepository.java
+    │   │   │   │               │   ├── CategoriaProductoRepository.java
+    │   │   │   │               │   ├── ClienteRepository.java
+    │   │   │   │               │   ├── CompraRepository.java
+    │   │   │   │               │   ├── DetalleCompraRepository.java
+    │   │   │   │               │   ├── DetalleFacturaRepository.java
+    │   │   │   │               │   ├── EmpresaRepository.java
+    │   │   │   │               │   ├── FacturaVentaRepository.java
+    │   │   │   │               │   ├── FormaPagoRepository.java
+    │   │   │   │               │   ├── ImpuestoRepository.java
+    │   │   │   │               │   ├── InventarioRepository.java
+    │   │   │   │               │   ├── MovimientoCajaRepository.java
+    │   │   │   │               │   ├── package-info.java
+    │   │   │   │               │   ├── ProductoRepository.java
+    │   │   │   │               │   ├── ProveedorRepository.java
+    │   │   │   │               │   ├── RolRepository.java
+    │   │   │   │               │   └── UsuarioRepository.java
+    │   │   │   │               ├── security/
+    │   │   │   │               │   ├── CustomUserDetailsService.java
+    │   │   │   │               │   └── package-info.java
+    │   │   │   │               ├── services/
+    │   │   │   │               │   ├── AuthService.java
+    │   │   │   │               │   ├── AuthServiceImpl.java
+    │   │   │   │               │   ├── BaseCrudService.java
+    │   │   │   │               │   ├── CajaService.java
+    │   │   │   │               │   ├── CajaServiceImpl.java
+    │   │   │   │               │   ├── CategoriaProductoService.java
+    │   │   │   │               │   ├── CategoriaProductoServiceImpl.java
+    │   │   │   │               │   ├── ClienteService.java
+    │   │   │   │               │   ├── ClienteServiceImpl.java
+    │   │   │   │               │   ├── CompraService.java
+    │   │   │   │               │   ├── CompraServiceImpl.java
+    │   │   │   │               │   ├── EmpresaService.java
+    │   │   │   │               │   ├── EmpresaServiceImpl.java
+    │   │   │   │               │   ├── FacturaVentaService.java
+    │   │   │   │               │   ├── FacturaVentaServiceImpl.java
+    │   │   │   │               │   ├── FormaPagoService.java
+    │   │   │   │               │   ├── FormaPagoServiceImpl.java
+    │   │   │   │               │   ├── ImpuestoService.java
+    │   │   │   │               │   ├── ImpuestoServiceImpl.java
+    │   │   │   │               │   ├── package-info.java
+    │   │   │   │               │   ├── ProductoService.java
+    │   │   │   │               │   ├── ProductoServiceImpl.java
+    │   │   │   │               │   ├── ProveedorService.java
+    │   │   │   │               │   ├── ProveedorServiceImpl.java
+    │   │   │   │               │   ├── RolService.java
+    │   │   │   │               │   ├── RolServiceImpl.java
+    │   │   │   │               │   ├── UsuarioService.java
+    │   │   │   │               │   └── UsuarioServiceImpl.java
+    │   │   │   │               └── utils/
+    │   │   │   │                   ├── package-info.java
+    │   │   │   │                   └── mappers/
+    │   │   │   │                       ├── CajaMapper.java
+    │   │   │   │                       ├── CategoriaProductoMapper.java
+    │   │   │   │                       ├── ClienteMapper.java
+    │   │   │   │                       ├── CompraMapper.java
+    │   │   │   │                       ├── EmpresaMapper.java
+    │   │   │   │                       ├── FacturaVentaMapper.java
+    │   │   │   │                       ├── FormaPagoMapper.java
+    │   │   │   │                       ├── ImpuestoMapper.java
+    │   │   │   │                       ├── ProductoMapper.java
+    │   │   │   │                       ├── ProveedorMapper.java
+    │   │   │   │                       ├── RolMapper.java
+    │   │   │   │                       └── UsuarioMapper.java
+    │   │   │   └── resources/
+    │   │   │       ├── application.yml
+    │   │   │       └── db/
+    │   │   │           └── migration/
+    │   │   │               ├── V1__initial_erp_schema.sql
+    │   │   │               ├── V2__add_impuestos_y_cuentas.sql
+    │   │   │               ├── V3__make_nullable_fields.sql
+    │   │   │               ├── V4__rename_tasa_to_porcentaje.sql
+    │   │   │               └── V5__rename_tipo_impuesto_to_tipo.sql
+    │   │   └── test/
+    │   │       └── java/
+    │   │           └── com/
+    │   │               └── rowin/
+    │   │                   └── contabilidad/
+    │   │                       └── ContabilidadApplicationTests.java
+    │   └── .mvn/
+    │       └── wrapper/
+    │           └── .gitkeep
+    └── frontend/
+        ├── index.html
+        ├── package.json
+        ├── tsconfig.json
+        ├── tsconfig.node.json
+        ├── vite.config.ts
+        └── src/
+            ├── App.tsx
+            ├── main.tsx
+            ├── styles.css
+            ├── vite-env.d.ts
+            ├── assets/
+            │   └── .gitkeep
+            ├── components/
+            │   ├── ConfirmDialog.css
+            │   ├── ConfirmDialog.tsx
+            │   ├── DataTable.css
+            │   ├── DataTable.tsx
+            │   ├── LoadingState.css
+            │   ├── LoadingState.tsx
+            │   ├── Modal.css
+            │   ├── Modal.tsx
+            │   ├── PageHeader.css
+            │   ├── PageHeader.tsx
+            │   ├── Placeholder.tsx
+            │   ├── PrimaryButton.css
+            │   ├── PrimaryButton.tsx
+            │   ├── SearchBar.css
+            │   ├── SearchBar.tsx
+            │   ├── SecondaryButton.css
+            │   ├── SecondaryButton.tsx
+            │   ├── StatCard.css
+            │   ├── StatCard.tsx
+            │   ├── StatusBadge.css
+            │   └── StatusBadge.tsx
+            ├── context/
+            │   └── AppContext.tsx
+            ├── hooks/
+            │   └── useAppContext.ts
+            ├── layouts/
+            │   ├── DashboardLayout.css
+            │   ├── DashboardLayout.tsx
+            │   └── MainLayout.tsx
+            ├── pages/
+            │   ├── CajaPage.css
+            │   ├── CajaPage.tsx
+            │   ├── CategoriasPage.css
+            │   ├── CategoriasPage.tsx
+            │   ├── ClientesPage.css
+            │   ├── ClientesPage.tsx
+            │   ├── ComprasPage.css
+            │   ├── ComprasPage.tsx
+            │   ├── ConfiguracionPage.css
+            │   ├── ConfiguracionPage.tsx
+            │   ├── DashboardPage.css
+            │   ├── DashboardPage.tsx
+            │   ├── HomePage.tsx
+            │   ├── InventarioPage.css
+            │   ├── InventarioPage.tsx
+            │   ├── LoginPage.css
+            │   ├── LoginPage.tsx
+            │   ├── NotFoundPage.tsx
+            │   ├── PosPage.css
+            │   ├── PosPage.tsx
+            │   ├── ProductosPage.css
+            │   ├── ProductosPage.tsx
+            │   ├── ProveedoresPage.css
+            │   ├── ProveedoresPage.tsx
+            │   ├── ReportesPage.css
+            │   ├── ReportesPage.tsx
+            │   ├── UsuariosPage.css
+            │   └── UsuariosPage.tsx
+            ├── routes/
+            │   └── AppRouter.tsx
+            └── services/
+                ├── authService.ts
+                ├── cajaService.ts
+                ├── cashStorage.ts
+                ├── CategoriaProductoService.ts
+                ├── categoryStorage.ts
+                ├── clienteService.ts
+                ├── compraService.ts
+                ├── dashboardService.ts
+                ├── http.ts
+                ├── ProductoService.ts
+                ├── productStorage.ts
+                ├── providerStorage.ts
+                ├── purchaseStorage.ts
+                ├── salesStorage.ts
+                ├── settingsStorage.ts
+                ├── userStorage.ts
+                └── VentaService.ts
 ```
 
 ---

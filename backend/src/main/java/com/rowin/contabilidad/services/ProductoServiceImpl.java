@@ -137,7 +137,13 @@ public class ProductoServiceImpl extends BaseCrudService implements ProductoServ
         inventario.setProducto(savedProducto);
         inventario.setCantidadActual(request.stockInicial() != null ? request.stockInicial() : BigDecimal.ZERO);
         inventario.setCostoPromedio(request.costo() != null ? request.costo() : BigDecimal.ZERO);
-        inventarioRepository.save(inventario);
+        Inventario savedInventario = inventarioRepository.save(inventario);
+
+        // Asociar el lado inverso de la relación @OneToOne en memoria: Hibernate no lo
+        // hace automáticamente solo porque el Inventario ya tiene la FK guardada, y
+        // productoMapper.toResponse() lee stockActual/costoPromedio desde
+        // savedProducto.getInventario(), que sin esta línea queda null.
+        savedProducto.setInventario(savedInventario);
 
         return productoMapper.toResponse(savedProducto);
     }

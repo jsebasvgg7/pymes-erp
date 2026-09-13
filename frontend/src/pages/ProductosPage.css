@@ -6,8 +6,20 @@
 .prod__controls {
 	display: grid;
 	grid-template-columns: 1fr auto;
-	align-items: center;
+	align-items: end;
 	gap: 12px;
+}
+
+.prod__search {
+	display: grid;
+	gap: 8px;
+}
+
+.prod__searchLabel {
+	font-size: 13px;
+	color: rgba(245, 245, 245, 0.68);
+	line-height: 1.2;
+	visibility: hidden;
 }
 
 .prod__filters {
@@ -23,35 +35,7 @@
 
 .prod__filterLabel {
 	font-size: 13px;
-	color: rgba(10, 18, 34, 0.72);
-	line-height: 1.2;
-}
-
-.prod__select,
-.prod__input {
-	width: 100%;
-	height: 44px;
-	padding: 0 12px;
-	border-radius: 12px;
-	border: 1px solid rgba(10, 18, 34, 0.14);
-	background: rgba(255, 255, 255, 1);
-	color: #0a1222;
-	outline: none;
-	transition: border-color 160ms ease, box-shadow 160ms ease;
-	box-sizing: border-box;
-	font: inherit;
-	font-size: 14px;
-	line-height: 1.2;
-}
-
-.prod__input::placeholder {
-	color: rgba(10, 18, 34, 0.38);
-}
-
-.prod__select:focus,
-.prod__input:focus {
-	border-color: rgba(11, 74, 166, 0.45);
-	box-shadow: 0 0 0 4px rgba(11, 74, 166, 0.12);
+	color: rgba(245, 245, 245, 0.68);
 }
 
 .prod__table {
@@ -64,16 +48,27 @@
 	justify-content: flex-end;
 }
 
-.prod__actionBtn {
-	height: 36px;
-	padding: 0 12px;
-	border-radius: 12px;
+.prod .prod__actions .prod__actionBtn {
+	height: 38px;
+	padding: 0 16px;
+	border-radius: 10px;
+	display: inline-flex;
+	align-items: center;
+	gap: 7px;
+	font-size: 13px;
+	white-space: nowrap;
 }
 
 .prod__actionBtn--danger {
-	border-color: rgba(239, 68, 68, 0.22);
-	background: rgba(239, 68, 68, 0.06);
-	color: rgba(239, 68, 68, 0.92);
+	border-color: rgba(248, 113, 113, 0.28);
+	background: rgba(248, 113, 113, 0.1);
+	color: #fca5a5;
+	box-shadow: none;
+}
+
+.prod__actionBtn--danger:hover {
+	background: rgba(248, 113, 113, 0.16);
+	transform: none;
 	box-shadow: none;
 }
 
@@ -87,25 +82,17 @@
 .prod__emptyTitle {
 	font-size: 14px;
 	font-weight: 650;
-	color: rgba(10, 18, 34, 0.86);
+	color: rgba(245, 245, 245, 0.86);
 }
 
 .prod__emptySubtitle {
 	font-size: 13px;
-	color: rgba(10, 18, 34, 0.62);
+	color: rgba(245, 245, 245, 0.55);
 }
 
 .prod__emptyEmph {
 	font-weight: 650;
-	color: rgba(11, 74, 166, 0.92);
-}
-
-.prod__imageCell {
-	width: 36px;
-	height: 36px;
-	border-radius: 12px;
-	border: 1px solid rgba(10, 18, 34, 0.14);
-	background: linear-gradient(135deg, rgba(11, 74, 166, 0.12), rgba(11, 74, 166, 0.04));
+	color: #a5b4fc;
 }
 
 .prod__modalActions {
@@ -113,7 +100,6 @@
 	gap: 10px;
 	justify-content: flex-end;
 	width: 100%;
-	align-items: center;
 }
 
 .prod__noCats {
@@ -123,13 +109,14 @@
 	gap: 12px;
 	padding: 14px;
 	border-radius: 14px;
-	border: 1px solid rgba(10, 18, 34, 0.10);
-	background: rgba(11, 74, 166, 0.04);
+	border: 1px solid rgba(255, 255, 255, 0.08);
+	background: rgba(99, 102, 241, 0.08);
+	margin-bottom: 14px;
 }
 
 .prod__noCatsTitle {
 	font-size: 13px;
-	color: rgba(10, 18, 34, 0.72);
+	color: rgba(245, 245, 245, 0.75);
 	line-height: 1.35;
 	flex: 1 1 auto;
 }
@@ -148,8 +135,7 @@
 .prod__grid {
 	display: grid;
 	grid-template-columns: repeat(2, minmax(0, 1fr));
-	column-gap: 12px;
-	row-gap: 12px;
+	gap: 12px;
 	align-items: start;
 }
 
@@ -164,30 +150,231 @@
 
 .prod__label {
 	font-size: 13px;
-	color: rgba(10, 18, 34, 0.72);
-	line-height: 1.2;
+	color: rgba(245, 245, 245, 0.68);
+}
+
+.prod__input,
+.prod__select {
+	box-sizing: border-box;
+	width: 100%;
+	height: 44px;
+	padding: 0 12px;
+	border-radius: 12px;
+	border: 1px solid rgba(255, 255, 255, 0.12);
+	background: #171717;
+	color: #f5f5f5;
+	outline: none;
+	transition: border-color 160ms ease, box-shadow 160ms ease;
+	font: inherit;
+	font-size: 14px;
+}
+
+.prod__input::placeholder {
+	color: rgba(245, 245, 245, 0.34);
+}
+
+.prod__input:focus,
+.prod__select:focus {
+	border-color: rgba(99, 102, 241, 0.5);
+	box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.14);
+}
+
+.prod__select option {
+	background: #171717;
+	color: #f5f5f5;
+}
+
+.prod__input:disabled,
+.prod__select:disabled {
+	background: rgba(255, 255, 255, 0.03);
+	color: rgba(245, 245, 245, 0.4);
+	cursor: not-allowed;
 }
 
 .prod__textarea {
+	box-sizing: border-box;
 	width: 100%;
 	padding: 12px;
 	border-radius: 12px;
-	border: 1px solid rgba(10, 18, 34, 0.14);
-	background: rgba(255, 255, 255, 1);
-	color: #0a1222;
+	border: 1px solid rgba(255, 255, 255, 0.12);
+	background: #171717;
+	color: #f5f5f5;
 	outline: none;
 	resize: vertical;
 	transition: border-color 160ms ease, box-shadow 160ms ease;
-	box-sizing: border-box;
 	font: inherit;
 	font-size: 14px;
 	line-height: 1.4;
 	min-height: 96px;
 }
 
+.prod__textarea::placeholder {
+	color: rgba(245, 245, 245, 0.34);
+}
+
 .prod__textarea:focus {
-	border-color: rgba(11, 74, 166, 0.45);
-	box-shadow: 0 0 0 4px rgba(11, 74, 166, 0.12);
+	border-color: rgba(99, 102, 241, 0.5);
+	box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.14);
+}
+
+.prod__hint {
+	font-size: 12px;
+	color: rgba(245, 245, 245, 0.45);
+	line-height: 1.3;
+}
+
+.prod__state {
+	padding: 48px 24px;
+	text-align: center;
+	color: rgba(245, 245, 245, 0.5);
+	background: #1c1c1c;
+	border-radius: 14px;
+	border: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.prod__state--error {
+	color: #fca5a5;
+	background: rgba(248, 113, 113, 0.06);
+	border-color: rgba(248, 113, 113, 0.18);
+}
+
+.prod__formError {
+	font-size: 13px;
+	color: #fca5a5;
+	background: rgba(248, 113, 113, 0.1);
+	border: 1px solid rgba(248, 113, 113, 0.22);
+	border-radius: 10px;
+	padding: 10px 12px;
+}
+
+/* Overrides scoped al tema oscuro para componentes compartidos (PageHeader, SearchBar,
+   DataTable, StatusBadge, Modal, ConfirmDialog, SecondaryButton, PrimaryButton).
+   No se tocan los CSS originales de estos componentes.
+   Mismo patrón que CategoriasPage.css / ProveedoresPage.css. */
+
+.prod .ui-pageHeader__title {
+	color: #f5f5f5;
+}
+
+.prod .ui-pageHeader__subtitle {
+	color: rgba(245, 245, 245, 0.5);
+}
+
+.prod .ui-search {
+	background: #1c1c1c;
+	border: 1px solid rgba(255, 255, 255, 0.1);
+	box-shadow: none;
+}
+
+.prod .ui-search__icon {
+	color: rgba(245, 245, 245, 0.4);
+}
+
+.prod .ui-search__input {
+	color: #f5f5f5;
+}
+
+.prod .ui-search__input::placeholder {
+	color: rgba(245, 245, 245, 0.4);
+}
+
+.prod .ui-table__row {
+	border-color: rgba(255, 255, 255, 0.07);
+	background: rgba(255, 255, 255, 0.02);
+	padding: 16px 18px;
+	align-items: center;
+}
+
+.prod .ui-table__row--head {
+	background: rgba(99, 102, 241, 0.08);
+	border-color: rgba(99, 102, 241, 0.16);
+	padding: 12px 18px;
+	align-items: center;
+}
+
+.prod .ui-table__cell {
+	color: rgba(245, 245, 245, 0.82);
+	display: flex;
+	align-items: center;
+}
+
+.prod .ui-table__cell--head {
+	color: rgba(245, 245, 245, 0.6);
+	display: flex;
+	align-items: center;
+}
+
+.prod .ui-table__empty {
+	border-color: rgba(255, 255, 255, 0.14);
+	color: rgba(245, 245, 245, 0.4);
+	background: rgba(255, 255, 255, 0.02);
+}
+
+.prod .ui-badge {
+	color: rgba(245, 245, 245, 0.6);
+	background: rgba(99, 102, 241, 0.1);
+	border-color: rgba(99, 102, 241, 0.2);
+}
+
+.prod .ui-badge--active {
+	color: #86efac;
+	background: rgba(74, 222, 128, 0.12);
+	border-color: rgba(74, 222, 128, 0.24);
+}
+
+.prod .ui-badge--inactive {
+	color: rgba(245, 245, 245, 0.55);
+	background: rgba(255, 255, 255, 0.06);
+	border-color: rgba(255, 255, 255, 0.12);
+}
+
+.prod .ui-modal__backdrop {
+	background: rgba(0, 0, 0, 0.6);
+}
+
+.prod .ui-modal__panel {
+	background: #1c1c1c;
+	border: 1px solid rgba(255, 255, 255, 0.08);
+	box-shadow: 0 22px 55px rgba(0, 0, 0, 0.4);
+}
+
+.prod .ui-modal__title {
+	color: #f5f5f5;
+}
+
+.prod .ui-modal__body {
+	color: rgba(245, 245, 245, 0.75);
+}
+
+.prod .ui-confirm__message {
+	color: rgba(245, 245, 245, 0.72);
+}
+
+.prod .ui-btnPrimary,
+.prod .ui-btnSecondary {
+	height: 44px;
+	padding: 0 20px;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 8px;
+}
+
+.prod .ui-btnSecondary {
+	background: transparent;
+	border: 1px solid rgba(255, 255, 255, 0.12);
+	color: rgba(245, 245, 245, 0.8);
+	box-shadow: none;
+}
+
+.prod .ui-btnSecondary:hover {
+	background: rgba(255, 255, 255, 0.06);
+	transform: none;
+	box-shadow: none;
+}
+
+.prod .ui-btnSecondary:disabled {
+	opacity: 0.5;
 }
 
 @media (max-width: 860px) {

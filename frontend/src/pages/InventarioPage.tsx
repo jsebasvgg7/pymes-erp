@@ -1,34 +1,19 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import DataTable, { DataTableColumn } from "../components/DataTable";
+import LoadingState from "../components/LoadingState";
 import Modal from "../components/Modal";
 import PageHeader from "../components/PageHeader";
 import SecondaryButton from "../components/SecondaryButton";
 import SearchBar from "../components/SearchBar";
 import StatusBadge from "../components/StatusBadge";
-import { getCategories } from "../services/categoryStorage";
-import { getProducts, type Product } from "../services/productStorage";
-import { getSettings } from "../services/settingsStorage";
+import { authService } from "../services/authService";
+import { productoService, type Producto } from "../services/ProductoService";
 import "./InventarioPage.css";
 
 type StockLevel = "Agotado" | "Stock Bajo" | "Disponible";
 
-type InventoryRow = {
-	id: string;
-	producto: string;
-	categoria: string;
-	stock: number;
-	stockMinimo: number;
-	unidad: string;
-	estadoInventario: StockLevel;
-	productoEstado: Product["estado"];
-	raw: Product;
-};
-
-const DEFAULT_STOCK_MIN = 5;
-const DEFAULT_UNIT = "Und";
-
 function getStockLevel(stock: number, stockMinimo: number): StockLevel {
-	if (stock === 0) return "Agotado";
+	if (stock <= 0) return "Agotado";
 	if (stock <= stockMinimo) return "Stock Bajo";
 	return "Disponible";
 }
@@ -44,15 +29,42 @@ function formatDateLabel(value: string) {
 }
 
 export default function InventarioPage() {
-	const [products] = useState<Product[]>(() => getProducts());
+	const empresaId = authService.getUsuario()?.empresaId;
+
+	const [products, setProducts] = useState<Producto[]>([]);
+	const [loading, setLoading] = useState(true);
+	const [error, setError] = useState<string | null>(null);
+
 	const [searchQuery, setSearchQuery] = useState("");
 	const [selectedCategory, setSelectedCategory] = useState("Todos");
 	const [selectedStockStatus, setSelectedStockStatus] = useState<StockLevel | "Todos">("Todos");
 	const searchRef = useRef<HTMLDivElement | null>(null);
-	const stockMinimoConfig = useMemo(() => getSettings()?.system.defaultMinStock ?? DEFAULT_STOCK_MIN, []);
 
 	const [viewOpen, setViewOpen] = useState(false);
-	const [viewProductId, setViewProductId] = useState<string | null>(null);
+	const [viewProductId, setViewProductId] = useState<number | null>(null);
+
+	const loadProducts = useCallback(async () => {
+		if (!empresaId) {
+			setError("No se encontró la empresa del usuario. Inicia sesión nuevamente.");
+			setLoading(false);
+			return;
+		}
+
+		setLoading(true);
+		setError(null);
+		try {
+			const data = await productoService.listarPorEmpresa(empresaId, 0, 200);
+			setProducts(data.content);
+		} catch {
+			setError("No se pudo cargar el inventario. Verifica tu conexión con el servidor.");
+		} finally {
+			setLoading(false);
+		}
+	}, [empresaId]);
+
+	useEffect(() => {
+		loadProducts();
+	}, [loadProducts]);
 
 	useEffect(() => {
 		const el = searchRef.current;
@@ -72,15 +84,10 @@ export default function InventarioPage() {
 		};
 	}, []);
 
-	const activeCategoryNames = useMemo(() => {
-		return getCategories()
-			.filter((c) => c.estado === "Activo")
-			.map((c) => c.nombre);
-	}, []);
-
 	const categoryOptions = useMemo(() => {
-		return ["Todos", ...activeCategoryNames];
-	}, [activeCategoryNames]);
+		const names = Array.from(new Set(products.map((p) => p.categoriaNombre).filter(Boolean)));
+		return ["Todos", ...names];
+	}, [products]);
 
 	useEffect(() => {
 		if (!categoryOptions.includes(selectedCategory)) {
@@ -88,23 +95,24 @@ export default function InventarioPage() {
 		}
 	}, [categoryOptions, selectedCategory]);
 
-	const rows: InventoryRow[] = useMemo(() => {
+	const rows = useMemo(() => {
 		return products.map((p) => {
-			const stockMinimo = stockMinimoConfig;
-			const unidad = DEFAULT_UNIT;
+			const stock = p.stockActual ?? 0;
+			const stockMinimo = p.stockMinimo ?? 0;
 			return {
 				id: p.id,
 				producto: p.nombre,
-				categoria: p.categoria,
-				stock: p.stock,
+				categoria: p.categoriaNombre || "—",
+				stock,
 				stockMinimo,
-				unidad,
-				estadoInventario: getStockLevel(p.stock, stockMinimo),
-				productoEstado: p.estado,
+				unidad: p.unidadMedida || "—",
+				estadoInventario: getStockLevel(stock, stockMinimo),
 				raw: p
 			};
 		});
-	}, [products, stockMinimoConfig]);
+	}, [products]);
+
+	type InventoryRow = (typeof rows)[number];
 
 	const filteredRows = useMemo(() => {
 		const q = searchQuery.trim().toLowerCase();
@@ -116,7 +124,7 @@ export default function InventarioPage() {
 		});
 	}, [rows, searchQuery, selectedCategory, selectedStockStatus]);
 
-	const openView = (productId: string) => {
+	const openView = (productId: number) => {
 		setViewProductId(productId);
 		setViewOpen(true);
 	};
@@ -148,26 +156,14 @@ export default function InventarioPage() {
 				header: "Estado",
 				render: (r) => {
 					if (r.estadoInventario === "Agotado") {
-						return (
-							<span className="inv__stockBadge inv__stockBadge--out">
-								<StatusBadge status="Anulado" />
-							</span>
-						);
+						return <span className="inv__stockBadge inv__stockBadge--out">Agotado</span>;
 					}
 
 					if (r.estadoInventario === "Stock Bajo") {
-						return (
-							<span className="inv__stockBadge inv__stockBadge--low">
-								<StatusBadge status="Pendiente" />
-							</span>
-						);
+						return <span className="inv__stockBadge inv__stockBadge--low">Stock Bajo</span>;
 					}
 
-					return (
-						<span className="inv__stockBadge inv__stockBadge--ok">
-							<StatusBadge status="Activo" />
-						</span>
-					);
+					return <span className="inv__stockBadge inv__stockBadge--ok">Disponible</span>;
 				}
 			},
 			{
@@ -186,12 +182,49 @@ export default function InventarioPage() {
 		[]
 	);
 
+	const emptyState = useMemo(() => {
+		if (products.length === 0) {
+			return (
+				<div className="inv__empty">
+					<div className="inv__emptyTitle">No hay productos registrados.</div>
+					<div className="inv__emptySubtitle">Crea el primer producto para empezar a consultar el inventario.</div>
+				</div>
+			);
+		}
+
+		return (
+			<div className="inv__empty">
+				<div className="inv__emptyTitle">No se encontraron productos.</div>
+				<div className="inv__emptySubtitle">Prueba modificando la búsqueda o los filtros.</div>
+			</div>
+		);
+	}, [products.length]);
+
+	if (loading) {
+		return (
+			<div className="inv">
+				<LoadingState label="Cargando inventario..." />
+			</div>
+		);
+	}
+
+	if (error) {
+		return (
+			<div className="inv">
+				<div className="inv__state inv__state--error">{error}</div>
+			</div>
+		);
+	}
+
 	return (
 		<div className="inv">
 			<PageHeader title="Inventario" subtitle="Consulta del inventario disponible." />
 
 			<div className="inv__controls">
 				<div className="inv__search">
+					<label className="inv__searchLabel" aria-hidden="true">
+						Buscar
+					</label>
 					<div ref={searchRef}>
 						<SearchBar placeholder="Buscar producto..." />
 					</div>
@@ -226,23 +259,7 @@ export default function InventarioPage() {
 			</div>
 
 			<div className="inv__table">
-				<DataTable
-					columns={columns}
-					data={filteredRows}
-					emptyState={
-						products.length === 0 ? (
-							<div className="inv__empty">
-								<div className="inv__emptyTitle">No hay productos registrados.</div>
-								<div className="inv__emptySubtitle">Crea el primer producto para empezar a consultar el inventario.</div>
-							</div>
-						) : (
-							<div className="inv__empty">
-								<div className="inv__emptyTitle">No se encontraron productos.</div>
-								<div className="inv__emptySubtitle">Prueba modificando la búsqueda o los filtros.</div>
-							</div>
-						)
-					}
-				/>
+				<DataTable columns={columns} data={filteredRows} emptyState={emptyState} />
 			</div>
 
 			<Modal
@@ -259,7 +276,6 @@ export default function InventarioPage() {
 			>
 				{viewRow ? (
 					<div className="inv__details">
-						<div className="inv__imagePreview" style={viewRow.raw.imagen ? { backgroundImage: `url(${viewRow.raw.imagen})` } : undefined} />
 						<div className="inv__detailGrid">
 							<div className="inv__detail">
 								<div className="inv__detailLabel">Producto</div>
@@ -267,7 +283,7 @@ export default function InventarioPage() {
 							</div>
 							<div className="inv__detail">
 								<div className="inv__detailLabel">Categoría</div>
-								<div className="inv__detailValue">{viewRow.raw.categoria}</div>
+								<div className="inv__detailValue">{viewRow.categoria}</div>
 							</div>
 							<div className="inv__detail">
 								<div className="inv__detailLabel">Stock</div>
@@ -282,20 +298,26 @@ export default function InventarioPage() {
 								<div className="inv__detailValue">{viewRow.unidad}</div>
 							</div>
 							<div className="inv__detail">
-								<div className="inv__detailLabel">Estado del producto</div>
-								<div className="inv__detailValue">{viewRow.productoEstado}</div>
+								<div className="inv__detailLabel">Estado</div>
+								<div className="inv__detailValue">
+									<StatusBadge status={viewRow.raw.active ? "Activo" : "Inactivo"} />
+								</div>
 							</div>
 							<div className="inv__detail">
-								<div className="inv__detailLabel">Precio compra</div>
-								<div className="inv__detailValue">{formatCurrency(viewRow.raw.precioCompra)}</div>
+								<div className="inv__detailLabel">Costo</div>
+								<div className="inv__detailValue">{formatCurrency(viewRow.raw.costo ?? 0)}</div>
+							</div>
+							<div className="inv__detail">
+								<div className="inv__detailLabel">Costo promedio</div>
+								<div className="inv__detailValue">{formatCurrency(viewRow.raw.costoPromedio ?? 0)}</div>
 							</div>
 							<div className="inv__detail">
 								<div className="inv__detailLabel">Precio venta</div>
-								<div className="inv__detailValue">{formatCurrency(viewRow.raw.precioVenta)}</div>
+								<div className="inv__detailValue">{formatCurrency(viewRow.raw.precioVenta ?? 0)}</div>
 							</div>
 							<div className="inv__detail inv__detail--full">
 								<div className="inv__detailLabel">Descripción</div>
-								<div className="inv__detailValue">{viewRow.raw.descripcion ?? ""}</div>
+								<div className="inv__detailValue">{viewRow.raw.descripcion || "—"}</div>
 							</div>
 							<div className="inv__detail">
 								<div className="inv__detailLabel">Creado</div>
