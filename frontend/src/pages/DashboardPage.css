@@ -1,6 +1,7 @@
 .db {
 	display: grid;
 	gap: 20px;
+	min-width: 0;
 }
 
 .db__greeting {
@@ -27,12 +28,14 @@
 	display: grid;
 	grid-template-columns: repeat(4, minmax(0, 1fr));
 	gap: 14px;
+	min-width: 0;
 }
 
 .db__panels {
 	display: grid;
 	grid-template-columns: 1.15fr 0.85fr;
 	gap: 14px;
+	min-width: 0;
 }
 
 .db__panel {
@@ -41,6 +44,7 @@
 	border: 1px solid rgba(255, 255, 255, 0.07);
 	padding: 16px;
 	min-height: 320px;
+	min-width: 0;
 	transition: border-color 160ms ease;
 }
 

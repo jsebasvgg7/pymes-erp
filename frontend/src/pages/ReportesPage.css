@@ -1,18 +1,21 @@
 .rep {
 	display: grid;
 	gap: 16px;
+	min-width: 0;
 }
 
 .rep__metrics {
 	display: grid;
 	grid-template-columns: repeat(4, minmax(0, 1fr));
 	gap: 14px;
+	min-width: 0;
 }
 
 .rep__panels {
 	display: grid;
 	grid-template-columns: 1fr 1fr;
 	gap: 14px;
+	min-width: 0;
 }
 
 .rep__panel {
@@ -73,6 +76,9 @@
 
 .rep__typeBadge .ui-badge {
 	font-size: 0;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
 }
 
 .rep__typeBadge .ui-badge::after {
