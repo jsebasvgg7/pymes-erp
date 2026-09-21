@@ -7,6 +7,7 @@ import ComprasPage from "../pages/ComprasPage";
 import DashboardPage from "../pages/DashboardPage";
 import CajaPage from "../pages/CajaPage";
 import InventarioPage from "../pages/InventarioPage";
+import LandingPage from "../landing/LandingPage";
 import LoginPage from "../pages/LoginPage";
 import NotFoundPage from "../pages/NotFoundPage";
 import PosPage from "../pages/PosPage";
@@ -29,7 +30,7 @@ export default function AppRouter() {
   return (
     <Routes>
       <Route path="/login" element={<LoginPage />} />
-      <Route path="/" element={<Navigate to="/dashboard" replace />} />
+      <Route path="/" element={<LandingPage />} />
 
       <Route
         path="/dashboard"

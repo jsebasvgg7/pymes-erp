@@ -1,1 +1,1 @@
-VITE_API_URL=http://localhost:8080
+/// <reference types="vite/client" />

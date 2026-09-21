@@ -1,5 +1,18 @@
 :root {
-  font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+  /* Tipografía estándar de toda la app */
+  --font-sans: "Inter Variable", "Inter", system-ui, -apple-system, "Segoe UI",
+    Roboto, sans-serif;
+
+  /* Tokens del tema claro. La landing ya los usa; las demás páginas se
+     migrarán a estos nombres en vez de colores sueltos. */
+  --paper: #ffffff;
+  --ink: #000000;
+  --muted: #5c606a;
+  --line: #e3e5e9;
+  --surface: #f2f3f5;
+  --brand: #6366f1;
+
+  font-family: var(--font-sans);
 }
 
 body {
@@ -10,3 +23,10 @@ main {
   padding: 24px;
 }
 
+/* Los controles de formulario no heredan la fuente por defecto. */
+button,
+input,
+select,
+textarea {
+  font-family: inherit;
+}
