@@ -6,9 +6,10 @@ import LoadingButton from "./LoadingButton";
 import "./loading-button.css";
 
 const SECCIONES = [
+  { href: "#soluciones", label: "Soluciones" },
   { href: "#modulos", label: "Módulos" },
   { href: "#como-funciona", label: "Cómo funciona" },
-  { href: "#equipo", label: "Equipo" },
+  { href: "#tecnologia", label: "Tecnología" },
   { href: "#contacto", label: "Contacto" },
 ];
 

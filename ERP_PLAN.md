@@ -1,6 +1,6 @@
 # ERP Plan — PYMES ERP
 
-**Última actualización:** lunes 21 de septiembre de 2026 (roadmap realineado con `PYMES_ERP_Planeacion_Scrum.docx`; US-01 logo cerrada)
+**Última actualización:** martes 22 de septiembre de 2026 (landing: vista 1 y vista 2 cerradas y ajustadas a detalle; orden de secciones y nombres redefinidos; nuevas reglas de trabajo)
 **Reemplaza a:** la versión anterior del plan (nombre provisional "Contabilidad PYMES", LocalStorage, MySQL, Electron).
 
 > Documentos relacionados: `INICIO_FRONTEND.md` (bitácora técnica por sesión), `TRASPASO_FRONTEND.md` (resumen ejecutivo al 13 de septiembre), `NuevoPlanPymes.md` (bitácora de la sesión de landing y tema blanco).
@@ -154,7 +154,8 @@ El backend no arrancaba por un `UnknownHostException` contra el host de PostgreS
 
 **Estado actual del estilo:**
 
-- Landing (vista 1, hero): construida y corriendo. Falta la imagen del hero.
+- Landing (vista 1, hero): construida, corriendo y ajustada a detalle. Imagen del hero ya resuelta (`hero-illustration.png`).
+- Landing (vista 2, Módulos): construida, corriendo y ajustada a detalle. Header centrado (3 íconos + título + subtítulo + botón "Un solo sistema"), diagrama con 4 nodos arriba y 2 abajo del mismo tamaño, conectados por curvas SVG animadas. Nav con scroll suave a anclas y logo que resetea el scroll si ya se está en `/`.
 - App interna: **sigue en tema oscuro**, con **0 variables CSS**, 213 colores hex y 645 `rgba` hardcodeados. El tema oscuro de cada página son overrides bajo clases como `.cat`, `.prod`, `.inv`, `.posWrap`. La migración debe pasar por tokens.
 - Marca inconsistente: login "PYMES ERP" vs sidebar "Contabilidad PYMES"; botones azules (POS, Configuración) vs violeta/índigo (login, logo). Pendiente unificar (US-02).
 - **Logo: decidido (21 sep 2026), US-01 cerrada.** Diseño 1 — "Minimalista moderno" (ícono tipo P/flecha ascendente con bloque inferior), monocromo, sin degradados. Assets generados: `logo-black.png` (P negra sobre tarjeta blanca redondeada, margen transparente — para fondos claros) y `logo-white.png` (P blanca, fondo transparente — para fondos oscuros). Pendiente: reemplazar físicamente `src/assets/logo.png` y `public/favicon.png` en el repo con estos assets (AC3 de US-01).
@@ -167,11 +168,29 @@ El backend no arrancaba por un `UnknownHostException` contra el host de PostgreS
 
 **Ubicación:** `frontend/src/landing/`, misma app, ruta `/`. Todo el CSS bajo el prefijo `.lp`.
 
-**Secciones planeadas (13):** Navbar, Hero, Problema, Módulos (bento grid), Cómo funciona (Productos, Inventario, Venta, Caja y reportes), Beneficios, Para qué negocios, Capturas del sistema, Tecnología, Planes ("Próximamente"), Equipo y proyecto, Contacto, Footer.
+**Orden de secciones (reemplaza la lista de 13 secciones original, decisión del 22 de septiembre de 2026):**
 
-**Estado:** vista 1 (navbar y hero con marco de imagen en forma de tiquete) lista. Siguiente: vista 2 (módulos).
+1. Navbar
+2. Hero
+3. **Soluciones** (antes llamada "Problema"; mismo contenido —cuadernos y Excel, inventario que no cuadra, cierres de caja con diferencias, dato de la Cámara de Comercio— pero encuadrado en positivo: "esto es lo que resolvemos", no un listado de quejas)
+4. Módulos
+5. Cómo funciona (Productos → Inventario → Venta → Caja y reportes; numeración válida aquí por ser secuencia real)
+6. Tecnologías (reemplaza a "Equipo"; más útil mostrar el stack real — Java, Spring Boot, React, TypeScript — que el equipo, en un proyecto con vocación SaaS)
+7. Contacto
+8. Footer
 
-**Pendientes de la vista 1:** imagen del hero, destino real de "Solicitar una demo", los cuatro anclajes (`#modulos`, `#como-funciona`, `#equipo`, `#contacto`), decidir si se queda la línea de autoría, y borrar `HomePage.tsx` (sin uso).
+**Descartado del plan original:**
+- **Beneficios** ya no es sección aparte; su contenido se reparte entre Soluciones y Cómo funciona.
+- **Equipo** como sección propia queda reemplazada por Tecnologías (ver arriba). El navbar pasa de `#equipo` a `#tecnologia`.
+
+**Pendiente de decidir:** si "Capturas del sistema" y "Planes" entran en este orden final o se descartan igual que Beneficios/Equipo.
+
+**Estado:**
+- Vista 1 (Hero): completa y ajustada a detalle. Imagen resuelta.
+- Vista 2 (Módulos): completa y ajustada a detalle (ver §9).
+- Siguiente paso: **Soluciones**, luego **Cómo funciona**.
+
+**Pendientes generales aún abiertos:** destino real de "Solicitar una demo" (`#contacto` no existe todavía), anclajes `#equipo`/`#contacto` sin sección de destino, decidir si se queda la línea de autoría del hero, borrar `HomePage.tsx` (sin uso).
 
 **Reglas de contenido:** no inventar testimonios ni estadísticas; capturas con datos creíbles de un negocio real (sembrar antes de capturar; evitar Configuración por las etiquetas "Pendiente").
 
@@ -180,6 +199,8 @@ El backend no arrancaba por un `UnknownHostException` contra el host de PostgreS
 ## 11. Roadmap
 
 Alineado con `PYMES_ERP_Planeacion_Scrum.docx` (4 sprints, 22/09/2026 – 12/11/2026). El roadmap anterior a esa fecha no se toca; desde aquí, cada ítem enlaza a su historia de usuario (US-xx) para que ambos documentos no se desalineen.
+
+> **El Sprint 1 es una guía, no un reglamento.** La landing es contenido nuevo que se está diseñando sobre la marcha (nombres de sección, orden, qué se descarta) — ver §10. Los puntos, nombres de historia y alcance de EPIC-02 se ajustan libremente a medida que el diseño avanza, sin necesidad de negociar el cambio como si fuera un desvío del plan.
 
 **Hecho (antes del rediseño)**
 
@@ -191,20 +212,20 @@ Alineado con `PYMES_ERP_Planeacion_Scrum.docx` (4 sprints, 22/09/2026 – 12/11/
 - [x] Landing, vista 1 (navbar + hero)
 - [x] Recuperar la base de datos (la instancia estaba apagada; reactivada sin pérdida de datos)
 
-**Sprint 1 — Marca, Landing y ajustes de backend (22/09 – 04/10, 26 puntos)**
+**Sprint 1 — Marca, Landing y ajustes de backend (22/09 – 04/10, 26 puntos, moldeable — ver nota arriba)**
 
 *EPIC-01: Rediseño de marca*
 - [x] **US-01 — Diseño del nuevo logo/ícono (3 pts).** Decidido: Diseño 1, monocromo. Assets `logo-black.png` / `logo-white.png` generados. Falta AC2/AC3: exportar a `favicon.png` y reemplazar `src/assets/logo.png` en el repo.
 - [ ] **US-02 — Unificar nombre de marca en toda la app (2 pts).** Sidebar sigue diciendo "Contabilidad PYMES"; debe decir "PYMES ERP" en todas partes (sidebar, títulos de pestaña, footer).
 
 *EPIC-02: Landing completa*
-- [ ] **US-03 — Sección de módulos en bento grid (4 pts).** Siguiente paso natural de la landing (vista 2).
-- [ ] **US-04 — Cerrar pendientes de la vista 1 / hero (3 pts).** Imagen real del hero, anclajes (`#modulos`, `#como-funciona`, `#equipo`, `#contacto`) y destino real de "Solicitar una demo".
-- [ ] **US-05 — Sección Problema (2 pts).**
+- [x] **US-03 — Sección de módulos (4 pts).** Cerrada. En vez de bento grid: header centrado (íconos + título + subtítulo) y diagrama con curvas SVG, 4 nodos arriba + 2 abajo, mismo tamaño.
+- [ ] **US-04 — Cerrar pendientes de la vista 1 / hero (3 pts).** Imagen del hero ya resuelta. Falta: destino real de `#contacto` para "Solicitar una demo", anclaje `#equipo` (ahora `#tecnologia`, ver §10).
+- [ ] **US-05 — Sección Soluciones (2 pts).** Antes "Problema"; ver §10 para el cambio de nombre y encuadre.
 - [ ] **US-06 — Sección Cómo funciona (2 pts).**
-- [ ] **US-07 — Secciones Beneficios y Para qué negocios (2 pts).**
-- [ ] **US-08 — Sección Capturas del sistema (3 pts).** Requiere sembrar datos creíbles antes de capturar.
-- [ ] **US-09 — Tecnología, Planes, Equipo, Contacto y Footer (3 pts).**
+- [ ] **US-07 — Sección Tecnologías (2 pts).** Antes cubría Beneficios/Para qué negocios; ese contenido se repartió en Soluciones y Cómo funciona (§10).
+- [ ] **US-08 — Sección Capturas del sistema (3 pts).** Pendiente de decidir si entra (§10). Requiere sembrar datos creíbles antes de capturar.
+- [ ] **US-09 — Contacto y Footer (3 pts).**
 
 *EPIC-03: Ajustes de backend detectados en QA*
 - [ ] **US-10 — Forma de pago al registrar una Compra (2 pts).**
@@ -244,6 +265,13 @@ Alineado con `PYMES_ERP_Planeacion_Scrum.docx` (4 sprints, 22/09/2026 – 12/11/
 ---
 
 ## 12. Reglas de trabajo
+
+**Nuevas (22 de septiembre de 2026):**
+
+1. **El Sprint 1 es moldeable.** Como la landing es contenido nuevo que se diseña sobre la marcha, el Sprint 1 (en especial EPIC-02) es una guía de referencia, no un reglamento fijo. Nombres de sección, orden, alcance y puntos de historia se ajustan libremente a medida que avanza el diseño — no hace falta tratarlo como una desviación del plan cada vez que cambia.
+2. **Evitar comentarios en el código.** Para entregar un diseño limpio, no se agregan comentarios explicativos en el código (componentes, estilos, etc.) salvo que sean estrictamente necesarios para algo no evidente por sí mismo.
+
+**Generales:**
 
 - No cambiar la arquitectura ni las tecnologías sin acuerdo del equipo.
 - Nada de refactorizaciones grandes salvo errores críticos.

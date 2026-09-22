@@ -22,6 +22,10 @@
   padding: 0;
 }
 
+.lp-main > section {
+  scroll-margin-top: 120px;
+}
+
 .lp-wrap {
   width: min(1200px, 100% - 48px);
   margin-inline: auto;
@@ -90,7 +94,7 @@
 }
 
 .lp-nav__inner {
-  width: min(900px, 100%);
+  width: min(980px, 100%);
   height: 68px;
   padding: 0 12px 0 22px;
   display: flex;
@@ -129,10 +133,11 @@
 
 .lp-nav__links {
   display: flex;
-  gap: 36px;
+  gap: 28px;
   font-size: 0.9375rem;
   font-weight: 600;
   color: var(--muted);
+  white-space: nowrap;
 }
 
 .lp-nav__links a {
