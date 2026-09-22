@@ -36,7 +36,7 @@ export default function Hero() {
 
           <p className="lp-hero__credit">
             Diseñado para negocios como el tuyo. Ligero, sin costos ocultos
-            ni configuraciones imposibles — para que te enfoques en crecer.
+            ni configuraciones imposibles para que te enfoques en crecer.
           </p>
         </div>
 

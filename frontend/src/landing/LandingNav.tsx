@@ -8,40 +8,46 @@ import "./loading-button.css";
 const SECCIONES = [
   { href: "#soluciones", label: "Soluciones" },
   { href: "#modulos", label: "Módulos" },
-  { href: "#como-funciona", label: "Cómo funciona" },
+  { href: "#beneficios", label: "Beneficios" },
   { href: "#tecnologia", label: "Tecnología" },
   { href: "#contacto", label: "Contacto" },
 ];
 
 export default function LandingNav() {
-  const conSesion = authService.isAuthenticated();
-  const [conScroll, setConScroll] = useState(false);
-  const location = useLocation();
-  const navigate = useNavigate();
+const conSesion = authService.isAuthenticated();
+const [conScroll, setConScroll] = useState(false);
+const location = useLocation();
+const navigate = useNavigate();
 
-  useEffect(() => {
-    const alScroll = () => setConScroll(window.scrollY > 8);
-    alScroll();
-    window.addEventListener("scroll", alScroll, { passive: true });
-    return () => window.removeEventListener("scroll", alScroll);
-  }, []);
+useEffect(() => {
+const alScroll = () => setConScroll(window.scrollY > 8);
+alScroll();
+window.addEventListener("scroll", alScroll, { passive: true });
+return () => window.removeEventListener("scroll", alScroll);
+}, []);
 
-  const irASeccion = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
-    e.preventDefault();
-    if (location.pathname !== "/") {
-      navigate(`/${href}`);
-      return;
-    }
-    document.querySelector(href)?.scrollIntoView({ behavior: "smooth" });
-  };
+const irASeccion = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
+e.preventDefault();
+if (location.pathname !== "/") {
+navigate(`/${href}`);
+return;
+}
+const destino = document.querySelector(href);
+if (!destino) return;
 
-  const irAInicio = (e: React.MouseEvent<HTMLAnchorElement>) => {
-    if (location.pathname === "/") {
-      e.preventDefault();
-      window.scrollTo({ top: 0, behavior: "smooth" });
-    }
-  };
+const compensacion = href === "#beneficios" ? 145 : 0;
+const top =
+destino.getBoundingClientRect().top + window.scrollY - 120 + compensacion;
 
+window.scrollTo({ top, behavior: "smooth" });
+};
+
+const irAInicio = (e: React.MouseEvent<HTMLAnchorElement>) => {
+if (location.pathname === "/") {
+e.preventDefault();
+window.scrollTo({ top: 0, behavior: "smooth" });
+}
+};
   return (
     <header className={`lp-nav${conScroll ? " lp-nav--scrolled" : ""}`}>
       <div className="lp-wrap lp-nav__inner">

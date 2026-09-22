@@ -1,6 +1,18 @@
 .lp-modulos {
   padding: clamp(24px, 4vw, 56px) 0 clamp(64px, 10vw, 128px);
   border-top: 1px solid transparent;
+  position: relative;
+}
+
+.lp-modulos::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 48px;
+  background: #0c0c0e;
+  border-radius: 32px 32px 0 0;
 }
 
 .lp-modulos__intro {

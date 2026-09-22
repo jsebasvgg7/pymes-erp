@@ -2,6 +2,7 @@ import Hero from "./Hero";
 import LandingNav from "./LandingNav";
 import Soluciones from "./Soluciones";
 import Modulos from "./Modulos";
+import Beneficios from "./Beneficios";
 import "./base.css";
 
 export default function LandingPage() {
@@ -12,6 +13,7 @@ export default function LandingPage() {
         <Hero />
         <Soluciones />
         <Modulos />
+        <Beneficios />
       </main>
     </div>
   );
