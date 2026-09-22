@@ -1,0 +1,120 @@
+.lp-hero {
+  padding: clamp(16px, 4vw, 48px) 0 clamp(48px, 8vw, 96px);
+}
+
+.lp-hero__grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 0.8fr);
+  align-items: center;
+  gap: clamp(32px, 6vw, 88px);
+}
+
+.lp-hero__title {
+  margin: 0 0 0 -0.04em;
+  font-size: clamp(2.5rem, 6.2vw, 5rem);
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: -0.045em;
+  text-wrap: balance;
+  animation: lp-entrar 700ms ease both;
+}
+
+.lp-hero__lead {
+  margin: 28px 0 0;
+  max-width: 44ch;
+  font-size: clamp(1.0625rem, 1.5vw, 1.1875rem);
+  line-height: 1.55;
+  color: var(--muted);
+  text-wrap: pretty;
+  animation: lp-entrar 700ms ease both;
+  animation-delay: 90ms;
+}
+
+.lp-hero__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 36px;
+  animation: lp-entrar 700ms ease both;
+  animation-delay: 180ms;
+}
+
+.lp-hero__credit {
+  margin: 48px 0 0;
+  padding-top: 20px;
+  max-width: 46ch;
+  border-top: 1px solid var(--line);
+  font-size: 0.875rem;
+  line-height: 1.55;
+  color: var(--muted);
+  text-wrap: pretty;
+  animation: lp-entrar 700ms ease both;
+  animation-delay: 270ms;
+}
+
+.lp-ticket {
+  justify-self: end;
+  width: 605px;
+  max-width: none;
+  margin-right: clamp(-60px, -6vw, -20px);
+  animation: lp-entrar 700ms ease both;
+  animation-delay: 120ms;
+}
+
+.lp-ticket__paper {
+  position: relative;
+  overflow: hidden;
+}
+
+.lp-ticket__img {
+  display: block;
+  width: 100%;
+  height: auto;
+  transition: transform 350ms ease;
+}
+
+.lp-ticket:hover .lp-ticket__img {
+  transform: scale(1.035);
+}
+
+@media (min-width: 901px) {
+  .lp-hero {
+    display: grid;
+    align-content: center;
+    min-height: calc(100svh - 108px);
+    padding-block: 0;
+  }
+}
+
+@media (max-width: 900px) {
+  .lp-hero__grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .lp-ticket {
+    justify-self: start;
+    width: min(100%, 420px);
+  }
+}
+
+@media (max-width: 720px) {
+  .lp-hero__actions .lp-btn {
+    flex: 1 1 auto;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lp-hero__title,
+  .lp-hero__lead,
+  .lp-hero__actions,
+  .lp-hero__credit,
+  .lp-ticket,
+  .lp-ticket__img {
+    animation: none;
+    transition: none;
+  }
+
+  .lp-ticket:hover .lp-ticket__img {
+    transform: none;
+  }
+}

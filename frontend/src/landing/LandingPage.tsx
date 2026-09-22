@@ -1,6 +1,7 @@
 import Hero from "./Hero";
 import LandingNav from "./LandingNav";
-import "./landing.css";
+import Modulos from "./Modulos";
+import "./base.css";
 
 export default function LandingPage() {
   return (
@@ -8,6 +9,7 @@ export default function LandingPage() {
       <LandingNav />
       <main className="lp-main">
         <Hero />
+        <Modulos />
       </main>
     </div>
   );

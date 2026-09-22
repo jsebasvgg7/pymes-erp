@@ -1,4 +1,7 @@
+import LoadingButton from "./LoadingButton";
 import HeroTicket from "./HeroTicket";
+import "./hero.css";
+import "./loading-button.css";
 
 export default function Hero() {
   return (
@@ -10,22 +13,30 @@ export default function Hero() {
           </h1>
 
           <p className="lp-hero__lead">
-            Punto de venta, inventario, compras y caja en un solo sistema,
-            pensado para tiendas, restaurantes, cafeterías y panaderías.
+            Registra ventas, controla tu inventario y gestiona tu caja en
+            un solo lugar. Pensado para tiendas, restaurantes, cafeterías
+            y panaderías.
           </p>
 
           <div className="lp-hero__actions">
-            <a href="#contacto" className="lp-btn lp-btn--primary">
+            <LoadingButton scrollTo="#contacto" className="lp-btn--primary">
               Solicitar una demo
-            </a>
-            <a href="#modulos" className="lp-btn lp-btn--ghost">
+            </LoadingButton>
+            <a
+              href="#modulos"
+              className="lp-btn lp-btn--ghost"
+              onClick={(e) => {
+                e.preventDefault();
+                document.querySelector("#modulos")?.scrollIntoView({ behavior: "smooth" });
+              }}
+            >
               Ver los módulos
             </a>
           </div>
 
           <p className="lp-hero__credit">
-            Desarrollado en Cartagena de Indias por estudiantes de Tecnología
-            en Desarrollo de Software del Tecnológico Comfenalco.
+            Diseñado para negocios como el tuyo. Ligero, sin costos ocultos
+            ni configuraciones imposibles — para que te enfoques en crecer.
           </p>
         </div>
 

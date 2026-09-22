@@ -1,17 +1,15 @@
 import { ImageIcon } from "lucide-react";
+import heroIllustration from "../assets/hero-illustration.png";
 
 type HeroTicketProps = {
-  /** Cuando haya imagen final: importarla desde src/assets y pasarla aquí. */
   src?: string;
   alt?: string;
 };
 
-/**
- * Marco de la imagen principal. Su borde inferior en dientes de sierra
- * recuerda a un tiquete de venta recién impreso.
- * Proporción recomendada para la imagen: 4:5 (vertical).
- */
-export default function HeroTicket({ src, alt = "" }: HeroTicketProps) {
+export default function HeroTicket({
+  src = heroIllustration,
+  alt = "Ilustración de un negocio usando PYMES ERP en el punto de venta",
+}: HeroTicketProps) {
   return (
     <div className="lp-ticket">
       <div className="lp-ticket__paper">

@@ -1,38 +1,74 @@
-import { Link } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import logo from "../assets/logo.png";
 import { authService } from "../services/authService";
+import LoadingButton from "./LoadingButton";
+import "./loading-button.css";
 
 const SECCIONES = [
   { href: "#modulos", label: "Módulos" },
   { href: "#como-funciona", label: "Cómo funciona" },
   { href: "#equipo", label: "Equipo" },
+  { href: "#contacto", label: "Contacto" },
 ];
 
 export default function LandingNav() {
   const conSesion = authService.isAuthenticated();
+  const [conScroll, setConScroll] = useState(false);
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const alScroll = () => setConScroll(window.scrollY > 8);
+    alScroll();
+    window.addEventListener("scroll", alScroll, { passive: true });
+    return () => window.removeEventListener("scroll", alScroll);
+  }, []);
+
+  const irASeccion = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
+    e.preventDefault();
+    if (location.pathname !== "/") {
+      navigate(`/${href}`);
+      return;
+    }
+    document.querySelector(href)?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  const irAInicio = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    if (location.pathname === "/") {
+      e.preventDefault();
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  };
 
   return (
-    <header className="lp-nav">
+    <header className={`lp-nav${conScroll ? " lp-nav--scrolled" : ""}`}>
       <div className="lp-wrap lp-nav__inner">
-        <Link to="/" className="lp-brand" aria-label="PYMES ERP, inicio">
+        <Link
+          to="/"
+          className="lp-brand"
+          aria-label="PYMES ERP, inicio"
+          onClick={irAInicio}
+        >
           <img src={logo} alt="" width={34} height={34} />
           <span>PYMES ERP</span>
         </Link>
 
         <nav className="lp-nav__links" aria-label="Secciones de la página">
           {SECCIONES.map((s) => (
-            <a key={s.href} href={s.href}>
+            <a key={s.href} href={s.href} onClick={(e) => irASeccion(e, s.href)}>
               {s.label}
             </a>
           ))}
         </nav>
 
-        <Link
+        <LoadingButton
           to={conSesion ? "/dashboard" : "/login"}
-          className="lp-btn lp-btn--primary lp-btn--sm"
+          className="lp-btn--primary lp-btn--sm"
+          duracionMs={900}
         >
-          {conSesion ? "Ir al panel" : "Iniciar sesión"}
-        </Link>
+          {conSesion ? "Ir al panel" : "Login"}
+        </LoadingButton>
       </div>
     </header>
   );
