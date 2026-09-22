@@ -6,9 +6,7 @@ backend/.mvn/wrapper/maven-wrapper.jar
 *.jar
 !.mvn/wrapper/maven-wrapper.jar
 HELP.md
-INICIO_FRONTEND.md
-digest.txt
-NuevoPlanPymes.md
+doc
 # === Frontend (Node / Vite / React) ===
 frontend/node_modules/
 frontend/dist/
