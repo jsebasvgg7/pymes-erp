@@ -169,13 +169,35 @@
   font-size: 0.95rem;
   font-weight: 600;
   cursor: pointer;
-  transition: opacity 0.2s ease;
+  transition: opacity 0.2s ease, background-color 0.2s ease;
   margin-top: 4px;
   align-self: flex-start;
 }
 
 .lp-submit-btn:hover {
   opacity: 0.88;
+}
+
+.lp-submit-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.lp-submit-btn.lp-submit-success {
+  background-color: #10b981;
+}
+
+.lp-submit-btn.lp-submit-error {
+  background-color: #dc2626;
+}
+
+.lp-spin {
+  animation: lp-spin-anim 0.8s linear infinite;
+}
+
+@keyframes lp-spin-anim {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }
 
 /* Responsive */
