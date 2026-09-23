@@ -34,7 +34,7 @@ export default function Contacto() {
           </div>
 
           <h2 className="lp-contact-title">
-            ¿Tienes dudas o quieres solicitar una demo?
+            ¿Tienes dudas o quieres solicitar una cuenta?
           </h2>
           <p className="lp-contact-subtitle">
             Escríbenos directamente o déjanos un mensaje. Te ayudamos a configurar tu negocio sin ningún compromiso.
@@ -85,7 +85,7 @@ export default function Contacto() {
             ></textarea>
 
             <button type="submit" className="lp-submit-btn">
-              <span>Enviar mensaje</span>
+              <span>Proximamente</span>
               <Send size={16} />
             </button>
           </form>

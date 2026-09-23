@@ -30,7 +30,7 @@ const COLUMNAS = [
     titulo: "Contacto",
     enlaces: [
       { label: "Solicitud", href: "#contacto" },
-      { label: "correo electrónico", href: "mailto:pymeserp.oficial@gmail.com" },
+      { label: "Correo Electrónico", href: "mailto:pymeserp.oficial@gmail.com" },
     ],
   },
 ];

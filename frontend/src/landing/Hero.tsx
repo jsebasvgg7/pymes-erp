@@ -20,7 +20,7 @@ export default function Hero() {
 
           <div className="lp-hero__actions">
             <LoadingButton scrollTo="#contacto" className="lp-btn--primary">
-              Solicitar una demo
+              Saber más
             </LoadingButton>
             <a
               href="#modulos"

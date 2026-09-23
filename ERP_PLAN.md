@@ -1,6 +1,6 @@
 # ERP Plan — PYMES ERP
 
-**Última actualización:** martes 22 de septiembre de 2026 (landing: vista 1, 2, 3 y 4 —Hero, Módulos, Soluciones, Beneficios— cerradas y ajustadas a detalle; "Cómo funciona" descartada por redundante con Módulos y reemplazada por Beneficios; vista 5 —Tecnología— construida; orden de secciones y nombres redefinidos; nombre de marca definido como "Pymes ERP"; nuevas reglas de trabajo)
+**Última actualización:** martes 22 de septiembre de 2026 (landing completa: las 9 secciones del orden final —Navbar, Hero, Soluciones, Módulos, Beneficios, Tecnología, Estado del repositorio, Contacto, Footer— están construidas; se añadió una sección no prevista en el plan original, "Estado del repositorio" (`RepoStatus`), con métricas en vivo del repo vía API de GitHub; responsive de Contacto corregido; único pendiente funcional de la landing es el envío real del formulario de Contacto, movido a EPIC-03 como US-26; "Cómo funciona" descartada por redundante con Módulos y reemplazada por Beneficios; nombre de marca definido como "Pymes ERP"; nuevas reglas de trabajo)
 **Reemplaza a:** la versión anterior del plan (nombre provisional "Contabilidad PYMES", LocalStorage, MySQL, Electron).
 
 > Documentos relacionados: `INICIO_FRONTEND.md` (bitácora técnica por sesión), `TRASPASO_FRONTEND.md` (resumen ejecutivo al 13 de septiembre), `NuevoPlanPymes.md` (bitácora de la sesión de landing y tema blanco).
@@ -177,24 +177,30 @@ El backend no arrancaba por un `UnknownHostException` contra el host de PostgreS
 4. Módulos
 5. **Beneficios** (decisión del 22 de septiembre de 2026: reemplaza a "Cómo funciona", que fue descartada por repetir el contenido de Módulos — ver nota abajo)
 6. Tecnologías (reemplaza a "Equipo"; más útil mostrar el stack real — Java, Spring Boot, React, TypeScript — que el equipo, en un proyecto con vocación SaaS)
-7. Contacto
-8. Footer
+7. **Estado del repositorio** (nueva, añadida el 22 de septiembre de 2026 — ver nota abajo)
+8. Contacto
+9. Footer
 
 **Descartado del plan original:**
 - **Cómo funciona** se descartó durante la construcción: al llegar a esa sección se notó que repetía el mismo contenido que Módulos (la secuencia Productos → Inventario → Venta → Caja). En su lugar se recuperó **Beneficios** (que el plan original ya había descartado una vez, ver abajo) con un enfoque distinto: tres tarjetas con mock visual propio (ticket de venta, inventario, caja/reportes), reveladas en dos tiempos al hacer scroll (primero título, luego tarjetas) para dar más impacto.
 - **Equipo** como sección propia queda reemplazada por Tecnologías (ver arriba). El navbar pasa de `#equipo` a `#tecnologia`.
+- **Capturas del sistema** y **Planes**: descartadas del orden final, igual que Equipo. No se incluyen en la landing.
 
-**Pendiente de decidir:** si "Capturas del sistema" y "Planes" entran en este orden final o se descartan igual que Equipo.
+**Nueva sección — Estado del repositorio (`RepoStatus`):** surgió al notar que Tecnología dejaba un hueco visual grande antes de Contacto (layout de 2 columnas termina temprano, deja espacio muerto). Se resolvió con una franja tipo terminal/status-bar en fondo oscuro (`#0d0e12`, conecta con la franja oscura de Beneficios) que muestra métricas reales del repo público, obtenidas en vivo desde la API de GitHub (sin autenticación): commits totales, distribución de lenguajes (barra + leyenda), fecha de la última actualización relativa y número de contribuidores. Sin ítem propio en el navbar (se percibe como continuación visual de Tecnología, no como sección independiente a navegar). Tiene estado de fallback si la API falla o se agota el límite de peticiones públicas.
 
 **Estado:**
 - Vista 1 (Hero): completa y ajustada a detalle. Imagen resuelta.
 - Vista 2 (Módulos): completa y ajustada a detalle (ver §9).
 - Vista 3 (Soluciones): completa.
 - Vista 4 (Beneficios): completa y cerrada (22 de septiembre de 2026). Título final: "Un negocio más rentable sin cambiar cómo trabajas" (evita mencionar el nombre del producto). Reveal en dos tiempos vía dos `IntersectionObserver` independientes (intro y tarjetas). Mocks agrandados (`aspect-ratio` del contenedor `4/3` → `1/1`, tipografías y paddings escalados). Sin `border-radius` en la sección; la transición curva de color hacia el fondo oscuro vive en `modulos.css` como franja `::after` al final de Módulos, no en Beneficios.
-- Vista 5 (Tecnología): construida (22 de septiembre de 2026), pendiente de dar por cerrada a detalle. Layout de 2 columnas asimétrico (copy con `position: sticky` a la izquierda, lista de 4 tecnologías —Java, Spring Boot, React, TypeScript— a la derecha con línea conectora vertical punteada, inspirado en un patrón tipo Slack/Notion/Loom). Iconos de marca reales vía Simple Icons (CDN `cdn.jsdelivr.net`, recoloreados a monocromo con CSS `mask`), no `lucide-react`, para diferenciarse del resto del sitio. Dos CTA: "Ver repositorio" (enlaza al repo público `jsebasvgg7/pymes-erp`) y "Hablar con el equipo" (scroll a `#contacto`). Escalado de tamaño ajustado a +25% sobre los valores base (padding, tipografías, iconos) tras prueba visual. Pendiente: verificar que el CDN de Simple Icons cargue bien en producción (no solo en local) y considerar fallback con SVGs inline si falla.
-- Siguiente paso: cerrar Tecnología a detalle, luego **Contacto y Footer** (US-09).
+- Vista 5 (Tecnología): completa. Layout de 2 columnas asimétrico (copy con `position: sticky` a la izquierda, lista de 4 tecnologías —Java, Spring Boot, React, TypeScript— a la derecha con línea conectora vertical punteada, inspirado en un patrón tipo Slack/Notion/Loom). Iconos de marca reales vía Simple Icons (CDN `cdn.jsdelivr.net`, recoloreados a monocromo con CSS `mask`), no `lucide-react`, para diferenciarse del resto del sitio. Dos CTA: "Ver repositorio" (enlaza al repo público `jsebasvgg7/pymes-erp`) y "Hablar con el equipo" (scroll a `#contacto`). Pendiente menor: verificar que el CDN de Simple Icons cargue bien en producción (no solo en local) y considerar fallback con SVGs inline si falla.
+- Vista 6 (Estado del repositorio): completa (22 de septiembre de 2026). Ventana tipo terminal (dots rojo/amarillo/verde + path del repo como link a GitHub) con 4 estadísticas en fila (commits, lenguajes, última actualización, contribuidores), fetch dinámico a la API pública de GitHub en el cliente. Ajustada tras QA visual: `z-index` bajo para no montarse sobre el nav sticky al hacer scroll, espaciado inferior reducido para acercarla a Contacto, y el link del path del repo forzado a gris claro (`rgba(255,255,255,0.55)`) porque heredaba negro de una regla global (`.lp a { color: inherit }`).
+- Vista 7 (Contacto): completa. Responsive corregido (22 de septiembre de 2026): el bloque de email (`lp-email-box`) se desbordaba en mobile porque nunca se cubrió en el media query existente; ahora trunca con `ellipsis` cuando el ancho es ajustado y se apila en columna bajo 480px. Padding vertical de la sección reducido en mobile (192px → 64px). **Pendiente real, no de diseño:** el formulario no envía el mensaje a ningún correo todavía — falta backend (endpoint `POST` con `JavaMailSender` o un servicio externo tipo EmailJS/Formspree) para que "Enviar mensaje" haga algo.
+- Vista 8 (Footer): completa (22 de septiembre de 2026). Modo oscuro, mismo tono que Beneficios y RepoStatus. Patrón de 3 columnas (Producto, Proyecto, Contacto) + logo y email a la izquierda + línea inferior con copyright, año dinámico e íconos de contacto directo (teléfono y SMS vía `tel:`/`sms:` con el número +57 318 126 1899). Columna "Proyecto" enlaza al repositorio y a la Fundación Universitaria Tecnológico Comfenalco. Sin redes sociales (no existen aún para el proyecto).
 
-**Pendientes generales aún abiertos:** destino real de "Solicitar una demo" (`#contacto` no existe todavía), anclajes `#equipo`/`#contacto` sin sección de destino, decidir si se queda la línea de autoría del hero, borrar `HomePage.tsx` (sin uso), actualizar `LandingNav.tsx` para que el array `SECCIONES` refleje "Beneficios" en vez de (o además de) cualquier referencia residual a "Cómo funciona".
+**Landing: las 9 secciones del orden final están construidas.** Único pendiente funcional de la landing: el envío real del formulario de Contacto (requiere trabajo de backend, no de diseño).
+
+**Pendientes generales aún abiertos:** destino real de "Solicitar una demo" ya resuelto (`#contacto` existe), decidir si se queda la línea de autoría del hero, borrar `HomePage.tsx` (sin uso), verificar `LandingNav.tsx` no tiene referencias residuales a "Cómo funciona" o "Equipo".
 
 **Reglas de contenido:** no inventar testimonios ni estadísticas; capturas con datos creíbles de un negocio real (sembrar antes de capturar; evitar Configuración por las etiquetas "Pendiente").
 
@@ -224,12 +230,13 @@ Alineado con `PYMES_ERP_Planeacion_Scrum.docx` (4 sprints, 22/09/2026 – 12/11/
 
 *EPIC-02: Landing completa*
 - [x] **US-03 — Sección de módulos (4 pts).** Cerrada. En vez de bento grid: header centrado (íconos + título + subtítulo) y diagrama con curvas SVG, 4 nodos arriba + 2 abajo, mismo tamaño.
-- [ ] **US-04 — Cerrar pendientes de la vista 1 / hero (3 pts).** Imagen del hero ya resuelta. Falta: destino real de `#contacto` para "Solicitar una demo", anclaje `#equipo` (ahora `#tecnologia`, ver §10).
+- [x] **US-04 — Cerrar pendientes de la vista 1 / hero (3 pts).** Cerrada. Imagen del hero resuelta; "Solicitar una demo" ya apunta a `#contacto` (existe); anclaje `#equipo` reemplazado por `#tecnologia` en el nav.
 - [x] **US-05 — Sección Soluciones (2 pts).** Cerrada. Antes "Problema"; ver §10 para el cambio de nombre y encuadre.
 - [x] **US-06 — Sección Beneficios (2 pts).** Cerrada el 22 de septiembre de 2026. Reemplaza a "Cómo funciona" (descartada por redundante con Módulos — ver §10). Título sin mencionar el nombre del producto, tres tarjetas con mock propio y reveal en dos tiempos al hacer scroll.
-- [ ] **US-07 — Sección Tecnologías (2 pts).** En construcción (22 de septiembre de 2026), ver §10 para el detalle de layout (2 columnas, iconos de marca reales, línea conectora). Falta ajuste fino y darla por cerrada.
-- [ ] **US-08 — Sección Capturas del sistema (3 pts).** Pendiente de decidir si entra (§10). Requiere sembrar datos creíbles antes de capturar.
-- [ ] **US-09 — Contacto y Footer (3 pts).**
+- [x] **US-07 — Sección Tecnologías (2 pts).** Cerrada (22 de septiembre de 2026). Layout de 2 columnas, iconos de marca reales vía Simple Icons, línea conectora vertical punteada, dos CTA. Ver §10 para detalle.
+- [x] **US-07b — Sección Estado del repositorio (2 pts, no prevista en el plan original).** Cerrada (22 de septiembre de 2026). Añadida para llenar el hueco visual entre Tecnología y Contacto. Franja tipo terminal con métricas reales del repo (commits, lenguajes, última actualización, contribuidores) vía API pública de GitHub. Ver §10 para detalle técnico y ajustes de QA.
+- [x] **US-08 — Decisión sobre Capturas del sistema y Planes.** Resuelta: ambas se descartan del orden final (§10), no entran en la landing.
+- [x] **US-09 — Contacto y Footer (3 pts).** Cerrada en diseño (22 de septiembre de 2026). Contacto con responsive corregido (email box ya no se desborda en mobile). Footer en modo oscuro con 3 columnas, contacto directo (teléfono/SMS) y mención a la universidad. **Excepción:** el envío real del formulario de Contacto queda fuera de esta historia (es trabajo de backend) — ver nueva US-26 en EPIC-03.
 
 *EPIC-03: Ajustes de backend detectados en QA*
 - [ ] **US-10 — Forma de pago al registrar una Compra (2 pts).**
@@ -237,6 +244,7 @@ Alineado con `PYMES_ERP_Planeacion_Scrum.docx` (4 sprints, 22/09/2026 – 12/11/
 - [ ] **US-12 — Reportes avanzados: severidad de stock bajo (3 pts).**
 - [ ] **US-13 — Impresión térmica de recibos (5 pts).**
 - [ ] **US-14 — Reactivar categorías y simplificar servicios por empresa (3 pts).**
+- [ ] **US-26 — Envío real del formulario de Contacto (2 pts, añadida el 22 de septiembre de 2026).** El formulario de la landing (`Contacto.tsx`) no envía nada hoy; solo hace `preventDefault()`. Falta decidir entre: (a) endpoint backend `POST /api/contacto` con `JavaMailSender` hacia `pymeserp.oficial@gmail.com`, o (b) servicio externo tipo EmailJS/Formspree para evitar tocar el backend. Bloquea que "Enviar mensaje" tenga efecto real.
 
 **Sprint 2 — Migración de color y mejora de diseño (05/10 – 17/10, 20 puntos)**
 - [ ] US-15 — Definir tokens del tema blanco (3 pts)

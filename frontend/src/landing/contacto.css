@@ -71,11 +71,13 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 10px;
   background-color: var(--surface, #f2f3f5);
   border: 1px solid var(--line, #e3e5e9);
   border-radius: 14px;
   padding: 10px 10px 10px 19px;
   margin-bottom: 29px;
+  min-width: 0;
 }
 
 .lp-email-address {
@@ -83,6 +85,14 @@
   font-size: 1.08rem;
   font-weight: 600;
   color: var(--ink, #000000);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.lp-copy-btn {
+  flex: none;
 }
 
 .lp-copy-btn {
@@ -181,5 +191,27 @@
 
   .lp-contact-title {
     font-size: 1.98rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .lp-email-box {
+    flex-direction: column;
+    align-items: stretch;
+    padding: 14px 14px 10px;
+  }
+
+  .lp-email-address {
+    white-space: normal;
+    word-break: break-all;
+    text-align: left;
+  }
+
+  .lp-copy-btn {
+    align-self: flex-end;
+  }
+
+  .lp-contact-section {
+    padding: 64px 20px;
   }
 }
