@@ -7,9 +7,10 @@
   --cf-surface: #17171a;
 
   position: relative;
-  padding: clamp(120px, 16vw, 220px) 0 clamp(96px, 12vw, 160px);
+  padding: clamp(120px, 16vw, 220px) 0;
   background: var(--cf-paper);
   color: var(--cf-ink);
+  border-radius: 0 0 32px 32px;
 }
 
 .lp-beneficios-seccion__intro {

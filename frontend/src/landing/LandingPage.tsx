@@ -3,6 +3,10 @@ import LandingNav from "./LandingNav";
 import Soluciones from "./Soluciones";
 import Modulos from "./Modulos";
 import Beneficios from "./Beneficios";
+import Tecnologia from "./Tecnologia";
+import RepoStatus from "./RepoStatus";
+import Contacto from "./Contacto";
+import Footer from "./Footer";
 import "./base.css";
 
 export default function LandingPage() {
@@ -14,7 +18,11 @@ export default function LandingPage() {
         <Soluciones />
         <Modulos />
         <Beneficios />
+        <Tecnologia />
+        <RepoStatus />
+        <Contacto />
       </main>
+      <Footer />
     </div>
   );
 }

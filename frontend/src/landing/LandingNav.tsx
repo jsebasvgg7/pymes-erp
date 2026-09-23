@@ -13,52 +13,61 @@ const SECCIONES = [
   { href: "#contacto", label: "Contacto" },
 ];
 
+// Mapa de compensaciones según el ID de la sección
+const OFFSETS_SECCION: Record<string, number> = {
+  "#beneficios": 145,
+  "#tecnologia": 125,
+  "#contacto": 100,
+};
+
 export default function LandingNav() {
-const conSesion = authService.isAuthenticated();
-const [conScroll, setConScroll] = useState(false);
-const location = useLocation();
-const navigate = useNavigate();
+  const conSesion = authService.isAuthenticated();
+  const [conScroll, setConScroll] = useState(false);
+  const location = useLocation();
+  const navigate = useNavigate();
 
-useEffect(() => {
-const alScroll = () => setConScroll(window.scrollY > 8);
-alScroll();
-window.addEventListener("scroll", alScroll, { passive: true });
-return () => window.removeEventListener("scroll", alScroll);
-}, []);
+  useEffect(() => {
+    const alScroll = () => setConScroll(window.scrollY > 8);
+    alScroll();
+    window.addEventListener("scroll", alScroll, { passive: true });
+    return () => window.removeEventListener("scroll", alScroll);
+  }, []);
 
-const irASeccion = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
-e.preventDefault();
-if (location.pathname !== "/") {
-navigate(`/${href}`);
-return;
-}
-const destino = document.querySelector(href);
-if (!destino) return;
+  const irASeccion = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
+    e.preventDefault();
 
-const compensacion = href === "#beneficios" ? 145 : 0;
-const top =
-destino.getBoundingClientRect().top + window.scrollY - 120 + compensacion;
+    if (location.pathname !== "/") {
+      navigate(`/${href}`);
+      return;
+    }
 
-window.scrollTo({ top, behavior: "smooth" });
-};
+    const destino = document.querySelector(href);
+    if (!destino) return;
 
-const irAInicio = (e: React.MouseEvent<HTMLAnchorElement>) => {
-if (location.pathname === "/") {
-e.preventDefault();
-window.scrollTo({ top: 0, behavior: "smooth" });
-}
-};
+    const compensacion = OFFSETS_SECCION[href] || 0;
+    const top = destino.getBoundingClientRect().top + window.scrollY - 120 + compensacion;
+
+    window.scrollTo({ top, behavior: "smooth" });
+  };
+
+  const irAInicio = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    if (location.pathname === "/") {
+      e.preventDefault();
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  };
+
   return (
     <header className={`lp-nav${conScroll ? " lp-nav--scrolled" : ""}`}>
       <div className="lp-wrap lp-nav__inner">
         <Link
           to="/"
           className="lp-brand"
-          aria-label="PYMES ERP, inicio"
+          aria-label="Pymes ERP, inicio"
           onClick={irAInicio}
         >
           <img src={logo} alt="" width={34} height={34} />
-          <span>PYMES ERP</span>
+          <span>Pymes ERP</span>
         </Link>
 
         <nav className="lp-nav__links" aria-label="Secciones de la página">

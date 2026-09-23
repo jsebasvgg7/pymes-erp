@@ -113,7 +113,7 @@
   display: grid;
   grid-template-columns: auto 1fr;
   align-items: center;
-  gap: 28px;
+  gap: 32px;
   margin-top: 20px;
   padding: 32px clamp(24px, 4vw, 40px);
   border: 1px solid var(--line);
@@ -136,14 +136,17 @@
   font-weight: 700;
   letter-spacing: -0.03em;
   white-space: nowrap;
+  padding-right: 32px;
+  border-right: 1px solid var(--line);
 }
 
 .lp-soluciones__dato-texto {
   margin: 0;
   max-width: 56ch;
-  font-size: 1rem;
-  line-height: 1.5;
-  color: var(--muted);
+  font-size: 1.0625rem;
+  font-weight: 500;
+  line-height: 1.55;
+  color: var(--ink);
 }
 
 .lp-soluciones__dato-fuente {
@@ -162,6 +165,11 @@
     grid-template-columns: 1fr;
     text-align: center;
     gap: 12px;
+  }
+
+  .lp-soluciones__dato-cifra {
+    padding-right: 0;
+    border-right: none;
   }
 }
 

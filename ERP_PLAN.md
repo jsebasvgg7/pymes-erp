@@ -1,6 +1,6 @@
 # ERP Plan — PYMES ERP
 
-**Última actualización:** martes 22 de septiembre de 2026 (landing: vista 1 y vista 2 cerradas y ajustadas a detalle; orden de secciones y nombres redefinidos; nuevas reglas de trabajo)
+**Última actualización:** martes 22 de septiembre de 2026 (landing: vista 1, 2, 3 y 4 —Hero, Módulos, Soluciones, Beneficios— cerradas y ajustadas a detalle; "Cómo funciona" descartada por redundante con Módulos y reemplazada por Beneficios; vista 5 —Tecnología— construida; orden de secciones y nombres redefinidos; nombre de marca definido como "Pymes ERP"; nuevas reglas de trabajo)
 **Reemplaza a:** la versión anterior del plan (nombre provisional "Contabilidad PYMES", LocalStorage, MySQL, Electron).
 
 > Documentos relacionados: `INICIO_FRONTEND.md` (bitácora técnica por sesión), `TRASPASO_FRONTEND.md` (resumen ejecutivo al 13 de septiembre), `NuevoPlanPymes.md` (bitácora de la sesión de landing y tema blanco).
@@ -9,7 +9,7 @@
 
 ## 1. Proyecto
 
-**Nombre oficial:** PYMES ERP (el sidebar aún dice "Contabilidad PYMES · ERP", pendiente de unificar).
+**Nombre oficial:** Pymes ERP (decisión del 22 de septiembre de 2026, ver §9 — reemplaza a "PYMES ERP" todo en mayúsculas). El sidebar aún dice "Contabilidad PYMES · ERP", pendiente de unificar (US-02).
 **Objetivo:** ERP ligero con Punto de Venta (POS) para pequeños negocios de Cartagena de Indias, que integre productos, inventario, compras, ventas, caja y reportes, y genere información contable de forma automática a partir de la operación diaria.
 **Naturaleza:** proyecto académico (Tecnología en Desarrollo de Software, Tecnológico Comfenalco) con vocación comercial (SaaS).
 
@@ -158,6 +158,7 @@ El backend no arrancaba por un `UnknownHostException` contra el host de PostgreS
 - Landing (vista 2, Módulos): construida, corriendo y ajustada a detalle. Header centrado (3 íconos + título + subtítulo + botón "Un solo sistema"), diagrama con 4 nodos arriba y 2 abajo del mismo tamaño, conectados por curvas SVG animadas. Nav con scroll suave a anclas y logo que resetea el scroll si ya se está en `/`.
 - App interna: **sigue en tema oscuro**, con **0 variables CSS**, 213 colores hex y 645 `rgba` hardcodeados. El tema oscuro de cada página son overrides bajo clases como `.cat`, `.prod`, `.inv`, `.posWrap`. La migración debe pasar por tokens.
 - Marca inconsistente: login "PYMES ERP" vs sidebar "Contabilidad PYMES"; botones azules (POS, Configuración) vs violeta/índigo (login, logo). Pendiente unificar (US-02).
+- **Nombre de marca: decidido (22 sep 2026).** El nombre oficial es **"Pymes ERP"** (ya no "PYMES ERP" todo en mayúsculas). Criterio: igual que "ChatGPT", la parte que funciona como nombre propio ("Pymes") va en Title Case, mientras que la sigla técnica que el usuario ya reconoce como tal ("ERP") se mantiene en mayúsculas. Aplicado en `LandingNav.tsx` (brand del nav y `aria-label`). Pendiente aplicar en el resto de la app (sidebar, login, `<title>` de pestaña, footer) como parte de US-02.
 - **Logo: decidido (21 sep 2026), US-01 cerrada.** Diseño 1 — "Minimalista moderno" (ícono tipo P/flecha ascendente con bloque inferior), monocromo, sin degradados. Assets generados: `logo-black.png` (P negra sobre tarjeta blanca redondeada, margen transparente — para fondos claros) y `logo-white.png` (P blanca, fondo transparente — para fondos oscuros). Pendiente: reemplazar físicamente `src/assets/logo.png` y `public/favicon.png` en el repo con estos assets (AC3 de US-01).
 
 **Componentes compartidos a migrar primero:** `DataTable`, `Modal`, `PageHeader`, `StatCard`, `SearchBar`, `StatusBadge`, `ConfirmDialog`, `PrimaryButton`, `SecondaryButton`, `LoadingState`.
@@ -174,23 +175,26 @@ El backend no arrancaba por un `UnknownHostException` contra el host de PostgreS
 2. Hero
 3. **Soluciones** (antes llamada "Problema"; mismo contenido —cuadernos y Excel, inventario que no cuadra, cierres de caja con diferencias, dato de la Cámara de Comercio— pero encuadrado en positivo: "esto es lo que resolvemos", no un listado de quejas)
 4. Módulos
-5. Cómo funciona (Productos → Inventario → Venta → Caja y reportes; numeración válida aquí por ser secuencia real)
+5. **Beneficios** (decisión del 22 de septiembre de 2026: reemplaza a "Cómo funciona", que fue descartada por repetir el contenido de Módulos — ver nota abajo)
 6. Tecnologías (reemplaza a "Equipo"; más útil mostrar el stack real — Java, Spring Boot, React, TypeScript — que el equipo, en un proyecto con vocación SaaS)
 7. Contacto
 8. Footer
 
 **Descartado del plan original:**
-- **Beneficios** ya no es sección aparte; su contenido se reparte entre Soluciones y Cómo funciona.
+- **Cómo funciona** se descartó durante la construcción: al llegar a esa sección se notó que repetía el mismo contenido que Módulos (la secuencia Productos → Inventario → Venta → Caja). En su lugar se recuperó **Beneficios** (que el plan original ya había descartado una vez, ver abajo) con un enfoque distinto: tres tarjetas con mock visual propio (ticket de venta, inventario, caja/reportes), reveladas en dos tiempos al hacer scroll (primero título, luego tarjetas) para dar más impacto.
 - **Equipo** como sección propia queda reemplazada por Tecnologías (ver arriba). El navbar pasa de `#equipo` a `#tecnologia`.
 
-**Pendiente de decidir:** si "Capturas del sistema" y "Planes" entran en este orden final o se descartan igual que Beneficios/Equipo.
+**Pendiente de decidir:** si "Capturas del sistema" y "Planes" entran en este orden final o se descartan igual que Equipo.
 
 **Estado:**
 - Vista 1 (Hero): completa y ajustada a detalle. Imagen resuelta.
 - Vista 2 (Módulos): completa y ajustada a detalle (ver §9).
-- Siguiente paso: **Soluciones**, luego **Cómo funciona**.
+- Vista 3 (Soluciones): completa.
+- Vista 4 (Beneficios): completa y cerrada (22 de septiembre de 2026). Título final: "Un negocio más rentable sin cambiar cómo trabajas" (evita mencionar el nombre del producto). Reveal en dos tiempos vía dos `IntersectionObserver` independientes (intro y tarjetas). Mocks agrandados (`aspect-ratio` del contenedor `4/3` → `1/1`, tipografías y paddings escalados). Sin `border-radius` en la sección; la transición curva de color hacia el fondo oscuro vive en `modulos.css` como franja `::after` al final de Módulos, no en Beneficios.
+- Vista 5 (Tecnología): construida (22 de septiembre de 2026), pendiente de dar por cerrada a detalle. Layout de 2 columnas asimétrico (copy con `position: sticky` a la izquierda, lista de 4 tecnologías —Java, Spring Boot, React, TypeScript— a la derecha con línea conectora vertical punteada, inspirado en un patrón tipo Slack/Notion/Loom). Iconos de marca reales vía Simple Icons (CDN `cdn.jsdelivr.net`, recoloreados a monocromo con CSS `mask`), no `lucide-react`, para diferenciarse del resto del sitio. Dos CTA: "Ver repositorio" (enlaza al repo público `jsebasvgg7/pymes-erp`) y "Hablar con el equipo" (scroll a `#contacto`). Escalado de tamaño ajustado a +25% sobre los valores base (padding, tipografías, iconos) tras prueba visual. Pendiente: verificar que el CDN de Simple Icons cargue bien en producción (no solo en local) y considerar fallback con SVGs inline si falla.
+- Siguiente paso: cerrar Tecnología a detalle, luego **Contacto y Footer** (US-09).
 
-**Pendientes generales aún abiertos:** destino real de "Solicitar una demo" (`#contacto` no existe todavía), anclajes `#equipo`/`#contacto` sin sección de destino, decidir si se queda la línea de autoría del hero, borrar `HomePage.tsx` (sin uso).
+**Pendientes generales aún abiertos:** destino real de "Solicitar una demo" (`#contacto` no existe todavía), anclajes `#equipo`/`#contacto` sin sección de destino, decidir si se queda la línea de autoría del hero, borrar `HomePage.tsx` (sin uso), actualizar `LandingNav.tsx` para que el array `SECCIONES` refleje "Beneficios" en vez de (o además de) cualquier referencia residual a "Cómo funciona".
 
 **Reglas de contenido:** no inventar testimonios ni estadísticas; capturas con datos creíbles de un negocio real (sembrar antes de capturar; evitar Configuración por las etiquetas "Pendiente").
 
@@ -216,14 +220,14 @@ Alineado con `PYMES_ERP_Planeacion_Scrum.docx` (4 sprints, 22/09/2026 – 12/11/
 
 *EPIC-01: Rediseño de marca*
 - [x] **US-01 — Diseño del nuevo logo/ícono (3 pts).** Decidido: Diseño 1, monocromo. Assets `logo-black.png` / `logo-white.png` generados. Falta AC2/AC3: exportar a `favicon.png` y reemplazar `src/assets/logo.png` en el repo.
-- [ ] **US-02 — Unificar nombre de marca en toda la app (2 pts).** Sidebar sigue diciendo "Contabilidad PYMES"; debe decir "PYMES ERP" en todas partes (sidebar, títulos de pestaña, footer).
+- [ ] **US-02 — Unificar nombre de marca en toda la app (2 pts).** Nombre oficial decidido el 22 de septiembre de 2026: **"Pymes ERP"** (ver §9). Sidebar sigue diciendo "Contabilidad PYMES"; debe decir "Pymes ERP" en todas partes (sidebar, títulos de pestaña, footer, login). Ya aplicado en `LandingNav.tsx`; falta el resto de la app.
 
 *EPIC-02: Landing completa*
 - [x] **US-03 — Sección de módulos (4 pts).** Cerrada. En vez de bento grid: header centrado (íconos + título + subtítulo) y diagrama con curvas SVG, 4 nodos arriba + 2 abajo, mismo tamaño.
 - [ ] **US-04 — Cerrar pendientes de la vista 1 / hero (3 pts).** Imagen del hero ya resuelta. Falta: destino real de `#contacto` para "Solicitar una demo", anclaje `#equipo` (ahora `#tecnologia`, ver §10).
-- [ ] **US-05 — Sección Soluciones (2 pts).** Antes "Problema"; ver §10 para el cambio de nombre y encuadre.
-- [ ] **US-06 — Sección Cómo funciona (2 pts).**
-- [ ] **US-07 — Sección Tecnologías (2 pts).** Antes cubría Beneficios/Para qué negocios; ese contenido se repartió en Soluciones y Cómo funciona (§10).
+- [x] **US-05 — Sección Soluciones (2 pts).** Cerrada. Antes "Problema"; ver §10 para el cambio de nombre y encuadre.
+- [x] **US-06 — Sección Beneficios (2 pts).** Cerrada el 22 de septiembre de 2026. Reemplaza a "Cómo funciona" (descartada por redundante con Módulos — ver §10). Título sin mencionar el nombre del producto, tres tarjetas con mock propio y reveal en dos tiempos al hacer scroll.
+- [ ] **US-07 — Sección Tecnologías (2 pts).** En construcción (22 de septiembre de 2026), ver §10 para el detalle de layout (2 columnas, iconos de marca reales, línea conectora). Falta ajuste fino y darla por cerrada.
 - [ ] **US-08 — Sección Capturas del sistema (3 pts).** Pendiente de decidir si entra (§10). Requiere sembrar datos creíbles antes de capturar.
 - [ ] **US-09 — Contacto y Footer (3 pts).**
 

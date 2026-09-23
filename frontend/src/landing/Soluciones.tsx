@@ -60,7 +60,7 @@ export default function Soluciones() {
           </h2>
           <p className="lp-soluciones__lead">
             Los problemas más comunes de un negocio pequeño tienen una misma
-            causa: la información vive regada. PYMES ERP la junta en un solo
+            causa: la información vive regada. Pymes ERP la junta en un solo
             lugar.
           </p>
         </div>

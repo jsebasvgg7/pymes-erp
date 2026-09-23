@@ -1,0 +1,185 @@
+.lp-contact-section {
+  padding: clamp(115px, 14.4vw, 192px) 29px;
+  background-color: var(--paper, #ffffff);
+  display: flex;
+  justify-content: center;
+}
+
+.lp-contact-container {
+  max-width: 1296px;
+  width: 100%;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 58px;
+  align-items: center;
+}
+
+/* Ilustración */
+.lp-contact-image-wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 0;
+}
+
+.lp-contact-img {
+  width: 100%;
+  max-width: 100%;
+  height: auto;
+  object-fit: contain;
+}
+
+/* Tarjeta / Columna Derecha */
+.lp-contact-card {
+  display: flex;
+  flex-direction: column;
+}
+
+.lp-contact-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  align-self: flex-start;
+  padding: 7px 14px;
+  border-radius: 9999px;
+  background-color: var(--surface, #f2f3f5);
+  border: 1px solid var(--line, #e3e5e9);
+  font-size: 0.96rem;
+  font-weight: 500;
+  color: var(--ink, #000000);
+  margin-bottom: 19px;
+}
+
+.lp-contact-title {
+  font-size: 2.4rem;
+  font-weight: 700;
+  color: var(--ink, #000000);
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+  margin: 0 0 14px 0;
+}
+
+.lp-contact-subtitle {
+  font-size: 1.14rem;
+  color: var(--muted, #5c606a);
+  line-height: 1.5;
+  margin: 0 0 29px 0;
+}
+
+/* Email Box */
+.lp-email-box {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background-color: var(--surface, #f2f3f5);
+  border: 1px solid var(--line, #e3e5e9);
+  border-radius: 14px;
+  padding: 10px 10px 10px 19px;
+  margin-bottom: 29px;
+}
+
+.lp-email-address {
+  font-family: monospace;
+  font-size: 1.08rem;
+  font-weight: 600;
+  color: var(--ink, #000000);
+}
+
+.lp-copy-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 10px 17px;
+  border-radius: 10px;
+  border: none;
+  background-color: var(--paper, #ffffff);
+  color: var(--ink, #000000);
+  font-size: 0.99rem;
+  font-weight: 500;
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  transition: all 0.2s ease;
+}
+
+.lp-copy-btn:hover {
+  background-color: var(--ink, #000000);
+  color: var(--paper, #ffffff);
+}
+
+.lp-copy-btn.copied {
+  background-color: #10b981;
+  color: #ffffff;
+}
+
+/* Formulario */
+.lp-contact-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.lp-form-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 16px;
+}
+
+.lp-input {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 14px 17px;
+  border-radius: 12px;
+  border: 1px solid var(--line, #e3e5e9);
+  background-color: var(--paper, #ffffff);
+  font-size: 1.05rem;
+  color: var(--ink, #000000);
+  outline: none;
+  transition: border-color 0.2s ease;
+}
+
+.lp-input:focus {
+  border-color: var(--ink, #000000);
+}
+
+.lp-textarea {
+  resize: vertical;
+  min-height: 96px;
+}
+
+.lp-submit-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 22px;
+  border-radius: 9999px; /* Botón en píldora */
+  border: none;
+  background-color: var(--ink, #000000);
+  color: var(--paper, #ffffff);
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.2s ease;
+  margin-top: 4px;
+  align-self: flex-start;
+}
+
+.lp-submit-btn:hover {
+  opacity: 0.88;
+}
+
+/* Responsive */
+@media (max-width: 868px) {
+  .lp-contact-container {
+    grid-template-columns: 1fr;
+    gap: 38px;
+  }
+
+  .lp-form-row {
+    grid-template-columns: 1fr;
+  }
+
+  .lp-contact-title {
+    font-size: 1.98rem;
+  }
+}
