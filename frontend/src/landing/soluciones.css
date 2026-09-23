@@ -52,41 +52,92 @@
 .lp-soluciones__grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 20px;
+  gap: 24px;
 }
 
 .lp-solucion {
-  padding: 28px;
-  border: 1px solid var(--line);
+  display: flex;
+  flex-direction: column;
+  min-height: 374px;
+  max-width: 74%;
+  margin-inline: auto;
+  padding: 23px 19px 19px;
+  border: 1.5px solid color-mix(in srgb, var(--ink) 22%, var(--line));
   border-radius: 20px;
   background: var(--paper);
   opacity: 0;
-  transform: translateY(16px);
+  transform: translateY(16px) rotate(var(--tilt, 0deg));
   transition:
-    opacity 500ms ease,
-    transform 500ms ease;
+    opacity 500ms cubic-bezier(0.22, 1, 0.36, 1),
+    transform 500ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* slight, alternating tilt per card so the row doesn't read as a rigid grid */
+.lp-solucion--0 {
+  --tilt: -2.26deg;
+}
+
+.lp-solucion--1 {
+  --tilt: 1.945deg;
+  margin-top: 18px;
+}
+
+.lp-solucion--2 {
+  --tilt: -2.735deg;
 }
 
 .lp-soluciones--visible .lp-solucion {
   opacity: 1;
-  transform: translateY(0);
+  transform: translateY(0) rotate(var(--tilt, 0deg));
 }
 
-.lp-solucion__icono {
-  display: inline-flex;
-  align-items: center;
+.lp-solucion:hover {
+  transform: translateY(-4px) rotate(var(--tilt, 0deg));
+  border-color: color-mix(in srgb, var(--ink) 34%, var(--line));
+  transition:
+    transform 260ms cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 260ms ease;
+}
+
+.lp-solucion:hover .lp-solucion__ilustracion {
+  transform: translateY(-3px);
+}
+
+.lp-solucion__figura {
+  display: flex;
+  align-items: flex-end;
   justify-content: center;
-  width: 48px;
-  height: 48px;
-  margin-bottom: 20px;
-  border-radius: 14px;
-  background: var(--surface);
-  color: var(--ink);
+  width: 100%;
+  height: 190px;
+  margin-top: auto;
+  margin-bottom: 8px;
+}
+
+.lp-solucion__ilustracion {
+  width: 187px;
+  height: 187px;
+  object-fit: contain;
+  filter: drop-shadow(0 6px 10px rgb(0 0 0 / 0.08));
+  opacity: 0;
+  transform: scale(0.82);
+  transition:
+    opacity 480ms cubic-bezier(0.22, 1, 0.36, 1),
+    transform 480ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.lp-soluciones--visible .lp-solucion__ilustracion {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.lp-solucion__texto {
+  margin-top: auto;
+  padding-top: 18px;
 }
 
 .lp-solucion__antes {
-  margin: 0 0 10px;
-  font-size: 0.875rem;
+  margin: 0 0 9px;
+  font-size: 0.77rem;
   font-weight: 600;
   color: var(--muted);
   text-decoration: line-through;
@@ -96,89 +147,45 @@
 
 .lp-solucion__titulo {
   margin: 0;
-  font-size: 1.25rem;
+  font-size: 1.1rem;
   font-weight: 600;
   line-height: 1.3;
   letter-spacing: -0.01em;
 }
 
 .lp-solucion__desc {
-  margin: 8px 0 0;
-  font-size: 0.9375rem;
+  margin: 7px 0 0;
+  font-size: 0.825rem;
   line-height: 1.5;
-  color: var(--muted);
-}
-
-.lp-soluciones__dato {
-  display: grid;
-  grid-template-columns: auto 1fr;
-  align-items: center;
-  gap: 32px;
-  margin-top: 20px;
-  padding: 32px clamp(24px, 4vw, 40px);
-  border: 1px solid var(--line);
-  border-radius: 20px;
-  background: var(--surface);
-  opacity: 0;
-  transform: translateY(16px);
-  transition:
-    opacity 500ms ease 300ms,
-    transform 500ms ease 300ms;
-}
-
-.lp-soluciones--visible .lp-soluciones__dato {
-  opacity: 1;
-  transform: translateY(0);
-}
-
-.lp-soluciones__dato-cifra {
-  font-size: clamp(2.5rem, 5vw, 3.5rem);
-  font-weight: 700;
-  letter-spacing: -0.03em;
-  white-space: nowrap;
-  padding-right: 32px;
-  border-right: 1px solid var(--line);
-}
-
-.lp-soluciones__dato-texto {
-  margin: 0;
-  max-width: 56ch;
-  font-size: 1.0625rem;
-  font-weight: 500;
-  line-height: 1.55;
-  color: var(--ink);
-}
-
-.lp-soluciones__dato-fuente {
-  display: block;
-  margin-top: 6px;
-  font-size: 0.8125rem;
   color: var(--muted);
 }
 
 @media (max-width: 900px) {
   .lp-soluciones__grid {
     grid-template-columns: 1fr;
+    row-gap: 32px;
   }
 
-  .lp-soluciones__dato {
-    grid-template-columns: 1fr;
-    text-align: center;
-    gap: 12px;
+  .lp-solucion {
+    min-height: 340px;
   }
 
-  .lp-soluciones__dato-cifra {
-    padding-right: 0;
-    border-right: none;
+  .lp-solucion--1 {
+    margin-top: 0;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .lp-soluciones__intro,
   .lp-solucion,
-  .lp-soluciones__dato {
+  .lp-solucion__ilustracion {
     transition: none;
     opacity: 1;
+    transform: none;
+  }
+
+  .lp-solucion:hover,
+  .lp-solucion:hover .lp-solucion__ilustracion {
     transform: none;
   }
 }

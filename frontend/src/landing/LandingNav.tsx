@@ -16,7 +16,7 @@ const SECCIONES = [
 // Mapa de compensaciones según el ID de la sección
 const OFFSETS_SECCION: Record<string, number> = {
   "#beneficios": 145,
-  "#tecnologia": 125,
+  "#tecnologia": 135,
   "#contacto": 100,
 };
 
@@ -45,7 +45,7 @@ export default function LandingNav() {
     if (!destino) return;
 
     const compensacion = OFFSETS_SECCION[href] || 0;
-    const top = destino.getBoundingClientRect().top + window.scrollY - 120 + compensacion;
+    const top = destino.getBoundingClientRect().top + window.scrollY - 90 + compensacion;
 
     window.scrollTo({ top, behavior: "smooth" });
   };

@@ -1,22 +1,27 @@
 import { useEffect, useRef, useState } from "react";
-import { NotebookPen, PackageSearch, Wallet } from "lucide-react";
 import "./soluciones.css";
+import ilustracionSistema from "../assets/sol-sistema.png";
+import ilustracionInventario from "../assets/sol-inventario.png";
+import ilustracionCaja from "../assets/sol-caja.png";
 
 const SOLUCIONES = [
   {
-    icono: NotebookPen,
+    ilustracion: ilustracionSistema,
+    ilustracionAlt: "Recibo saliendo de una impresora",
     antes: "Antes: cuadernos y hojas de Excel",
     titulo: "Todo en un solo sistema",
     desc: "Registras la venta una vez y ya queda guardada: sin cuadernos, sin hojas sueltas, sin pasar datos de un lado a otro.",
   },
   {
-    icono: PackageSearch,
+    ilustracion: ilustracionInventario,
+    ilustracionAlt: "Montacargas cargando cajas de inventario",
     antes: "Antes: inventario que no cuadra",
     titulo: "Tu inventario, siempre exacto",
     desc: "Cada venta y cada compra actualizan el stock solas. Sabes en todo momento qué tienes y qué se está por acabar.",
   },
   {
-    icono: Wallet,
+    ilustracion: ilustracionCaja,
+    ilustracionAlt: "Monedero abierto con monedas alrededor",
     antes: "Antes: cierres de caja con diferencias",
     titulo: "Caja que cuadra sola",
     desc: "Cada movimiento queda registrado al momento. Al cerrar el día, el saldo ya está calculado y no hay que adivinar.",
@@ -66,35 +71,30 @@ export default function Soluciones() {
         </div>
 
         <div className="lp-soluciones__grid">
-          {SOLUCIONES.map((s, i) => {
-            const Icono = s.icono;
-            return (
-              <div
-                key={s.titulo}
-                className="lp-solucion"
-                style={{ transitionDelay: `${i * 90}ms` }}
-              >
-                <span className="lp-solucion__icono">
-                  <Icono size={22} strokeWidth={1.6} />
-                </span>
+          {SOLUCIONES.map((s, i) => (
+            <div
+              key={s.titulo}
+              className={`lp-solucion lp-solucion--${i}`}
+              style={{ transitionDelay: `${i * 110}ms` }}
+            >
+              <div className="lp-solucion__figura">
+                <img
+                  src={s.ilustracion}
+                  alt={s.ilustracionAlt}
+                  className="lp-solucion__ilustracion"
+                  style={{ transitionDelay: `${180 + i * 110}ms` }}
+                  loading="lazy"
+                  width={140}
+                  height={140}
+                />
+              </div>
+              <div className="lp-solucion__texto">
                 <p className="lp-solucion__antes">{s.antes}</p>
                 <h3 className="lp-solucion__titulo">{s.titulo}</h3>
                 <p className="lp-solucion__desc">{s.desc}</p>
               </div>
-            );
-          })}
-        </div>
-
-        <div className="lp-soluciones__dato">
-          <span className="lp-soluciones__dato-cifra">+71 mil</span>
-          <p className="lp-soluciones__dato-texto">
-            unidades económicas identificadas en Cartagena, gran parte de
-            ellas operando todavía en la informalidad.
-            <span className="lp-soluciones__dato-fuente">
-              Fuente: censo empresarial, Cámara de Comercio de Cartagena
-              (corte mayo de 2026).
-            </span>
-          </p>
+            </div>
+          ))}
         </div>
       </div>
     </section>

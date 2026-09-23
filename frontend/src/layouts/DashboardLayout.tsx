@@ -104,7 +104,7 @@ export default function DashboardLayout() {
 						<img src={logo} alt="" className="dash__brandLogo" />
 					</div>
 					<div className="dash__brandText">
-						<div className="dash__brandTitle">Contabilidad PYMES</div>
+						<div className="dash__brandTitle">Tu Negocio</div>
 						<div className="dash__brandCaption">ERP</div>
 					</div>
 				</div>
