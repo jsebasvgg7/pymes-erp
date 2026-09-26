@@ -7,6 +7,7 @@ type Plan = {
   desc: string;
   features: string[];
   precio: string;
+  precioSufijo: string;
   ctaLabel: string;
   destacado?: boolean;
 };
@@ -21,7 +22,8 @@ const PLANES: Plan[] = [
       "Parches de seguridad y mantenimiento de estabilidad continuos",
       "Interfaz responsive optimizada para PC, tablet y teléfono móvil",
     ],
-    precio: "$$$",
+    precio: "$ 199,99",
+    precioSufijo: "pago único",
     ctaLabel: "Crear cuenta",
   },
   {
@@ -33,7 +35,8 @@ const PLANES: Plan[] = [
       "Soporte técnico prioritario y asistencia directa",
       "Acceso continuo a nuevas funciones y actualizaciones del sistema",
     ],
-    precio: "$$$",
+    precio: "$ 14,99",
+    precioSufijo: "mensual",
     ctaLabel: "Mejorar cuenta",
     destacado: true,
   },
@@ -138,7 +141,7 @@ export default function Pricing() {
 
               <div className="lp-plan__pie">
                 <span className="lp-plan__precio">
-                  {plan.precio} <small>/ pago único</small>
+                  {plan.precio} <small>/ {plan.precioSufijo}</small>
                 </span>
                 <button
                   type="button"

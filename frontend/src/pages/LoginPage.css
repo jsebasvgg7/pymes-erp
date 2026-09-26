@@ -1,15 +1,19 @@
 .login {
 	min-height: 100dvh;
+	height: 100dvh;
+	overflow: hidden;
 	display: grid;
 	place-items: center;
-	background: var(--paper, #fff);
+	background: #e0dede;
 	padding: clamp(16px, 3vw, 40px);
+	box-sizing: border-box;
 }
 
 .login__shell {
 	width: 100%;
 	max-width: 935px;
-	min-height: min(720px, calc(100dvh - 80px));
+	max-height: 100%;
+	min-height: 0;
 	display: grid;
 	grid-template-columns: minmax(0, 480px) 1fr;
 	align-items: center;
@@ -18,7 +22,9 @@
 	border: 1px solid var(--line, #e3e5e9);
 	border-radius: 28px;
 	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
-	padding: clamp(32px, 4vw, 56px);
+	padding: clamp(24px, 3vw, 48px);
+	box-sizing: border-box;
+	overflow: hidden;
 }
 
 .login__left {
@@ -275,16 +281,18 @@
 .login__panel {
 	width: 100%;
 	max-width: 550px;
+	max-height: 100%;
 	position: relative;
 	display: flex;
 	flex-direction: column;
 	align-items: center;
 	overflow: hidden;
-	padding: clamp(20px, 2.5vw, 28px);
+	padding: clamp(12px, 2vw, 20px);
 }
 
 .login__illustration {
 	width: 100%;
+	max-height: 45vh;
 	aspect-ratio: 4 / 3;
 	display: grid;
 	place-items: center;
