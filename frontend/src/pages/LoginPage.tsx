@@ -2,13 +2,13 @@ import { useId, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import PrimaryButton from "../components/PrimaryButton";
 import { authService } from "../services/authService";
-import posIllustration from "../assets/pos-illustration.png";
+import loginIllustration from "../assets/login-element-1.png";
 import logo from "../assets/logo.png";
 import "./LoginPage.css";
 
 export default function LoginPage() {
   const navigate = useNavigate();
-  const emailId = useId();
+  const usernameId = useId();
   const passwordId = useId();
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -18,17 +18,23 @@ export default function LoginPage() {
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError(null);
-    setLoading(true);
 
     const formData = new FormData(e.currentTarget);
-    const username = formData.get("email") as string;
+    const username = (formData.get("username") as string)?.trim();
     const password = formData.get("password") as string;
+
+    if (!username || !password) {
+      setError("Usuario o contraseña incorrecta, intente de nuevo");
+      return;
+    }
+
+    setLoading(true);
 
     try {
       await authService.login({ username, password });
       navigate("/dashboard");
     } catch (err: any) {
-      setError(err.response?.data?.message || "Error al iniciar sesión");
+      setError(err.response?.data?.message || "Usuario o contraseña incorrecta, intente de nuevo");
     } finally {
       setLoading(false);
     }
@@ -37,40 +43,21 @@ export default function LoginPage() {
   return (
     <div className="login">
       <div className="login__shell">
-        <section className="login__left" aria-hidden="true">
-          <div className="login__brandRow">
-            <div className="login__brandLogo">
-              <img src={logo} alt="" className="login__brandLogoImg" />
-            </div>
-            <div>
-              <p className="login__brandName">
-                PYMES <span>ERP</span>
-              </p>
-              <p className="login__brandTag">POS · Inventario · Facturación</p>
-            </div>
-          </div>
-
-          <div className="login__illustration">
-            <img src={posIllustration} alt="" />
-          </div>
-        </section>
-
-        <section className="login__right">
+        <section className="login__left">
           <div className="login__form-wrap">
-            <div className="login__eyebrow" />
-            <h2 className="login__welcomeTitle">
-              Bienvenido a
-              <br />
-              PYMES <span>ERP</span>
-            </h2>
+            <div className="login__brandLogo">
+              <img src={logo} alt="Pymes ERP" className="login__brandLogoImg" />
+            </div>
+
+            <h1 className="login__welcomeTitle">Inicie sesión en su cuenta</h1>
             <p className="login__welcomeText">
-              Tu punto de venta y gestión empresarial en un solo lugar.
+              Gestiona tu punto de venta, inventario, pagos desde un solo lugar.
             </p>
 
             <form className="login__form" onSubmit={handleSubmit}>
               <div className="login__field">
-                <label className="login__label" htmlFor={emailId}>
-                  Usuario o correo electrónico
+                <label className="login__label" htmlFor={usernameId}>
+                  Usuario
                 </label>
                 <div className="login__inputWrap">
                   <span className="login__inputIcon" aria-hidden="true">
@@ -86,12 +73,11 @@ export default function LoginPage() {
                   </span>
                   <input
                     className="login__input"
-                    id={emailId}
-                    name="email"
+                    id={usernameId}
+                    name="username"
                     type="text"
-                    placeholder="admin"
+                    placeholder="usuario"
                     autoComplete="username"
-                    required
                     disabled={loading}
                   />
                 </div>
@@ -115,7 +101,6 @@ export default function LoginPage() {
                     type={showPassword ? "text" : "password"}
                     placeholder="••••••••"
                     autoComplete="current-password"
-                    required
                     disabled={loading}
                   />
                   <button
@@ -149,44 +134,67 @@ export default function LoginPage() {
                 </div>
               </div>
 
-              <div className="login__row">
-                <label className="login__remember">
-                  <input
-                    type="checkbox"
-                    className="login__checkbox"
-                    checked={remember}
-                    onChange={(e) => setRemember(e.target.checked)}
-                  />
-                  Recordarme
-                </label>
-                <button type="button" className="login__link">
-                  ¿Olvidaste tu contraseña?
-                </button>
-              </div>
+              <label className="login__remember">
+                <input
+                  type="checkbox"
+                  className="login__checkbox"
+                  checked={remember}
+                  onChange={(e) => setRemember(e.target.checked)}
+                />
+                Recordarme
+              </label>
 
-              {error && <div className="login__error">{error}</div>}
+              {error && (
+                <div className="login__error">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <circle cx="12" cy="12" r="9.25" stroke="currentColor" strokeWidth="1.8" />
+                    <path
+                      d="M9 9l6 6M15 9l-6 6"
+                      stroke="currentColor"
+                      strokeWidth="1.8"
+                      strokeLinecap="round"
+                    />
+                  </svg>
+                  <span>{error}</span>
+                </div>
+              )}
 
               <PrimaryButton className="login__submit" type="submit" disabled={loading}>
-                {loading ? (
-                  "Cargando..."
-                ) : (
-                  <>
-                    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                      <path
-                        d="M10 17l5-5-5-5M4 12h11"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                    </svg>
-                    Iniciar sesión
-                  </>
-                )}
+                {loading ? "Cargando..." : "Iniciar sesión"}
               </PrimaryButton>
             </form>
 
-            <p className="login__footer">PYMES ERP · Tu negocio, más simple</p>
+            <div className="login__divider">
+              <span />
+              <p>o</p>
+              <span />
+            </div>
+
+            <button
+              type="button"
+              className="login__secondary"
+              onClick={() => navigate("/#precios")}
+            >
+              Consigue tu cuenta ¡AQUÍ!
+            </button>
+
+            <p className="login__footer">Pymes ERP · Tu negocio, más simple</p>
+          </div>
+        </section>
+
+        <section className="login__right" aria-hidden="true">
+          <div className="login__panel">
+            <div className="login__illustration">
+              <img src={loginIllustration} alt="" />
+            </div>
+            <div className="login__panelCaption">
+              <h2>Accede a tu panel de control</h2>
+              <p>Ingresa con tus credenciales para administrar tu negocio y registrar tus movimientos de hoy.</p>
+            </div>
+            <div className="login__dots">
+              <span className="login__dot login__dot--active" />
+              <span className="login__dot" />
+            </div>
           </div>
         </section>
       </div>

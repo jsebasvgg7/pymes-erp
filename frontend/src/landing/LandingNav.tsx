@@ -10,6 +10,7 @@ const SECCIONES = [
   { href: "#modulos", label: "Módulos" },
   { href: "#beneficios", label: "Beneficios" },
   { href: "#tecnologia", label: "Tecnología" },
+  { href: "#precios", label: "Precios" },
   { href: "#contacto", label: "Contacto" },
 ];
 
@@ -17,7 +18,8 @@ const SECCIONES = [
 const OFFSETS_SECCION: Record<string, number> = {
   "#beneficios": 145,
   "#tecnologia": 135,
-  "#contacto": 100,
+  "#precios": 140,
+  "#contacto": 115,
 };
 
 export default function LandingNav() {
