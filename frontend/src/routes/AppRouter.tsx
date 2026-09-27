@@ -1,5 +1,5 @@
 import { Navigate, Route, Routes } from "react-router-dom";
-import DashboardLayout from "../layouts/DashboardLayout";
+import Sidebar from "../layouts/Sidebar";
 import MainLayout from "../layouts/MainLayout";
 import ClientesPage from "../pages/ClientesPage";
 import CategoriasPage from "../pages/CategoriasPage";
@@ -36,7 +36,7 @@ export default function AppRouter() {
         path="/dashboard"
         element={
           <ProtectedRoute>
-            <DashboardLayout />
+            <Sidebar />
           </ProtectedRoute>
         }
       >
@@ -47,7 +47,7 @@ export default function AppRouter() {
         path="/clientes"
         element={
           <ProtectedRoute>
-            <DashboardLayout />
+            <Sidebar />
           </ProtectedRoute>
         }
       >
@@ -58,7 +58,7 @@ export default function AppRouter() {
         path="/proveedores"
         element={
           <ProtectedRoute>
-            <DashboardLayout />
+            <Sidebar />
           </ProtectedRoute>
         }
       >
@@ -69,7 +69,7 @@ export default function AppRouter() {
         path="/productos"
         element={
           <ProtectedRoute>
-            <DashboardLayout />
+            <Sidebar />
           </ProtectedRoute>
         }
       >
@@ -80,7 +80,7 @@ export default function AppRouter() {
         path="/categorias"
         element={
           <ProtectedRoute>
-            <DashboardLayout />
+            <Sidebar />
           </ProtectedRoute>
         }
       >
@@ -91,7 +91,7 @@ export default function AppRouter() {
         path="/compras"
         element={
           <ProtectedRoute>
-            <DashboardLayout />
+            <Sidebar />
           </ProtectedRoute>
         }
       >
@@ -102,7 +102,7 @@ export default function AppRouter() {
         path="/inventario"
         element={
           <ProtectedRoute>
-            <DashboardLayout />
+            <Sidebar />
           </ProtectedRoute>
         }
       >
@@ -113,7 +113,7 @@ export default function AppRouter() {
         path="/pos"
         element={
           <ProtectedRoute>
-            <DashboardLayout />
+            <Sidebar />
           </ProtectedRoute>
         }
       >
@@ -124,7 +124,7 @@ export default function AppRouter() {
         path="/caja"
         element={
           <ProtectedRoute>
-            <DashboardLayout />
+            <Sidebar />
           </ProtectedRoute>
         }
       >
@@ -135,7 +135,7 @@ export default function AppRouter() {
         path="/reportes"
         element={
           <ProtectedRoute>
-            <DashboardLayout />
+            <Sidebar />
           </ProtectedRoute>
         }
       >
@@ -146,7 +146,7 @@ export default function AppRouter() {
         path="/configuracion"
         element={
           <ProtectedRoute>
-            <DashboardLayout />
+            <Sidebar />
           </ProtectedRoute>
         }
       >
@@ -157,7 +157,7 @@ export default function AppRouter() {
         path="/usuarios"
         element={
           <ProtectedRoute>
-            <DashboardLayout />
+            <Sidebar />
           </ProtectedRoute>
         }
       >
