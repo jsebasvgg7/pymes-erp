@@ -26,6 +26,9 @@ function formatDayLabel(value: Date) {
 	return value.toLocaleDateString("es-CO", { weekday: "long", day: "numeric", month: "long" });
 }
 
+// Placeholder decorativo, no son datos reales. Se reemplaza en la fase de gráficas con datos históricos.
+const SPARKLINE_PLACEHOLDER = [4, 7, 5, 9, 6, 8, 5, 7];
+
 export default function DashboardPage() {
 	const usuario = authService.getUsuario();
 	const empresaId = usuario?.empresaId;
@@ -150,24 +153,28 @@ export default function DashboardPage() {
 					title="Clientes registrados"
 					value={(resumen?.totalClientes ?? 0).toLocaleString("es-CO")}
 					color="blue"
+					sparkline={SPARKLINE_PLACEHOLDER}
 				/>
 				<StatCard
 					icon={<Package size={20} strokeWidth={1.8} />}
 					title="Productos registrados"
 					value={(resumen?.totalProductos ?? 0).toLocaleString("es-CO")}
 					color="blue"
+					sparkline={SPARKLINE_PLACEHOLDER}
 				/>
 				<StatCard
 					icon={<AlertTriangle size={20} strokeWidth={1.8} />}
 					title="Productos con stock bajo"
 					value={stockBajo.toLocaleString("es-CO")}
 					color={stockBajo > 0 ? "amber" : "green"}
+					sparkline={SPARKLINE_PLACEHOLDER}
 				/>
 				<StatCard
 					icon={<Wallet size={20} strokeWidth={1.8} />}
 					title="Saldo total en cajas"
 					value={formatCurrency(resumen?.saldoTotalCajas ?? 0)}
 					color="green"
+					sparkline={SPARKLINE_PLACEHOLDER}
 				/>
 			</section>
 

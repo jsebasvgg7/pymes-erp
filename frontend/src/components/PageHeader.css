@@ -13,12 +13,13 @@
 	margin: 0;
 	font-size: 15px;
 	letter-spacing: -0.01em;
+	color: var(--ink);
 }
 
 .ui-pageHeader__subtitle {
 	margin: 6px 0 0 0;
 	font-size: 12px;
-	color: rgba(10, 18, 34, 0.56);
+	color: var(--muted);
 }
 
 .ui-pageHeader__actions {
@@ -27,4 +28,3 @@
 	gap: 10px;
 	flex-shrink: 0;
 }
-
