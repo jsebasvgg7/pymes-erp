@@ -1,15 +1,16 @@
-import { useEffect, useState } from "react";
-import { Users, Package, AlertTriangle, Wallet } from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { RefreshCw, Users, Package, AlertTriangle, Wallet } from "lucide-react";
 import DataTable, { DataTableColumn } from "../components/DataTable";
 import LoadingState from "../components/LoadingState";
-import PageHeader from "../components/PageHeader";
 import StatCard from "../components/StatCard";
-import StatusBadge from "../components/StatusBadge";
+import CashFlowChart from "../components/dashboard/CashFlowChart";
+import CategoryBreakdownChart from "../components/dashboard/CategoryBreakdownChart";
 import { authService } from "../services/authService";
 import { dashboardService, type DashboardResumen } from "../services/dashboardService";
 import { ventaService, type FacturaVentaResponse } from "../services/VentaService";
 import { cajaService, type MovimientoCajaResponse } from "../services/cajaService";
 import { productoService, type Producto } from "../services/ProductoService";
+import { calcularVentasPorCategoria, calcularNetoCajaHoy, type CategoriaVenta } from "../services/dashboardAnalytics";
 import "./DashboardPage.css";
 
 function formatCurrency(value: number) {
@@ -22,23 +23,80 @@ function formatDateTime(value: string) {
 	return Number.isNaN(d.getTime()) ? value : d.toLocaleString("es-CO");
 }
 
-function formatDayLabel(value: Date) {
-	return value.toLocaleDateString("es-CO", { weekday: "long", day: "numeric", month: "long" });
+function formatDateInput(value: Date) {
+	return value.toISOString().slice(0, 10);
 }
 
-// Placeholder decorativo, no son datos reales. Se reemplaza en la fase de gráficas con datos históricos.
-const SPARKLINE_PLACEHOLDER = [4, 7, 5, 9, 6, 8, 5, 7];
+// El backend espera LocalDateTime ISO completo (@DateTimeFormat ISO.DATE_TIME),
+// no solo la fecha — de lo contrario Spring falla el bind y responde 500.
+function toInicioDeDia(fechaYMD: string) {
+	return `${fechaYMD}T00:00:00`;
+}
+
+function toFinDeDia(fechaYMD: string) {
+	return `${fechaYMD}T23:59:59`;
+}
+
+type MovimientoUnificado = {
+	id: string;
+	fecha: string;
+	tipo: "INGRESO" | "EGRESO";
+	concepto: string;
+	valor: number;
+};
+
+const RANGO_DIAS_DEFECTO = 240;
 
 export default function DashboardPage() {
 	const usuario = authService.getUsuario();
 	const empresaId = usuario?.empresaId;
 
 	const [loading, setLoading] = useState(true);
+	const [reloading, setReloading] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 	const [resumen, setResumen] = useState<DashboardResumen | null>(null);
-	const [recentSales, setRecentSales] = useState<FacturaVentaResponse[]>([]);
-	const [lowStockProducts, setLowStockProducts] = useState<Producto[]>([]);
-	const [recentCashMovements, setRecentCashMovements] = useState<MovimientoCajaResponse[]>([]);
+	const [movimientosCaja, setMovimientosCaja] = useState<MovimientoCajaResponse[]>([]);
+
+	const [fechaInicio, setFechaInicio] = useState(() => {
+		const d = new Date();
+		d.setDate(d.getDate() - RANGO_DIAS_DEFECTO);
+		return formatDateInput(d);
+	});
+	const [fechaFin, setFechaFin] = useState(() => formatDateInput(new Date()));
+	const [facturasPeriodo, setFacturasPeriodo] = useState<FacturaVentaResponse[]>([]);
+	const [productos, setProductos] = useState<Producto[]>([]);
+
+	const cargarDashboard = useCallback(
+		async (empresaIdActual: number, signalCancelled: () => boolean) => {
+			const [resumenData, cajaData, productosData] = await Promise.all([
+				dashboardService.obtenerResumen(empresaIdActual),
+				cajaService.listarMovimientosPorEmpresa(empresaIdActual, 0, 200),
+				productoService.listarPorEmpresa(empresaIdActual, 0, 500)
+			]);
+
+			if (signalCancelled()) return;
+
+			setResumen(resumenData);
+			setMovimientosCaja(
+				[...cajaData.content].sort((a, b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime())
+			);
+			setProductos(productosData.content);
+		},
+		[]
+	);
+
+	const cargarFacturasPeriodo = useCallback(
+		async (empresaIdActual: number, inicio: string, fin: string, signalCancelled: () => boolean) => {
+			const facturas = await ventaService.obtenerPorPeriodo(
+				empresaIdActual,
+				toInicioDeDia(inicio),
+				toFinDeDia(fin)
+			);
+			if (signalCancelled()) return;
+			setFacturasPeriodo(facturas);
+		},
+		[]
+	);
 
 	useEffect(() => {
 		if (!empresaId) {
@@ -54,26 +112,12 @@ export default function DashboardPage() {
 			setLoading(true);
 			setError(null);
 			try {
-				const [resumenData, ventasData, stockBajoData, cajaData] = await Promise.all([
-					dashboardService.obtenerResumen(empresaIdActual),
-					ventaService.listarPorEmpresa(empresaIdActual, 0, 5),
-					productoService.obtenerStockBajo(empresaIdActual),
-					cajaService.listarMovimientosPorEmpresa(empresaIdActual, 0, 5)
+				await Promise.all([
+					cargarDashboard(empresaIdActual, () => cancelled),
+					cargarFacturasPeriodo(empresaIdActual, fechaInicio, fechaFin, () => cancelled)
 				]);
-
-				if (cancelled) return;
-
-				setResumen(resumenData);
-				setRecentSales(
-					[...ventasData.content].sort(
-						(a, b) => new Date(b.fechaEmision).getTime() - new Date(a.fechaEmision).getTime()
-					)
-				);
-				setLowStockProducts(stockBajoData);
-				setRecentCashMovements(
-					[...cajaData.content].sort((a, b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime())
-				);
 			} catch (err) {
+				console.error("Error cargando dashboard:", err);
 				if (!cancelled) {
 					setError("No se pudo cargar la información del dashboard. Verifica tu conexión con el servidor.");
 				}
@@ -86,39 +130,72 @@ export default function DashboardPage() {
 		return () => {
 			cancelled = true;
 		};
+		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [empresaId]);
 
-	const salesColumns: Array<DataTableColumn<FacturaVentaResponse>> = [
-		{ key: "numero", header: "Número", render: (r) => `#${r.numero}` },
-		{ key: "fechaEmision", header: "Fecha", render: (r) => formatDateTime(r.fechaEmision) },
-		{ key: "total", header: "Total", align: "right", render: (r) => formatCurrency(r.total) },
-		{ key: "formaPagoNombre", header: "Método de pago", render: (r) => r.formaPagoNombre }
-	];
+	const esPrimerRenderRango = useRef(true);
 
-	const lowStockColumns: Array<DataTableColumn<Producto>> = [
-		{ key: "producto", header: "Producto", render: (r) => r.nombre },
-		{ key: "categoria", header: "Categoría", render: (r) => r.categoriaNombre },
-		{ key: "stock", header: "Stock", align: "right", render: (r) => r.stockActual.toLocaleString("es-CO") },
-		{ key: "estado", header: "Estado", render: () => <StatusBadge status="Pendiente" /> }
-	];
+	useEffect(() => {
+		if (esPrimerRenderRango.current) {
+			esPrimerRenderRango.current = false;
+			return;
+		}
+		if (!empresaId) return;
+		let cancelled = false;
+		cargarFacturasPeriodo(empresaId, fechaInicio, fechaFin, () => cancelled).catch((err) => {
+			console.error("Error cargando ventas del período:", err);
+			if (!cancelled) setError("No se pudieron cargar las ventas del período seleccionado.");
+		});
+		return () => {
+			cancelled = true;
+		};
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [fechaInicio, fechaFin]);
 
-	const cashColumns: Array<DataTableColumn<MovimientoCajaResponse>> = [
+	async function handleRecargar() {
+		if (!empresaId || reloading) return;
+		setReloading(true);
+		setError(null);
+		try {
+			let cancelled = false;
+			await Promise.all([
+				cargarDashboard(empresaId, () => cancelled),
+				cargarFacturasPeriodo(empresaId, fechaInicio, fechaFin, () => cancelled)
+			]);
+		} catch {
+			setError("No se pudo actualizar la información. Intenta de nuevo.");
+		} finally {
+			setReloading(false);
+		}
+	}
+
+	const categoriasVenta: CategoriaVenta[] = useMemo(
+		() => calcularVentasPorCategoria(facturasPeriodo, productos),
+		[facturasPeriodo, productos]
+	);
+
+	const netoCajaHoy = useMemo(() => calcularNetoCajaHoy(movimientosCaja), [movimientosCaja]);
+	const variacionCaja =
+		netoCajaHoy !== 0 ? `${netoCajaHoy > 0 ? "+" : "-"}${formatCurrency(Math.abs(netoCajaHoy))} hoy` : undefined;
+
+	const movimientosUnificados: MovimientoUnificado[] = useMemo(
+		() =>
+			movimientosCaja.map((m) => ({
+				id: `caja-${m.id}`,
+				fecha: m.fecha,
+				tipo: m.tipo,
+				concepto: m.descripcion || (m.tipo === "INGRESO" ? `Ingreso · ${m.cajaNombre}` : `Egreso · ${m.cajaNombre}`),
+				valor: m.monto
+			})),
+		[movimientosCaja]
+	);
+
+	const movimientosColumns: Array<DataTableColumn<MovimientoUnificado>> = [
+		{ key: "check", header: "", render: () => <input type="checkbox" aria-label="Seleccionar fila" /> },
 		{ key: "fecha", header: "Fecha", render: (r) => formatDateTime(r.fecha) },
 		{ key: "tipo", header: "Tipo", render: (r) => (r.tipo === "INGRESO" ? "Ingreso" : "Egreso") },
-		{ key: "concepto", header: "Concepto", render: (r) => r.descripcion },
-		{ key: "valor", header: "Valor", align: "right", render: (r) => formatCurrency(r.monto) }
-	];
-
-	type CajaRow = { label: string; value: string };
-
-	const cajasRows: CajaRow[] = (resumen?.cajas ?? []).map((c) => ({
-		label: c.cajaNombre,
-		value: formatCurrency(c.saldoActual)
-	}));
-
-	const cajasColumns: Array<DataTableColumn<CajaRow>> = [
-		{ key: "label", header: "Caja", render: (r) => r.label },
-		{ key: "value", header: "Saldo", align: "right", render: (r) => r.value }
+		{ key: "concepto", header: "Concepto", render: (r) => r.concepto },
+		{ key: "valor", header: "Valor", align: "right", render: (r) => formatCurrency(r.valor) }
 	];
 
 	if (loading) {
@@ -142,9 +219,22 @@ export default function DashboardPage() {
 
 	return (
 		<div className="db">
-			<div className="db__greeting">
-				<h1 className="db__greetingTitle">Hola, {nombreUsuario}</h1>
-				<p className="db__greetingSubtitle">{formatDayLabel(new Date())}</p>
+			<div className="db__header">
+				<h1 className="db__greetingTitle">Bienvenido, {nombreUsuario}</h1>
+				<div className="db__headerActions">
+					<button type="button" className="db__todaySelect" disabled>
+						Hoy
+					</button>
+					<button
+						type="button"
+						className="db__reloadBtn"
+						onClick={handleRecargar}
+						disabled={reloading}
+					>
+						<RefreshCw size={14} strokeWidth={2} className={reloading ? "db__reloadIcon--spin" : ""} />
+						Recargar
+					</button>
+				</div>
 			</div>
 
 			<section className="db__metrics" aria-label="Indicadores">
@@ -153,91 +243,53 @@ export default function DashboardPage() {
 					title="Clientes registrados"
 					value={(resumen?.totalClientes ?? 0).toLocaleString("es-CO")}
 					color="blue"
-					sparkline={SPARKLINE_PLACEHOLDER}
 				/>
 				<StatCard
 					icon={<Package size={20} strokeWidth={1.8} />}
 					title="Productos registrados"
 					value={(resumen?.totalProductos ?? 0).toLocaleString("es-CO")}
 					color="blue"
-					sparkline={SPARKLINE_PLACEHOLDER}
 				/>
 				<StatCard
 					icon={<AlertTriangle size={20} strokeWidth={1.8} />}
 					title="Productos con stock bajo"
 					value={stockBajo.toLocaleString("es-CO")}
 					color={stockBajo > 0 ? "amber" : "green"}
-					sparkline={SPARKLINE_PLACEHOLDER}
 				/>
 				<StatCard
 					icon={<Wallet size={20} strokeWidth={1.8} />}
 					title="Saldo total en cajas"
 					value={formatCurrency(resumen?.saldoTotalCajas ?? 0)}
 					color="green"
-					sparkline={SPARKLINE_PLACEHOLDER}
+					variation={variacionCaja}
 				/>
 			</section>
 
-			<section className="db__panels" aria-label="Paneles">
-				<article className="db__panel">
+			<section className="db__charts" aria-label="Gráficos">
+				<CashFlowChart movimientos={movimientosCaja} />
+				<CategoryBreakdownChart
+					categorias={categoriasVenta}
+					fechaInicio={fechaInicio}
+					fechaFin={fechaFin}
+					onChangeRango={(inicio, fin) => {
+						setFechaInicio(inicio);
+						setFechaFin(fin);
+					}}
+				/>
+			</section>
+
+			<section className="db__panels" aria-label="Movimientos">
+				<article className="db__panel db__panel--full">
 					<div className="db__panelHead">
-						<PageHeader title="Últimas ventas" />
+						<span className="db__panelTitle">Movimientos recientes</span>
 					</div>
 
 					<DataTable
-						columns={salesColumns}
-						data={recentSales}
-						emptyState={
-							<div>
-								<div>No existen ventas registradas.</div>
-							</div>
-						}
-					/>
-				</article>
-
-				<article className="db__panel">
-					<div className="db__panelHead">
-						<PageHeader title="Productos con stock bajo" />
-					</div>
-
-					<DataTable
-						columns={lowStockColumns}
-						data={lowStockProducts}
-						emptyState={
-							<div>
-								<div>No hay productos con stock bajo.</div>
-							</div>
-						}
-					/>
-				</article>
-
-				<article className="db__panel">
-					<div className="db__panelHead">
-						<PageHeader title="Movimientos recientes de caja" />
-					</div>
-
-					<DataTable
-						columns={cashColumns}
-						data={recentCashMovements}
+						columns={movimientosColumns}
+						data={movimientosUnificados}
 						emptyState={
 							<div>
 								<div>No existen movimientos registrados.</div>
-							</div>
-						}
-					/>
-				</article>
-
-				<article className="db__panel">
-					<div className="db__panelHead">
-						<PageHeader title="Cajas" />
-					</div>
-
-					<DataTable
-						columns={cajasColumns}
-						data={cajasRows}
-						emptyState={
-							<div>
-								<div>No hay cajas registradas.</div>
 							</div>
 						}
 					/>
