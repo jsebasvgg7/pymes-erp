@@ -8,7 +8,7 @@ type HeroTicketProps = {
 
 export default function HeroTicket({
   src = heroIllustration,
-  alt = "Ilustración de un negocio usando PYMES ERP en el punto de venta",
+  alt = "Ilustración de un negocio usando Pymes ERP en el punto de venta",
 }: HeroTicketProps) {
   return (
     <div className="lp-ticket">

@@ -1,4 +1,4 @@
-# PYMES ERP
+# Pymes ERP
 
 ERP ligero con Punto de Venta (POS) orientado a pequeños negocios: restaurantes, comidas rápidas, cafeterías, panaderías, tiendas y minimercados.
 
