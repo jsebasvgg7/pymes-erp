@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import {
 	LayoutDashboard,
@@ -23,6 +23,7 @@ import {
 	Mail
 } from "lucide-react";
 import { authService } from "../services/authService";
+import { empresaService } from "../services/empresaService";
 import logo from "../assets/logo-black.png";
 import "./Sidebar.css";
 
@@ -116,10 +117,27 @@ function Avatar({ name, size, className, fallbackClassName }: AvatarProps) {
 
 export default function Sidebar() {
 	const [sidebarOpen, setSidebarOpen] = useState(false);
+	const [nombreEmpresa, setNombreEmpresa] = useState<string | null>(null);
 	const location = useLocation();
 	const navigate = useNavigate();
 
 	const usuario = useMemo(() => authService.getUsuario(), []);
+
+	useEffect(() => {
+		if (!usuario?.empresaId) return;
+		let activo = true;
+		empresaService
+			.obtenerPorId(usuario.empresaId)
+			.then((empresa) => {
+				if (activo) setNombreEmpresa(empresa.nombre);
+			})
+			.catch(() => {
+				if (activo) setNombreEmpresa(null);
+			});
+		return () => {
+			activo = false;
+		};
+	}, [usuario?.empresaId]);
 
 	const breadcrumb = useMemo(() => {
 		for (const group of menuGroups) {
@@ -146,7 +164,7 @@ export default function Sidebar() {
 						</div>
 						<div className="dash__brandText">
 							<div className="dash__brandCaption">ERP</div>
-							<div className="dash__brandTitle">Tu Negocio</div>
+							<div className="dash__brandTitle">{nombreEmpresa ?? "Tu Negocio"}</div>
 						</div>
 					</div>
 

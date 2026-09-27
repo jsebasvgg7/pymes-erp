@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { RefreshCw, Users, Package, AlertTriangle, Wallet } from "lucide-react";
+import { RefreshCw, Users, Package, AlertTriangle, Wallet, Info, Check } from "lucide-react";
 import DataTable, { DataTableColumn } from "../components/DataTable";
 import LoadingState from "../components/LoadingState";
 import StatCard from "../components/StatCard";
@@ -17,6 +17,7 @@ import {
 	calcularRegistradosAyer,
 	type CategoriaVenta
 } from "../services/dashboardAnalytics";
+import "../components/dashboard/dashboard-charts.css";
 import "./DashboardPage.css";
 
 function formatCurrency(value: number) {
@@ -49,6 +50,9 @@ type MovimientoUnificado = {
 	tipo: "INGRESO" | "EGRESO";
 	concepto: string;
 	valor: number;
+	caja: string;
+	formaPago: string;
+	referencia: string;
 };
 
 const RANGO_DIAS_DEFECTO = 240;
@@ -207,17 +211,37 @@ export default function DashboardPage() {
 				fecha: m.fecha,
 				tipo: m.tipo,
 				concepto: m.descripcion || (m.tipo === "INGRESO" ? `Ingreso · ${m.cajaNombre}` : `Egreso · ${m.cajaNombre}`),
-				valor: m.monto
+				valor: m.monto,
+				caja: m.cajaNombre,
+				formaPago: m.formaPagoNombre,
+				referencia: m.tipoReferencia
 			})),
 		[movimientosCaja]
 	);
 
 	const movimientosColumns: Array<DataTableColumn<MovimientoUnificado>> = [
-		{ key: "check", header: "", render: () => <input type="checkbox" aria-label="Seleccionar fila" /> },
-		{ key: "fecha", header: "Fecha", render: (r) => formatDateTime(r.fecha) },
-		{ key: "tipo", header: "Tipo", render: (r) => (r.tipo === "INGRESO" ? "Ingreso" : "Egreso") },
-		{ key: "concepto", header: "Concepto", render: (r) => r.concepto },
-		{ key: "valor", header: "Valor", align: "right", render: (r) => formatCurrency(r.valor) }
+		{
+			key: "check",
+			header: "",
+			width: "32px",
+			render: () => <input type="checkbox" aria-label="Seleccionar fila" />
+		},
+		{ key: "fecha", header: "Fecha", width: "minmax(140px, 1.1fr)", render: (r) => formatDateTime(r.fecha) },
+		{
+			key: "tipo",
+			header: "Tipo",
+			width: "minmax(90px, 0.6fr)",
+			render: (r) => (
+				<span className={`db__movBadge ${r.tipo === "INGRESO" ? "db__movBadge--ingreso" : "db__movBadge--egreso"}`}>
+					{r.tipo === "INGRESO" ? "Ingreso" : "Egreso"}
+				</span>
+			)
+		},
+		{ key: "concepto", header: "Concepto", width: "minmax(160px, 1.6fr)", render: (r) => r.concepto },
+		{ key: "caja", header: "Caja", width: "minmax(100px, 0.9fr)", render: (r) => r.caja },
+		{ key: "formaPago", header: "Forma de pago", width: "minmax(100px, 0.9fr)", render: (r) => r.formaPago },
+		{ key: "referencia", header: "Referencia", width: "minmax(90px, 0.7fr)", render: (r) => r.referencia },
+		{ key: "valor", header: "Valor", align: "right", width: "minmax(90px, 0.8fr)", render: (r) => formatCurrency(r.valor) }
 	];
 
 	if (loading) {
@@ -305,7 +329,13 @@ export default function DashboardPage() {
 			<section className="db__panels" aria-label="Movimientos">
 				<article className="db__panel db__panel--full">
 					<div className="db__panelHead">
-						<span className="db__panelTitle">Movimientos recientes</span>
+						<div className="db__panelHeadLeft">
+							<span className="db__panelTitle">Movimientos recientes</span>
+							<Info size={13} strokeWidth={2} className="dbChart__infoIcon" />
+						</div>
+						<span className="dbChart__verifiedBadge">
+							<Check size={12} strokeWidth={3} />
+						</span>
 					</div>
 
 					<DataTable

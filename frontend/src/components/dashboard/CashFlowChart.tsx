@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { Info, Check } from "lucide-react";
 import { BarChart } from "../charts/bar-chart";
 import { BarSquares } from "../charts/bar-squares";
 import { Grid } from "../charts/grid";
@@ -35,7 +36,13 @@ export default function CashFlowChart({ movimientos }: CashFlowChartProps) {
 	return (
 		<article className="dbChart">
 			<div className="dbChart__head">
-				<span className="dbChart__title">Tendencia de flujo de cajas</span>
+				<div className="dbChart__headLeft">
+					<span className="dbChart__title">Tendencia de flujo de cajas</span>
+					<Info size={13} strokeWidth={2} className="dbChart__infoIcon" />
+				</div>
+				<span className="dbChart__verifiedBadge">
+					<Check size={12} strokeWidth={3} />
+				</span>
 			</div>
 
 			<div className="dbChart__subhead">

@@ -1,19 +1,47 @@
 .dbChart {
 	background: var(--paper);
-	border: 1px solid var(--line);
+	border: 2px solid var(--line);
 	border-radius: 16px;
-	padding: 18px 18px 14px;
+	padding: 0 14px 16px;
 	min-width: 0;
+	height: 100%;
 	display: flex;
 	flex-direction: column;
 	gap: 14px;
 	overflow: hidden;
+	box-shadow: inset 0 0 0 1px var(--surface);
 }
 
 .dbChart__head {
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
+	background: var(--surface);
+	margin: 0 -14px;
+	padding: 10px 14px;
+}
+
+.dbChart__headLeft {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+}
+
+.dbChart__infoIcon {
+	color: var(--muted);
+	flex-shrink: 0;
+}
+
+.dbChart__verifiedBadge {
+	width: 20px;
+	height: 20px;
+	border-radius: 999px;
+	background: var(--ink);
+	color: var(--paper);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	flex-shrink: 0;
 }
 
 .dbChart__title {
@@ -34,14 +62,22 @@
 
 .dbChart__metric {
 	font-size: 20px;
-	font-weight: 800;
+	font-weight: 400;
 	letter-spacing: -0.01em;
 	color: var(--muted);
+	padding-left: 6px;
 }
 
 .dbChart__metric strong {
 	color: var(--ink);
 	font-weight: 800;
+}
+
+.dbChart__metricLabel {
+	font-size: 20px;
+	font-weight: 400;
+	color: var(--muted);
+	padding-left: 6px;
 }
 
 .dbChart__controls {
@@ -61,6 +97,7 @@
 	text-transform: uppercase;
 	color: var(--muted);
 	white-space: nowrap;
+	margin-right: 28px;
 }
 
 .dbChart__legendDot {

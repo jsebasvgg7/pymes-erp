@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import { Info, Check } from "lucide-react";
 import { BarChart } from "../charts/bar-chart";
 import { Bar } from "../charts/bar";
 import { Grid } from "../charts/grid";
@@ -40,11 +41,18 @@ export default function CategoryBreakdownChart({
 	return (
 		<article className="dbChart">
 			<div className="dbChart__head">
-				<span className="dbChart__title">Desglose de ventas por categorías</span>
+				<div className="dbChart__headLeft">
+					<span className="dbChart__title">Desglose de ventas por categorías</span>
+					<Info size={13} strokeWidth={2} className="dbChart__infoIcon" />
+				</div>
+				<span className="dbChart__verifiedBadge">
+					<Check size={12} strokeWidth={3} />
+				</span>
 			</div>
 
 			<div className="dbChart__subhead">
 				<div className="dbChart__metric">
+					<span className="dbChart__metricLabel">Valor </span>
 					<strong>{formatCurrencyShort(total)}</strong>
 				</div>
 				<div className="dbChart__dateRange">
@@ -73,12 +81,10 @@ export default function CategoryBreakdownChart({
 					xDataKey="label"
 					aspectRatio="1.7 / 1"
 					barGap={0.45}
-					stacked
 					margin={{ top: 28, right: 8, bottom: 28, left: 40 }}
 				>
 					<Grid horizontal strokeDasharray="3,4" />
 					<Bar dataKey="total" fill="var(--ink)" />
-					<Bar dataKey="promedio" fill="var(--line)" />
 					<BarXAxis maxLabels={8} />
 					<ChartTooltip
 						rows={(point) => [
