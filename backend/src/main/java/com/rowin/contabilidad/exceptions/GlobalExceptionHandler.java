@@ -4,6 +4,8 @@ import jakarta.servlet.http.HttpServletRequest;
 import java.time.LocalDateTime;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -14,6 +16,9 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+
+	private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
+
 	@ExceptionHandler(ResourceNotFoundException.class)
 	public ResponseEntity<ApiErrorResponse> handleNotFound(ResourceNotFoundException ex, HttpServletRequest request) {
 		return build(HttpStatus.NOT_FOUND, ex.getMessage(), request.getRequestURI(), null);
@@ -37,11 +42,13 @@ public class GlobalExceptionHandler {
 
 	@ExceptionHandler(DataIntegrityViolationException.class)
 	public ResponseEntity<ApiErrorResponse> handleConflict(DataIntegrityViolationException ex, HttpServletRequest request) {
+		log.error("Conflicto de integridad de datos en {}", request.getRequestURI(), ex);
 		return build(HttpStatus.CONFLICT, "Conflicto de integridad de datos", request.getRequestURI(), null);
 	}
 
 	@ExceptionHandler(Exception.class)
 	public ResponseEntity<ApiErrorResponse> handleGeneric(Exception ex, HttpServletRequest request) {
+		log.error("Error no controlado en {}", request.getRequestURI(), ex);
 		return build(HttpStatus.INTERNAL_SERVER_ERROR, "Error interno del servidor", request.getRequestURI(), null);
 	}
 

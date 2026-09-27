@@ -312,9 +312,6 @@ public class FacturaVentaServiceImpl extends BaseCrudService implements FacturaV
             throw new ResourceNotFoundException("Empresa no encontrada: " + empresaId);
         }
 
-        return facturaVentaRepository.findByEmpresaAndFechaBetween(empresaId, inicio, fin)
-            .stream()
-            .map(FacturaVenta::getTotal)
-            .reduce(BigDecimal.ZERO, BigDecimal::add);
+        return facturaVentaRepository.sumTotalByEmpresaAndFechaBetween(empresaId, inicio, fin);
     }
 }
