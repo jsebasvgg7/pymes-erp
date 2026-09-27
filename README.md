@@ -1,113 +1,120 @@
 # Pymes ERP
 
-ERP ligero con Punto de Venta (POS) orientado a pequeños negocios: restaurantes, comidas rápidas, cafeterías, panaderías, tiendas y minimercados.
+ERP ligero con Punto de Venta (POS) para pequeños negocios de Cartagena de Indias: restaurantes y comidas rápidas, cafeterías y panaderías, tiendas de barrio y minimercados, papelerías y ferreterías pequeñas.
 
-La idea del proyecto es que el usuario sienta que está usando una herramienta simple de ventas y operación diaria, mientras el sistema genera la información contable y administrativa a partir de esas operaciones.
+Integra productos, inventario, compras, ventas, caja y reportes, y genera información contable de forma automática a partir de la operación diaria — sin que el usuario tenga que llevar contabilidad por su cuenta.
 
-> Proyecto en desarrollo activo — nació como proyecto académico y continúa evolucionando hacia una versión más completa.
+Proyecto académico (Tecnología en Desarrollo de Software, Fundación Universitaria Tecnológico Comfenalco) con vocación comercial (SaaS).
 
 ---
 
-## Stack
+## Filosofía
+
+- La prioridad del usuario es **vender**; la contabilidad se genera sola.
+- No debe sentirse como software contable complejo.
+- Pocos clics, intuitivo, con mouse y con pantalla táctil.
+- La información nunca se duplica: cada módulo reutiliza la del anterior.
+- La calidad pesa más que la velocidad.
+
+**Flujo principal:**
+
+```
+Productos → Inventario → Punto de Venta (POS) → Caja → Reportes
+```
+
+Al finalizar una venta, el backend, en una sola transacción:
+
+1. Valida stock contra Inventario y lo descuenta.
+2. Calcula subtotal, impuestos y total.
+3. Genera el número de factura (`FAC-YYYYMMDD-XXXXX`).
+4. Registra el movimiento de caja (ingreso) y actualiza el saldo de la caja.
+5. Crea cuenta por cobrar si hay cliente asociado.
+
+Debe existir una **Caja activa** para la empresa, o la venta falla.
+
+---
+
+## Arquitectura
 
 | Capa | Tecnología |
 |---|---|
-| Backend | Java 21 · Spring Boot 3.3.4 · Maven · JPA/Hibernate · MapStruct + Lombok |
+| Backend | Java 21, Spring Boot 3.3.4, Maven, JPA/Hibernate, MapStruct + Lombok |
 | Seguridad | Spring Security con JWT y roles |
-| Base de datos | **PostgreSQL** (hoy en Aiven), migraciones Flyway V1 a V6, borrado lógico con campo `active` |
-| Frontend | React 18 · TypeScript · Vite 5 · React Router 6 · axios · `lucide-react` |
-| Estilos | CSS plano por archivo, sin Tailwind (en migración a tema blanco/tokens) |
-| Documentación de API | Springdoc OpenAPI / Swagger (`/swagger-ui.html`) |
+| Base de datos | PostgreSQL (Neon), migraciones Flyway, borrado lógico con campo `active` |
+| API | REST, documentada con Swagger/OpenAPI (`/swagger-ui.html`) |
+| Frontend | React 18, TypeScript, Vite 5, React Router 6, axios, `lucide-react` |
+| Estilos | CSS plano por página + Tailwind CSS (acotado a los componentes de gráficas) |
+| Control de versiones | Git, repo público `jsebasvgg7/pymes-erp`, rama `main` |
+
+**Multiempresa:** toda entidad de negocio pertenece a una `Empresa`; el aislamiento se hace por `empresaId`. Modelo SaaS.
+
+**Regla de estilo:** sin emojis en la UI, solo iconos `lucide-react`.
 
 ---
 
-## Estado actual
+## Módulos
 
-El frontend tiene 13/13 páginas funcionando **contra la API real** (Login, Dashboard, Clientes, Proveedores, Categorías, Productos, Inventario, Compras, POS, Caja, Reportes, Configuración, Usuarios). El modo LocalStorage fue **eliminado por completo**; los 8 archivos `*Storage.ts` ya no existen.
+| Módulo | Descripción |
+|---|---|
+| Login / Autenticación | JWT, roles, interceptor de sesión |
+| Dashboard | Estadísticas en vivo, gráficas de flujo de caja y ventas por categoría |
+| Clientes | Gestión completa, cuentas por cobrar |
+| Proveedores | Gestión completa, cuentas por pagar |
+| Categorías | Organización de productos |
+| Productos | Costo, stock mínimo por producto, unidad de medida |
+| Inventario | Ajustes de entrada, salida y conteo, con auditoría de movimientos |
+| Compras | Aumenta inventario automáticamente, forma de pago obligatoria |
+| Punto de Venta (POS) | Módulo principal del sistema, recibo en modal |
+| Caja | Apertura, movimientos, resumen por caja |
+| Reportes | Sobre la operación real registrada |
+| Configuración | Datos de la empresa |
+| Usuarios y Roles | Multi-rol por usuario |
 
-El backend tiene un modelo de dominio completo en JPA (22 entidades), migraciones Flyway V1–V6, autenticación JWT con roles, y aislamiento multiempresa por `empresaId`. La mayoría de módulos están completos en backend y frontend; el módulo de Impuestos está desactivado (501) para esta primera versión. Ver el detalle módulo por módulo y las brechas conocidas en [`ERP_PLAN.md`](./ERP_PLAN.md).
-
-> `ERP_PLAN.md` es la fuente de verdad sobre el estado del proyecto. Este README se mantiene como resumen de instalación y arranque.
-
----
-
-## Estructura del repositorio
-
-```
-contabilidad-pymes/
-├── backend/            # Spring Boot 3.3.4 (Java 21) — API REST, JPA, Flyway
-│   └── src/main/java/.../contabilidad/
-│       ├── controllers/    # 15 controllers REST
-│       ├── entities/       # 22 entidades JPA
-│       ├── services/       # lógica de negocio
-│       ├── dto/             # requests/responses por módulo
-│       ├── repositories/    # Spring Data JPA
-│       ├── config/          # seguridad, CORS, JWT
-│       └── utils/mappers/   # MapStruct
-│   └── src/main/resources/db/migration/   # V1 a V6 (Flyway)
-└── frontend/           # React 18 + TypeScript + Vite
-    └── src/
-        ├── pages/           # 13 páginas (Login, Dashboard, POS, Caja, etc.)
-        ├── components/      # DataTable, Modal, PageHeader, StatCard, etc.
-        ├── services/        # clientes HTTP por módulo (axios)
-        ├── layouts/, routes/, context/, hooks/
-        └── landing/         # landing pública, ruta "/"
-```
+**Formas de pago:** Efectivo, Tarjeta, Transferencia como catálogo base, configurable por empresa.
 
 ---
 
-## Requisitos
+## Decisiones de producto
 
-- JDK 21
-- Maven (o el wrapper del proyecto)
-- Node.js + npm
-- PostgreSQL 16 (o Docker, como alternativa local)
-
----
-
-## Instalación y ejecución en desarrollo
-
-### Base de datos
-
-Usar una instancia de PostgreSQL (hoy en Aiven; alternativa local: PostgreSQL 16 en Docker) y configurar las variables de entorno correspondientes (ver más abajo). Flyway aplica las migraciones V1 a V6 automáticamente al arrancar el backend.
-
-### Backend
-
-```bash
-cd backend
-mvn clean install
-mvn spring-boot:run
-```
-
-API disponible en `http://localhost:8080`
-Swagger UI en `http://localhost:8080/swagger-ui.html`
-
-### Frontend
-
-```bash
-cd frontend
-npm install
-npm run dev
-```
-
-Disponible en `http://localhost:5173`
+- Primera versión sin IVA ni impuestos.
+- Stock mínimo por producto, no global.
+- **Costo** (no "precio de compra") es el campo real del producto, con costo promedio de inventario.
+- Sin campo Imagen en producto.
+- Borrado lógico en todas las entidades, nunca eliminación física desde la interfaz.
 
 ---
 
-## Variables de entorno
+## Diseño y marca
 
-| Variable | Uso | Valor por defecto |
-|---|---|---|
-| `DB_URL` | URL JDBC de PostgreSQL | *(sin valor por defecto; ver `application.yml`)* |
-| `DB_USER` | Usuario PostgreSQL | *(sin valor por defecto)* |
-| `DB_PASSWORD` | Contraseña PostgreSQL | *(sin valor por defecto)* |
-| `VITE_API_URL` | Base URL de la API para el frontend | `http://localhost:8080` |
+Tema blanco (`--paper`), negro como secundario (`--ink`), tipografía única Inter. Seis tokens de color (`--paper`, `--ink`, `--muted`, `--line`, `--surface`, `--brand`) cubren toda la interfaz, sin colores sueltos fuera del sistema.
+
+**Nombre oficial:** Pymes ERP — "Pymes" como nombre propio en Title Case, "ERP" como sigla técnica en mayúsculas, siguiendo el mismo criterio que "ChatGPT".
+
+La landing page (`/`) presenta el producto con secciones de hero, soluciones, módulos, beneficios, stack tecnológico, estado del repositorio en vivo (métricas reales vía API de GitHub), precios y contacto.
 
 ---
 
-## Visión del proyecto
+## Seguridad
 
-El sistema busca convertirse en un ERP ligero con POS, inventario, compras, caja y reportes para pequeños negocios, priorizando siempre la facilidad de uso sobre la complejidad contable tradicional. Hoy el producto es una SPA web (React + Vite); la distribución como aplicación de escritorio (Electron) queda como decisión de arquitectura abierta, no confirmada — ver ERP_PLAN.md §3. El plan sí contempla modelo SaaS multiempresa y soporte para impresión térmica (58/80 mm) como características futuras, no implementadas.
+- JWT en todos los endpoints salvo autenticación, documentación de API y monitoreo de salud.
+- CORS configurado para los orígenes de desarrollo del frontend.
+- Credenciales de base de datos fuera del código, vía variables de entorno.
+- Aislamiento de datos por empresa en cada endpoint.
 
-Más detalle sobre alcance, filosofía y roadmap en [`ERP_PLAN.md`](./ERP_PLAN.md).
+---
 
+## Próximos pasos
+
+- **Pasarela de pagos y membresías.** Hoy no existe cobro ni activación automática de cuentas; el modelo de precios (licencia de pago único o suscripción mensual) está definido en la landing, pero el flujo real de compra y alta de cliente sigue sin implementar.
+- **Definición de distribución final: web o escritorio.** Se evalúa llevar la aplicación a un empaquetado tipo Electron, como app de escritorio portable con almacenamiento local y backups del propio usuario, en vez de (o además de) mantenerla como SPA web con base de datos en la nube.
+- **Impresión térmica de recibos** (58 mm y 80 mm), planeada pero no implementada.
+- **Reportes avanzados** y severidad de alertas de stock bajo.
+- **Código de barras** en productos, pendiente de soporte en backend.
+
+---
+
+## Equipo
+
+John Sebastian Vega Gonzalez, Bryan Andres Tuñon Bermudez, Mahicol Hurtado Jimenez y Rowin Otalora Cano.
+Docente: Laura Beatriz Martinez Garcia.
+Fundación Universitaria Tecnológico Comfenalco, 2026.

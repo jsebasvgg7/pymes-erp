@@ -3,9 +3,9 @@ server:
 
 spring:
   datasource:
-    url: jdbc:postgresql://pg-15cdf451-erp-bd84.b.aivencloud.com:28175/defaultdb?sslmode=require
-    username: avnadmin
-    password: AVNS_HpEqe9GMkSc_ZlqXBij
+    url: ${DB_URL}
+    username: ${DB_USER}
+    password: ${DB_PASSWORD}
     driver-class-name: org.postgresql.Driver
   jpa:
     database-platform: org.hibernate.dialect.PostgreSQLDialect
