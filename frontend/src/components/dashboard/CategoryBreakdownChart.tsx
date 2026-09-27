@@ -5,7 +5,7 @@ import { Grid } from "../charts/grid";
 import { BarXAxis } from "../charts/bar-x-axis";
 import { ChartTooltip } from "../charts/tooltip/chart-tooltip";
 import type { CategoriaVenta } from "../../services/dashboardAnalytics";
-import { totalVentasPorCategoria } from "../../services/dashboardAnalytics";
+import { totalVentasPorCategoria, promedioVentasPorCategoria } from "../../services/dashboardAnalytics";
 import "./dashboard-charts.css";
 
 function formatCurrencyShort(value: number) {
@@ -30,9 +30,10 @@ export default function CategoryBreakdownChart({
 	onChangeRango
 }: CategoryBreakdownChartProps) {
 	const total = useMemo(() => totalVentasPorCategoria(categorias), [categorias]);
+	const promedio = useMemo(() => promedioVentasPorCategoria(categorias), [categorias]);
 	const data = useMemo(
-		() => categorias.map((c) => ({ label: c.categoria, total: c.total })),
-		[categorias]
+		() => categorias.map((c) => ({ label: c.categoria, total: c.total, promedio })),
+		[categorias, promedio]
 	);
 	const hayDatos = data.length > 0;
 
@@ -72,14 +73,17 @@ export default function CategoryBreakdownChart({
 					xDataKey="label"
 					aspectRatio="1.7 / 1"
 					barGap={0.45}
-					margin={{ top: 16, right: 8, bottom: 28, left: 40 }}
+					stacked
+					margin={{ top: 28, right: 8, bottom: 28, left: 40 }}
 				>
 					<Grid horizontal strokeDasharray="3,4" />
-					<Bar dataKey="total" fill="var(--ink)" lineCap={2} />
+					<Bar dataKey="total" fill="var(--ink)" />
+					<Bar dataKey="promedio" fill="var(--line)" />
 					<BarXAxis maxLabels={8} />
 					<ChartTooltip
 						rows={(point) => [
-							{ label: String(point.label), value: formatCurrencyShort(Number(point.total) || 0), color: "var(--ink)" }
+							{ label: String(point.label), value: formatCurrencyShort(Number(point.total) || 0), color: "var(--ink)" },
+							{ label: "Promedio", value: formatCurrencyShort(Number(point.promedio) || 0), color: "var(--muted)" }
 						]}
 					/>
 				</BarChart>

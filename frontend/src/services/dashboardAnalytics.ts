@@ -157,6 +157,16 @@ export function totalVentasPorCategoria(items: CategoriaVenta[]): number {
 }
 
 /**
+ * Promedio de ventas entre todas las categorías del rango actual. Sirve
+ * como referencia comparativa (zona gris) contra el total real de cada
+ * categoría (zona negra), sin pedir un período histórico aparte al backend.
+ */
+export function promedioVentasPorCategoria(items: CategoriaVenta[]): number {
+	if (items.length === 0) return 0;
+	return totalVentasPorCategoria(items) / items.length;
+}
+
+/**
  * Cuenta cuántos ítems (clientes o productos) fueron creados ayer,
  * usando el campo real createdAt que ya expone el backend. Es la misma
  * base de datos que soporta la variación de caja: comparación real,

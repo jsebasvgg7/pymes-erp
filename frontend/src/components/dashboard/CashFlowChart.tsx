@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { BarChart } from "../charts/bar-chart";
-import { Bar } from "../charts/bar";
+import { BarSquares } from "../charts/bar-squares";
 import { Grid } from "../charts/grid";
 import { BarXAxis } from "../charts/bar-x-axis";
 import { ChartTooltip } from "../charts/tooltip/chart-tooltip";
@@ -75,8 +75,8 @@ export default function CashFlowChart({ movimientos }: CashFlowChartProps) {
 					margin={{ top: 16, right: 8, bottom: 28, left: 40 }}
 				>
 					<Grid horizontal strokeDasharray="3,4" />
-					<Bar dataKey="ingreso" fill="var(--line)" lineCap={2} groupGap={3} />
-					<Bar dataKey="egreso" fill="var(--ink)" lineCap={2} groupGap={3} />
+					<BarSquares dataKey="ingreso" fill="var(--line)" squareGap={3} squareRadius={0.2} groupGap={3} />
+					<BarSquares dataKey="egreso" fill="var(--ink)" squareGap={3} squareRadius={0.2} groupGap={3} />
 					<BarXAxis maxLabels={12} />
 					<ChartTooltip
 						rows={(point) => [

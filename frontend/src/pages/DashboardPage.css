@@ -92,6 +92,7 @@
 .db__charts {
 	display: grid;
 	grid-template-columns: 1.35fr 1fr;
+	align-items: start;
 	gap: 14px;
 	min-width: 0;
 }
