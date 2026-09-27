@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Plus, Pencil, Trash2 } from "lucide-react";
+import { Plus, Pencil, Trash2, RotateCcw } from "lucide-react";
 import ConfirmDialog from "../components/ConfirmDialog";
 import DataTable, { DataTableColumn } from "../components/DataTable";
 import LoadingState from "../components/LoadingState";
@@ -41,6 +41,8 @@ export default function CategoriasPage() {
 	const [confirmTarget, setConfirmTarget] = useState<CategoriaProducto | null>(null);
 	const [deleting, setDeleting] = useState(false);
 
+	const [reactivatingId, setReactivatingId] = useState<number | null>(null);
+
 	const loadCategories = useCallback(async () => {
 		if (!empresaId) {
 			setError("No se encontró la empresa del usuario. Inicia sesión nuevamente.");
@@ -51,8 +53,11 @@ export default function CategoriasPage() {
 		setLoading(true);
 		setError(null);
 		try {
-			const data = await categoriaProductoService.listarPorEmpresa(empresaId);
-			setCategories(data);
+			const [activas, inactivas] = await Promise.all([
+				categoriaProductoService.listarPorEmpresa(empresaId),
+				categoriaProductoService.listarInactivasPorEmpresa(empresaId)
+			]);
+			setCategories([...activas, ...inactivas]);
 		} catch {
 			setError("No se pudo cargar las categorías. Verifica tu conexión con el servidor.");
 		} finally {
@@ -144,6 +149,18 @@ export default function CategoriasPage() {
 		}
 	}, [closeConfirm, confirmTarget]);
 
+	const handleReactivate = useCallback(async (category: CategoriaProducto) => {
+		setReactivatingId(category.id);
+		try {
+			const updated = await categoriaProductoService.reactivar(category.id);
+			setCategories((prev) => prev.map((c) => (c.id === updated.id ? updated : c)));
+		} catch {
+			setError("No se pudo reactivar la categoría. Intenta nuevamente.");
+		} finally {
+			setReactivatingId(null);
+		}
+	}, []);
+
 	useEffect(() => {
 		const el = searchRef.current;
 		if (!el) return;
@@ -176,25 +193,38 @@ export default function CategoriasPage() {
 				key: "acciones",
 				header: "Acciones",
 				align: "right",
-				render: (r) => (
-					<div className="cat__actions">
-						<SecondaryButton type="button" className="cat__actionBtn" onClick={() => openEditModal(r)}>
-							<Pencil size={14} strokeWidth={2} />
-							<span>Editar</span>
-						</SecondaryButton>
-						<SecondaryButton
-							type="button"
-							className="cat__actionBtn cat__actionBtn--danger"
-							onClick={() => openConfirmDelete(r)}
-						>
-							<Trash2 size={14} strokeWidth={2} />
-							<span>Eliminar</span>
-						</SecondaryButton>
-					</div>
-				)
+				render: (r) =>
+					r.active ? (
+						<div className="cat__actions">
+							<SecondaryButton type="button" className="cat__actionBtn" onClick={() => openEditModal(r)}>
+								<Pencil size={14} strokeWidth={2} />
+								<span>Editar</span>
+							</SecondaryButton>
+							<SecondaryButton
+								type="button"
+								className="cat__actionBtn cat__actionBtn--danger"
+								onClick={() => openConfirmDelete(r)}
+							>
+								<Trash2 size={14} strokeWidth={2} />
+								<span>Eliminar</span>
+							</SecondaryButton>
+						</div>
+					) : (
+						<div className="cat__actions">
+							<SecondaryButton
+								type="button"
+								className="cat__actionBtn"
+								onClick={() => handleReactivate(r)}
+								disabled={reactivatingId === r.id}
+							>
+								<RotateCcw size={14} strokeWidth={2} />
+								<span>{reactivatingId === r.id ? "Reactivando..." : "Reactivar"}</span>
+							</SecondaryButton>
+						</div>
+					)
 			}
 		],
-		[openConfirmDelete, openEditModal]
+		[handleReactivate, openConfirmDelete, openEditModal, reactivatingId]
 	);
 
 	const emptyState = useMemo(() => {

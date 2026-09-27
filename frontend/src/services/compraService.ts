@@ -11,7 +11,7 @@ export type DetalleCompraRequest = {
 export type CompraCreateRequest = {
   empresaId: number;
   proveedorId: number;
-  formaPagoId?: number;
+  formaPagoId: number;
   numeroDocumento?: string;
   fechaCompra?: string;
   detalles: DetalleCompraRequest[];

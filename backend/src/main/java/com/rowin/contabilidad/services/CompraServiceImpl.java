@@ -120,13 +120,10 @@ public class CompraServiceImpl extends BaseCrudService implements CompraService 
             throw new ResourceNotFoundException("Proveedor no encontrado: " + request.proveedorId());
         }
 
-        // 3. Validar forma de pago (opcional)
-        FormaPago formaPago = null;
-        if (request.formaPagoId() != null) {
-            formaPago = getByIdOrThrow(formaPagoRepository, request.formaPagoId(), "FormaPago");
-            if (!isActive(formaPago)) {
-                throw new ResourceNotFoundException("Forma de pago no encontrada: " + request.formaPagoId());
-            }
+        // 3. Validar forma de pago (obligatoria)
+        FormaPago formaPago = getByIdOrThrow(formaPagoRepository, request.formaPagoId(), "FormaPago");
+        if (!isActive(formaPago)) {
+            throw new ResourceNotFoundException("Forma de pago no encontrada: " + request.formaPagoId());
         }
 
         // 4. Validar que haya detalles

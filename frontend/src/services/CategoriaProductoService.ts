@@ -24,6 +24,7 @@ export type CategoriaProductoCreateRequest = {
 
 export type CategoriaProductoUpdateRequest = {
 	nombre: string;
+	active?: boolean;
 };
 
 export const categoriaProductoService = {
@@ -50,6 +51,19 @@ export const categoriaProductoService = {
 		return response.data.content;
 	},
 
+	async listarInactivasPorEmpresa(empresaId: number, pageable?: { page?: number; size?: number }): Promise<CategoriaProducto[]> {
+		const response = await http.get<Page<CategoriaProducto>>(
+			`/api/categorias-producto/listar-inactivas-por-empresa/${empresaId}`,
+			{
+				params: {
+					page: pageable?.page ?? 0,
+					size: pageable?.size ?? 200
+				}
+			}
+		);
+		return response.data.content;
+	},
+
 	async obtenerPorId(id: number): Promise<CategoriaProducto> {
 		const response = await http.get<CategoriaProducto>(`/api/categorias-producto/${id}`);
 		return response.data;
@@ -62,6 +76,11 @@ export const categoriaProductoService = {
 
 	async actualizar(id: number, data: CategoriaProductoUpdateRequest): Promise<CategoriaProducto> {
 		const response = await http.put<CategoriaProducto>(`/api/categorias-producto/actualizar/${id}`, data);
+		return response.data;
+	},
+
+	async reactivar(id: number): Promise<CategoriaProducto> {
+		const response = await http.put<CategoriaProducto>(`/api/categorias-producto/reactivar/${id}`);
 		return response.data;
 	},
 

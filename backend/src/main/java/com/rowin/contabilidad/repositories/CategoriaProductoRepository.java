@@ -10,4 +10,6 @@ public interface CategoriaProductoRepository extends JpaRepository<CategoriaProd
 	Page<CategoriaProducto> findByActiveTrue(Pageable pageable);
 
 	Page<CategoriaProducto> findByActiveTrueAndEmpresaId(Pageable pageable, Long empresaId);
+
+	Page<CategoriaProducto> findByActiveFalseAndEmpresaId(Pageable pageable, Long empresaId);
 }

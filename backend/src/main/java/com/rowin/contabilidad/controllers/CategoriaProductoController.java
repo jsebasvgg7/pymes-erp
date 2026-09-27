@@ -41,6 +41,14 @@ public class CategoriaProductoController {
 		return ResponseEntity.ok(categoriaProductoService.listarPorEmpresa(empresaId, pageable));
 	}
 
+	@GetMapping("/listar-inactivas-por-empresa/{empresaId}")
+	public ResponseEntity<Page<CategoriaProductoResponse>> listarInactivasPorEmpresa(
+		@PathVariable Long empresaId,
+		@ParameterObject Pageable pageable
+	) {
+		return ResponseEntity.ok(categoriaProductoService.listarInactivasPorEmpresa(empresaId, pageable));
+	}
+
 	@GetMapping("/{id}")
 	public ResponseEntity<CategoriaProductoResponse> obtenerPorId(@PathVariable Long id) {
 		return ResponseEntity.ok(categoriaProductoService.obtenerPorId(id));
@@ -58,6 +66,11 @@ public class CategoriaProductoController {
 		@Valid @RequestBody CategoriaProductoUpdateRequest request
 	) {
 		return ResponseEntity.ok(categoriaProductoService.actualizar(id, request));
+	}
+
+	@PutMapping("/reactivar/{id}")
+	public ResponseEntity<CategoriaProductoResponse> reactivar(@PathVariable Long id) {
+		return ResponseEntity.ok(categoriaProductoService.reactivar(id));
 	}
 
 	@DeleteMapping("/eliminar/{id}")

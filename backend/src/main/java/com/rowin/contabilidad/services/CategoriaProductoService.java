@@ -11,11 +11,15 @@ public interface CategoriaProductoService {
 
 	Page<CategoriaProductoResponse> listarPorEmpresa(Long empresaId, Pageable pageable);
 
+	Page<CategoriaProductoResponse> listarInactivasPorEmpresa(Long empresaId, Pageable pageable);
+
 	CategoriaProductoResponse obtenerPorId(Long id);
 
 	CategoriaProductoResponse crear(CategoriaProductoCreateRequest request);
 
 	CategoriaProductoResponse actualizar(Long id, CategoriaProductoUpdateRequest request);
+
+	CategoriaProductoResponse reactivar(Long id);
 
 	void eliminar(Long id);
 }

@@ -27,13 +27,9 @@ export const rolService = {
     return response.data;
   },
 
-  // NOTA: el backend no expone /listar-por-empresa/{id} para roles (igual que
-  // formaPagoService, ver bitácora sesión 8) — /listar devuelve los de TODAS
-  // las empresas. Filtramos aquí mientras no exista un endpoint dedicado.
   async listarPorEmpresa(empresaId: number, page: number = 0, size: number = 50): Promise<{ content: Rol[]; totalElements: number }> {
-    const response = await http.get(`/api/roles/listar?page=${page}&size=${size}`);
-    const data = response.data as { content: Rol[]; totalElements: number };
-    return { ...data, content: data.content.filter((r) => r.empresaId === empresaId) };
+    const response = await http.get(`/api/roles/listar-por-empresa/${empresaId}?page=${page}&size=${size}`);
+    return response.data;
   },
 
   async obtenerPorId(id: number): Promise<Rol> {

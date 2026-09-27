@@ -27,13 +27,9 @@ export const formaPagoService = {
     return response.data;
   },
 
-  // NOTA: el backend no expone /listar-por-empresa/{id} para formas de pago —
-  // /listar devuelve las de TODAS las empresas. Filtramos aquí por empresaId
-  // mientras no exista un endpoint dedicado (ver bitácora, pendiente sesión 8).
   async listarPorEmpresa(empresaId: number, page: number = 0, size: number = 50): Promise<{ content: FormaPago[]; totalElements: number }> {
-    const response = await http.get(`/api/formas-pago/listar?page=${page}&size=${size}`);
-    const data = response.data as { content: FormaPago[]; totalElements: number };
-    return { ...data, content: data.content.filter((f) => f.empresaId === empresaId) };
+    const response = await http.get(`/api/formas-pago/listar-por-empresa/${empresaId}?page=${page}&size=${size}`);
+    return response.data;
   },
 
   async obtenerPorId(id: number): Promise<FormaPago> {

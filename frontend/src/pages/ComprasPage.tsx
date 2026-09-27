@@ -8,6 +8,7 @@ import PrimaryButton from "../components/PrimaryButton";
 import SecondaryButton from "../components/SecondaryButton";
 import { authService } from "../services/authService";
 import { compraService, type CompraResponse } from "../services/compraService";
+import { formaPagoService, type FormaPago } from "../services/formaPagoService";
 import { productoService, type Producto } from "../services/ProductoService";
 import { proveedorService, type Proveedor } from "../services/proveedorService";
 import "./ComprasPage.css";
@@ -68,9 +69,11 @@ export default function ComprasPage() {
 
 	const [productos, setProductos] = useState<Producto[]>([]);
 	const [proveedores, setProveedores] = useState<Proveedor[]>([]);
+	const [formasPago, setFormasPago] = useState<FormaPago[]>([]);
 
 	const [modalOpen, setModalOpen] = useState(false);
 	const [proveedorId, setProveedorId] = useState("");
+	const [formaPagoId, setFormaPagoId] = useState("");
 	const [purchaseDate, setPurchaseDate] = useState(() => new Date().toISOString().slice(0, 10));
 	const [lines, setLines] = useState<PurchaseLine[]>([]);
 	const [confirmRemove, setConfirmRemove] = useState<ConfirmRemove>(null);
@@ -87,14 +90,16 @@ export default function ComprasPage() {
 		setLoading(true);
 		setError(null);
 		try {
-			const [comprasData, productosData, proveedoresData] = await Promise.all([
+			const [comprasData, productosData, proveedoresData, formasPagoData] = await Promise.all([
 				compraService.listarPorEmpresa(empresaId),
 				productoService.listarPorEmpresa(empresaId),
-				proveedorService.listarPorEmpresa(empresaId)
+				proveedorService.listarPorEmpresa(empresaId),
+				formaPagoService.listarPorEmpresa(empresaId)
 			]);
 			setCompras(comprasData.content);
 			setProductos(productosData.content);
 			setProveedores(proveedoresData);
+			setFormasPago(formasPagoData.content);
 		} catch {
 			setError("No se pudo cargar las compras. Verifica tu conexión con el servidor.");
 		} finally {
@@ -108,12 +113,19 @@ export default function ComprasPage() {
 
 	const activeProductos = useMemo(() => productos.filter((p) => p.active), [productos]);
 	const activeProveedores = useMemo(() => proveedores.filter((p) => p.active), [proveedores]);
+	const activeFormasPago = useMemo(() => formasPago.filter((f) => f.active), [formasPago]);
 
 	const proveedorById = useMemo(() => {
 		const map = new Map<string, Proveedor>();
 		activeProveedores.forEach((p) => map.set(String(p.id), p));
 		return map;
 	}, [activeProveedores]);
+
+	const formaPagoById = useMemo(() => {
+		const map = new Map<string, FormaPago>();
+		activeFormasPago.forEach((f) => map.set(String(f.id), f));
+		return map;
+	}, [activeFormasPago]);
 
 	const productoById = useMemo(() => {
 		const map = new Map<string, Producto>();
@@ -123,6 +135,7 @@ export default function ComprasPage() {
 
 	const openModal = useCallback(() => {
 		setProveedorId("");
+		setFormaPagoId("");
 		setPurchaseDate(new Date().toISOString().slice(0, 10));
 		setLines([]);
 		setFormError(null);
@@ -191,7 +204,9 @@ export default function ComprasPage() {
 	const validation = useMemo(() => {
 		if (activeProveedores.length === 0) return { ok: false, reason: "no_providers" as const };
 		if (activeProductos.length === 0) return { ok: false, reason: "no_products" as const };
+		if (activeFormasPago.length === 0) return { ok: false, reason: "no_payment_methods" as const };
 		if (!proveedorId) return { ok: false, reason: "missing_provider" as const };
+		if (!formaPagoId) return { ok: false, reason: "missing_payment_method" as const };
 		if (lines.length === 0) return { ok: false, reason: "no_lines" as const };
 
 		const hasInvalid = lines.some((l) => {
@@ -203,13 +218,16 @@ export default function ComprasPage() {
 		if (hasInvalid) return { ok: false, reason: "invalid_lines" as const };
 
 		return { ok: true as const };
-	}, [activeProductos.length, activeProveedores.length, lines, proveedorId]);
+	}, [activeFormasPago.length, activeProductos.length, activeProveedores.length, formaPagoId, lines, proveedorId]);
 
 	const handleSave = useCallback(async () => {
 		if (!validation.ok || !empresaId) return;
 
 		const proveedor = proveedorById.get(proveedorId);
 		if (!proveedor) return;
+
+		const formaPago = formaPagoById.get(formaPagoId);
+		if (!formaPago) return;
 
 		setSaving(true);
 		setFormError(null);
@@ -227,6 +245,7 @@ export default function ComprasPage() {
 			const created = await compraService.crear({
 				empresaId,
 				proveedorId: proveedor.id,
+				formaPagoId: formaPago.id,
 				fechaCompra: `${purchaseDate}T00:00:00`,
 				detalles
 			});
@@ -245,12 +264,13 @@ export default function ComprasPage() {
 		} finally {
 			setSaving(false);
 		}
-	}, [closeModal, empresaId, lines, productoById, proveedorById, proveedorId, purchaseDate, validation.ok]);
+	}, [closeModal, empresaId, formaPagoById, formaPagoId, lines, productoById, proveedorById, proveedorId, purchaseDate, validation.ok]);
 
 	const listColumns: Array<DataTableColumn<CompraResponse>> = useMemo(
 		() => [
 			{ key: "numero", header: "Número", render: (r) => r.numeroDocumento },
 			{ key: "proveedor", header: "Proveedor", render: (r) => r.proveedorNombre },
+			{ key: "formaPago", header: "Forma de pago", render: (r) => r.formaPagoNombre },
 			{ key: "fecha", header: "Fecha", render: (r) => formatDateLabel(r.fechaCompra) },
 			{
 				key: "items",
@@ -335,6 +355,19 @@ export default function ComprasPage() {
 							</select>
 						</div>
 						<div className="pur__field">
+							<label className="pur__label">Forma de pago</label>
+							<select className="pur__select" value={formaPagoId} onChange={(e) => setFormaPagoId(e.target.value)}>
+								<option value="" disabled>
+									Seleccionar...
+								</option>
+								{activeFormasPago.map((f) => (
+									<option key={f.id} value={f.id}>
+										{f.nombre}
+									</option>
+								))}
+							</select>
+						</div>
+						<div className="pur__field">
 							<label className="pur__label">Fecha</label>
 							<input className="pur__input" type="date" value={purchaseDate} onChange={(e) => setPurchaseDate(e.target.value)} />
 						</div>
@@ -349,6 +382,11 @@ export default function ComprasPage() {
 						<div className="pur__empty">
 							<div className="pur__emptyTitle">No hay productos activos.</div>
 							<div className="pur__emptySubtitle">Activa o registra productos para poder crear compras.</div>
+						</div>
+					) : validation.reason === "no_payment_methods" ? (
+						<div className="pur__empty">
+							<div className="pur__emptyTitle">No hay formas de pago activas.</div>
+							<div className="pur__emptySubtitle">Registra una forma de pago para poder crear compras.</div>
 						</div>
 					) : null}
 

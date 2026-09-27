@@ -22,7 +22,7 @@ public class Compra extends BaseEntity {
     private Proveedor proveedor;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "forma_pago_id")
+    @JoinColumn(name = "forma_pago_id", nullable = false)
     private FormaPago formaPago;
 
     @Column(nullable = false, length = 60)

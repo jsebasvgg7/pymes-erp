@@ -10,7 +10,7 @@ import java.util.List;
 public record CompraCreateRequest(
     @NotNull Long empresaId,
     @NotNull Long proveedorId,
-    Long formaPagoId,
+    @NotNull Long formaPagoId,
     @Size(max = 60) String numeroDocumento,
     LocalDateTime fechaCompra,
     List<DetalleCompraRequest> detalles
