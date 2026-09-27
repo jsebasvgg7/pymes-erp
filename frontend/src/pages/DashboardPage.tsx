@@ -10,7 +10,13 @@ import { dashboardService, type DashboardResumen } from "../services/dashboardSe
 import { ventaService, type FacturaVentaResponse } from "../services/VentaService";
 import { cajaService, type MovimientoCajaResponse } from "../services/cajaService";
 import { productoService, type Producto } from "../services/ProductoService";
-import { calcularVentasPorCategoria, calcularNetoCajaHoy, type CategoriaVenta } from "../services/dashboardAnalytics";
+import { clienteService, type Cliente } from "../services/clienteService";
+import {
+	calcularVentasPorCategoria,
+	calcularNetoCajaHoy,
+	calcularRegistradosAyer,
+	type CategoriaVenta
+} from "../services/dashboardAnalytics";
 import "./DashboardPage.css";
 
 function formatCurrency(value: number) {
@@ -65,13 +71,15 @@ export default function DashboardPage() {
 	const [fechaFin, setFechaFin] = useState(() => formatDateInput(new Date()));
 	const [facturasPeriodo, setFacturasPeriodo] = useState<FacturaVentaResponse[]>([]);
 	const [productos, setProductos] = useState<Producto[]>([]);
+	const [clientes, setClientes] = useState<Cliente[]>([]);
 
 	const cargarDashboard = useCallback(
 		async (empresaIdActual: number, signalCancelled: () => boolean) => {
-			const [resumenData, cajaData, productosData] = await Promise.all([
+			const [resumenData, cajaData, productosData, clientesData] = await Promise.all([
 				dashboardService.obtenerResumen(empresaIdActual),
 				cajaService.listarMovimientosPorEmpresa(empresaIdActual, 0, 200),
-				productoService.listarPorEmpresa(empresaIdActual, 0, 500)
+				productoService.listarPorEmpresa(empresaIdActual, 0, 500),
+				clienteService.listarPorEmpresa(empresaIdActual, 0, 500)
 			]);
 
 			if (signalCancelled()) return;
@@ -81,6 +89,7 @@ export default function DashboardPage() {
 				[...cajaData.content].sort((a, b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime())
 			);
 			setProductos(productosData.content);
+			setClientes(clientesData.content);
 		},
 		[]
 	);
@@ -176,7 +185,20 @@ export default function DashboardPage() {
 
 	const netoCajaHoy = useMemo(() => calcularNetoCajaHoy(movimientosCaja), [movimientosCaja]);
 	const variacionCaja =
-		netoCajaHoy !== 0 ? `${netoCajaHoy > 0 ? "+" : "-"}${formatCurrency(Math.abs(netoCajaHoy))} hoy` : undefined;
+		netoCajaHoy !== 0
+			? {
+					direction: (netoCajaHoy > 0 ? "up" : "down") as "up" | "down",
+					text: `${formatCurrency(Math.abs(netoCajaHoy))} hoy`
+			  }
+			: undefined;
+
+	const clientesAyer = useMemo(() => calcularRegistradosAyer(clientes), [clientes]);
+	const variacionClientes =
+		clientesAyer !== 0 ? { direction: "up" as const, text: `${clientesAyer} ayer` } : undefined;
+
+	const productosAyer = useMemo(() => calcularRegistradosAyer(productos), [productos]);
+	const variacionProductos =
+		productosAyer !== 0 ? { direction: "up" as const, text: `${productosAyer} ayer` } : undefined;
 
 	const movimientosUnificados: MovimientoUnificado[] = useMemo(
 		() =>
@@ -243,12 +265,14 @@ export default function DashboardPage() {
 					title="Clientes registrados"
 					value={(resumen?.totalClientes ?? 0).toLocaleString("es-CO")}
 					color="blue"
+					variation={variacionClientes}
 				/>
 				<StatCard
 					icon={<Package size={20} strokeWidth={1.8} />}
 					title="Productos registrados"
 					value={(resumen?.totalProductos ?? 0).toLocaleString("es-CO")}
 					color="blue"
+					variation={variacionProductos}
 				/>
 				<StatCard
 					icon={<AlertTriangle size={20} strokeWidth={1.8} />}

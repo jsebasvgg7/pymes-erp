@@ -1,5 +1,5 @@
 import { ReactNode } from "react";
-import { ArrowUpRight } from "lucide-react";
+import { ArrowUp, ArrowDown, Minus } from "lucide-react";
 import "./StatCard.css";
 
 type StatCardProps = {
@@ -7,8 +7,8 @@ type StatCardProps = {
 	title: string;
 	value: string;
 	color?: "blue" | "green" | "amber" | "red";
-	/** Texto de variación, p. ej. "+3 ayer". Se omite si no hay dato real que lo respalde. */
-	variation?: string;
+	/** Variación respecto a ayer. direction decide el ícono; text es lo que se muestra, p. ej. "3 ayer". Si se omite, se muestra "sin cambios". */
+	variation?: { direction: "up" | "down"; text: string };
 };
 
 const colorClass: Record<NonNullable<StatCardProps["color"]>, string> = {
@@ -19,19 +19,32 @@ const colorClass: Record<NonNullable<StatCardProps["color"]>, string> = {
 };
 
 export default function StatCard({ icon, title, value, color = "blue", variation }: StatCardProps) {
+	const direction = variation?.direction ?? "none";
+	const text = variation?.text ?? "sin cambios";
+
 	return (
 		<article className="ui-statCard">
-			<div className={`ui-statCard__icon ${colorClass[color]}`} aria-hidden="true">
-				{icon}
-			</div>
-			<div className="ui-statCard__label">{title}</div>
-			<div className="ui-statCard__value">{value}</div>
-			{variation ? (
-				<div className="ui-statCard__foot">
-					<ArrowUpRight size={13} strokeWidth={2} />
-					{variation}
+			<div className="ui-statCard__head">
+				<div className={`ui-statCard__icon ${colorClass[color]}`} aria-hidden="true">
+					{icon}
 				</div>
-			) : null}
+				<div className="ui-statCard__headText">
+					<div className="ui-statCard__label">{title}</div>
+					<div className="ui-statCard__value">{value}</div>
+				</div>
+			</div>
+			<div className="ui-statCard__foot">
+				<span className={`ui-statCard__trend ui-statCard__trend--${direction}`}>
+					{direction === "up" ? (
+						<ArrowUp size={14} strokeWidth={2.25} />
+					) : direction === "down" ? (
+						<ArrowDown size={14} strokeWidth={2.25} />
+					) : (
+						<Minus size={14} strokeWidth={2.25} />
+					)}
+				</span>
+				<span className="ui-statCard__footText">{text}</span>
+			</div>
 		</article>
 	);
 }

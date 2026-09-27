@@ -157,11 +157,27 @@ export function totalVentasPorCategoria(items: CategoriaVenta[]): number {
 }
 
 /**
+ * Cuenta cuántos ítems (clientes o productos) fueron creados ayer,
+ * usando el campo real createdAt que ya expone el backend. Es la misma
+ * base de datos que soporta la variación de caja: comparación real,
+ * sin inventar un histórico agregado que el backend no tiene.
+ */
+export function calcularRegistradosAyer(items: { createdAt: string }[]): number {
+	const ahora = new Date();
+	const ayer = new Date(ahora);
+	ayer.setDate(ayer.getDate() - 1);
+	const ayerYMD = ayer.toDateString();
+
+	return items.reduce((acc, item) => {
+		const fecha = new Date(item.createdAt);
+		if (Number.isNaN(fecha.getTime())) return acc;
+		return fecha.toDateString() === ayerYMD ? acc + 1 : acc;
+	}, 0);
+}
+
+/**
  * Neto de caja (ingresos - egresos) del día calendario actual, calculado
- * a partir de movimientos reales con fecha. Es el único dato del dashboard
- * con comparación temporal real disponible hoy; el resto de StatCards
- * (clientes, productos, stock bajo) son conteos actuales sin histórico
- * en el backend, así que no se les inventa una variación.
+ * a partir de movimientos reales con fecha.
  */
 export function calcularNetoCajaHoy(movimientos: MovimientoCajaResponse[]): number {
 	const hoy = new Date();
