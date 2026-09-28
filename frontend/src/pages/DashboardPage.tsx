@@ -78,7 +78,10 @@ export default function DashboardPage() {
 			const [resumenData, cajaData, flujoData, productosData, clientesData] = await Promise.all([
 				dashboardService.obtenerResumen(empresaIdActual),
 				cajaService.listarMovimientosPorEmpresa(empresaIdActual, 0, 50),
-				cajaService.obtenerFlujoCajaDiario(empresaIdActual, 12),
+				cajaService.obtenerFlujoCajaDiario(empresaIdActual, 12).catch((e) => {
+					console.error("Flujo de caja no disponible:", e);
+					return [] as FlujoCajaDiario[];
+				}),
 				productoService.listarPorEmpresa(empresaIdActual, 0, 200),
 				clienteService.listarPorEmpresa(empresaIdActual, 0, 200)
 			]);
@@ -98,11 +101,12 @@ export default function DashboardPage() {
 
 	const cargarVentasPorCategoria = useCallback(
 		async (empresaIdActual: number, inicio: string, fin: string, signalCancelled: () => boolean) => {
-			const categorias = await ventaService.obtenerVentasPorCategoria(
-				empresaIdActual,
-				toInicioDeDia(inicio),
-				toFinDeDia(fin)
-			);
+			const categorias = await ventaService
+				.obtenerVentasPorCategoria(empresaIdActual, toInicioDeDia(inicio), toFinDeDia(fin))
+				.catch((e) => {
+					console.error("Ventas por categoría no disponibles:", e);
+					return [] as CategoriaVenta[];
+				});
 			if (signalCancelled()) return;
 			setCategoriasVenta(categorias);
 		},

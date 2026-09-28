@@ -1,5 +1,6 @@
 package com.rowin.contabilidad.entities;
 
+import org.hibernate.annotations.BatchSize;
 import jakarta.persistence.*;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -47,6 +48,7 @@ public class Compra extends BaseEntity {
     @Column(nullable = false, precision = 19, scale = 2)
     private BigDecimal total = BigDecimal.ZERO;
 
+    @BatchSize(size = 100)
     @OneToMany(mappedBy = "compra", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<DetalleCompra> detalles = new ArrayList<>();
 

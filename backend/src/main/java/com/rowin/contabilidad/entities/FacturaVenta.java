@@ -1,5 +1,6 @@
 package com.rowin.contabilidad.entities;
 
+import org.hibernate.annotations.BatchSize;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -58,6 +59,7 @@ public class FacturaVenta extends BaseEntity {
 	@Column(nullable = false, precision = 19, scale = 2)
 	private BigDecimal total = BigDecimal.ZERO;
 
+	@BatchSize(size = 100)
 	@OneToMany(mappedBy = "facturaVenta", cascade = CascadeType.ALL, orphanRemoval = true)
 	private List<DetalleFactura> detalles = new ArrayList<>();
 

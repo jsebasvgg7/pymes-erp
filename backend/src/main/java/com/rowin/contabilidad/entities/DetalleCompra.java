@@ -1,5 +1,6 @@
 package com.rowin.contabilidad.entities;
 
+import org.hibernate.annotations.BatchSize;
 import jakarta.persistence.*;
 import java.math.BigDecimal;
 import java.util.HashSet;
@@ -32,6 +33,7 @@ public class DetalleCompra extends BaseEntity {
     @Column(nullable = false, precision = 19, scale = 2)
     private BigDecimal totalLinea = BigDecimal.ZERO;
 
+    @BatchSize(size = 100)
     @ManyToMany
     @JoinTable(
         name = "detalle_compra_impuesto",

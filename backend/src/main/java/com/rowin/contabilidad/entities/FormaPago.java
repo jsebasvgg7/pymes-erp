@@ -1,5 +1,6 @@
 package com.rowin.contabilidad.entities;
 
+import org.hibernate.annotations.BatchSize;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -14,6 +15,7 @@ import java.util.List;
 import lombok.Getter;
 import lombok.Setter;
 
+@BatchSize(size = 100)
 @Entity
 @Table(name = "forma_pago")
 @Getter

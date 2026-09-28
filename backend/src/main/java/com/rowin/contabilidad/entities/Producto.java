@@ -1,5 +1,6 @@
 package com.rowin.contabilidad.entities;
 
+import org.hibernate.annotations.BatchSize;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -18,6 +19,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+@BatchSize(size = 100)
 @Entity
 @Table(name = "producto")
 public class Producto extends BaseEntity {

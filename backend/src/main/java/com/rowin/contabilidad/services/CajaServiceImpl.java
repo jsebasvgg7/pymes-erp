@@ -161,27 +161,7 @@ public class CajaServiceImpl extends BaseCrudService implements CajaService {
             throw new ResourceNotFoundException("Caja no encontrada: " + cajaId);
         }
 
-        List<MovimientoCaja> movimientos = movimientoCajaRepository.findByCajaIdAndActiveTrue(cajaId);
-
-        BigDecimal totalIngresos = movimientos.stream()
-            .filter(m -> m.getTipo() == com.rowin.contabilidad.entities.TipoMovimientoCaja.INGRESO)
-            .map(MovimientoCaja::getMonto)
-            .reduce(BigDecimal.ZERO, BigDecimal::add);
-
-        BigDecimal totalEgresos = movimientos.stream()
-            .filter(m -> m.getTipo() == com.rowin.contabilidad.entities.TipoMovimientoCaja.EGRESO)
-            .map(MovimientoCaja::getMonto)
-            .reduce(BigDecimal.ZERO, BigDecimal::add);
-
-        return new CajaResumenResponse(
-            caja.getId(),
-            caja.getNombre(),
-            caja.getSaldoInicial(),
-            caja.getSaldoActual(),
-            totalIngresos,
-            totalEgresos,
-            movimientos.size()
-        );
+        return construirResumen(caja);
     }
 
     @Override
@@ -192,32 +172,8 @@ public class CajaServiceImpl extends BaseCrudService implements CajaService {
             throw new ResourceNotFoundException("Empresa no encontrada: " + empresaId);
         }
 
-        List<Caja> cajas = cajaRepository.findByEmpresaIdAndActiveTrue(empresaId);
-
-        return cajas.stream()
-            .map(caja -> {
-                List<MovimientoCaja> movimientos = movimientoCajaRepository.findByCajaIdAndActiveTrue(caja.getId());
-
-                BigDecimal totalIngresos = movimientos.stream()
-                    .filter(m -> m.getTipo() == com.rowin.contabilidad.entities.TipoMovimientoCaja.INGRESO)
-                    .map(MovimientoCaja::getMonto)
-                    .reduce(BigDecimal.ZERO, BigDecimal::add);
-
-                BigDecimal totalEgresos = movimientos.stream()
-                    .filter(m -> m.getTipo() == com.rowin.contabilidad.entities.TipoMovimientoCaja.EGRESO)
-                    .map(MovimientoCaja::getMonto)
-                    .reduce(BigDecimal.ZERO, BigDecimal::add);
-
-                return new CajaResumenResponse(
-                    caja.getId(),
-                    caja.getNombre(),
-                    caja.getSaldoInicial(),
-                    caja.getSaldoActual(),
-                    totalIngresos,
-                    totalEgresos,
-                    movimientos.size()
-                );
-            })
+        return cajaRepository.findByEmpresaIdAndActiveTrue(empresaId).stream()
+            .map(this::construirResumen)
             .collect(Collectors.toList());
     }
 
@@ -243,24 +199,41 @@ public class CajaServiceImpl extends BaseCrudService implements CajaService {
             ? LocalDateTime.now().minusMonths(mesesAtras).withDayOfMonth(1).toLocalDate().atStartOfDay()
             : null;
 
-        List<Object[]> filas = movimientoCajaRepository.sumFlujoCajaPorDia(empresaId, desde);
+        List<Object[]> filas = desde != null
+            ? movimientoCajaRepository.findFlujoCajaDesde(empresaId, desde)
+            : movimientoCajaRepository.findFlujoCajaTodo(empresaId);
 
-        java.util.Map<java.time.LocalDate, BigDecimal[]> porDia = new java.util.LinkedHashMap<>();
+        java.util.Map<java.time.LocalDate, BigDecimal[]> porDia = new java.util.TreeMap<>();
         for (Object[] fila : filas) {
-            java.time.LocalDate dia = (java.time.LocalDate) fila[0];
+            java.time.LocalDate dia = ((LocalDateTime) fila[0]).toLocalDate();
             TipoMovimientoCaja tipo = (TipoMovimientoCaja) fila[1];
-            BigDecimal total = (BigDecimal) fila[2];
+            BigDecimal monto = (BigDecimal) fila[2];
 
             BigDecimal[] par = porDia.computeIfAbsent(dia, d -> new BigDecimal[]{BigDecimal.ZERO, BigDecimal.ZERO});
             if (tipo == TipoMovimientoCaja.INGRESO) {
-                par[0] = total;
+                par[0] = par[0].add(monto);
             } else {
-                par[1] = total;
+                par[1] = par[1].add(monto);
             }
         }
 
         return porDia.entrySet().stream()
             .map(e -> new FlujoCajaDiarioResponse(e.getKey(), e.getValue()[0], e.getValue()[1]))
             .toList();
+    }
+
+    private CajaResumenResponse construirResumen(Caja caja) {
+        BigDecimal totalIngresos = movimientoCajaRepository.sumMontoByCajaAndTipo(caja.getId(), TipoMovimientoCaja.INGRESO);
+        BigDecimal totalEgresos = movimientoCajaRepository.sumMontoByCajaAndTipo(caja.getId(), TipoMovimientoCaja.EGRESO);
+        long total = movimientoCajaRepository.countByCajaIdAndActiveTrue(caja.getId());
+        return new CajaResumenResponse(
+            caja.getId(),
+            caja.getNombre(),
+            caja.getSaldoInicial(),
+            caja.getSaldoActual(),
+            totalIngresos,
+            totalEgresos,
+            (int) total
+        );
     }
 }

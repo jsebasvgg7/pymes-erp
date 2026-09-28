@@ -326,7 +326,7 @@ public class FacturaVentaServiceImpl extends BaseCrudService implements FacturaV
 
         return facturaVentaRepository.sumVentasPorCategoria(empresaId, inicio, fin)
             .stream()
-            .map(row -> new CategoriaVentaResponse((String) row[0], (BigDecimal) row[1]))
+            .map(row -> new CategoriaVentaResponse((String) row[0], row[1] instanceof BigDecimal bd ? bd : new BigDecimal(row[1].toString())))
             .toList();
     }
 }
