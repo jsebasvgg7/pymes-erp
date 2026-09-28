@@ -390,7 +390,7 @@ export default function CajaPage() {
 							Cancelar
 						</SecondaryButton>
 						<PrimaryButton type="button" onClick={handleSave} disabled={!isValid || saving}>
-							{saving ? "Guardando..." : "Guardar Movimiento"}
+							{saving ? "Guardando..." : "Guardar"}
 						</PrimaryButton>
 					</div>
 				}

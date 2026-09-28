@@ -362,7 +362,7 @@ export default function InventarioPage() {
               Cancelar
             </SecondaryButton>
             <PrimaryButton type="button" onClick={handleGuardarAjuste} disabled={!isAjusteValid || savingAjuste}>
-              {savingAjuste ? "Guardando..." : "Guardar Ajuste"}
+              {savingAjuste ? "Guardando..." : "Guardar"}
             </PrimaryButton>
           </div>
         }

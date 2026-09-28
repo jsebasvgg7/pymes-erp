@@ -18,7 +18,7 @@
 	width: 10px;
 	height: 10px;
 	border-radius: 50%;
-	background: #6366f1;
+	background: var(--ink);
 	animation: loadingState-bounce 1.2s ease-in-out infinite;
 }
 
@@ -33,7 +33,7 @@
 .loadingState__label {
 	margin: 0;
 	font-size: 14px;
-	color: rgba(245, 245, 245, 0.5);
+	color: var(--muted);
 }
 
 @keyframes loadingState-bounce {

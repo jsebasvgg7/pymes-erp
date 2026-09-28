@@ -19,9 +19,9 @@
 }
 
 .rep__panel {
-	background: #1c1c1c;
+	background: var(--paper);
 	border-radius: 18px;
-	border: 1px solid rgba(255, 255, 255, 0.08);
+	border: 1px solid var(--line);
 	box-shadow: none;
 	padding: 14px;
 	min-height: 320px;
@@ -31,7 +31,7 @@
 
 .rep__panel:hover {
 	transform: translateY(-1px);
-	box-shadow: 0 18px 45px rgba(0, 0, 0, 0.3);
+	box-shadow: 0 18px 45px rgba(0,0,0,0.16);
 }
 
 .rep__panelHead {
@@ -51,27 +51,27 @@
 .rep__emptyTitle {
 	font-size: 14px;
 	font-weight: 650;
-	color: rgba(245, 245, 245, 0.86);
+	color: var(--ink);
 }
 
 .rep__emptySubtitle {
 	font-size: 13px;
-	color: rgba(245, 245, 245, 0.55);
+	color: var(--muted);
 }
 
 .rep__state {
 	padding: 48px 24px;
 	text-align: center;
-	color: rgba(245, 245, 245, 0.5);
-	background: #1c1c1c;
+	color: var(--muted);
+	background: var(--paper);
 	border-radius: 14px;
-	border: 1px solid rgba(255, 255, 255, 0.07);
+	border: 1px solid var(--surface);
 }
 
 .rep__state--error {
-	color: #fca5a5;
-	background: rgba(248, 113, 113, 0.06);
-	border-color: rgba(248, 113, 113, 0.18);
+	color: #b91c1c;
+	background: rgba(220,38,38,0.06);
+	border-color: rgba(220,38,38,0.18);
 }
 
 .rep__typeBadge .ui-badge {
@@ -93,83 +93,24 @@
 	content: "Egreso";
 }
 
-/* Overrides scoped al tema oscuro para componentes compartidos (PageHeader, DataTable,
-   StatCard, StatusBadge). Mismo patrón que ComprasPage.css/PosPage.css. */
-
-.rep .ui-pageHeader__title {
-	color: #f5f5f5;
-}
-
-.rep .ui-pageHeader__subtitle {
-	color: rgba(245, 245, 245, 0.5);
-}
-
 .rep .ui-table__row {
-	border-color: rgba(255, 255, 255, 0.07);
-	background: rgba(255, 255, 255, 0.02);
 	padding: 16px 18px;
 	align-items: center;
 }
 
 .rep .ui-table__row--head {
-	background: rgba(99, 102, 241, 0.08);
-	border-color: rgba(99, 102, 241, 0.16);
 	padding: 12px 18px;
 	align-items: center;
 }
 
 .rep .ui-table__cell {
-	color: rgba(245, 245, 245, 0.82);
 	display: flex;
 	align-items: center;
 }
 
 .rep .ui-table__cell--head {
-	color: rgba(245, 245, 245, 0.6);
 	display: flex;
 	align-items: center;
-}
-
-.rep .ui-table__empty {
-	border-color: rgba(255, 255, 255, 0.14);
-	color: rgba(245, 245, 245, 0.4);
-	background: rgba(255, 255, 255, 0.02);
-}
-
-.rep .ui-badge {
-	color: rgba(245, 245, 245, 0.6);
-	background: rgba(99, 102, 241, 0.1);
-	border-color: rgba(99, 102, 241, 0.2);
-}
-
-.rep .ui-badge--active {
-	color: #86efac;
-	background: rgba(74, 222, 128, 0.12);
-	border-color: rgba(74, 222, 128, 0.24);
-}
-
-.rep .ui-badge--inactive {
-	color: rgba(245, 245, 245, 0.55);
-	background: rgba(255, 255, 255, 0.06);
-	border-color: rgba(255, 255, 255, 0.12);
-}
-
-.rep .ui-statCard {
-	background: #1c1c1c;
-	border: 1px solid rgba(255, 255, 255, 0.08);
-	box-shadow: none;
-}
-
-.rep .ui-statCard__label {
-	color: rgba(245, 245, 245, 0.55);
-}
-
-.rep .ui-statCard__value {
-	color: #f5f5f5;
-}
-
-.rep .ui-statCard__foot {
-	color: rgba(245, 245, 245, 0.45);
 }
 
 @media (max-width: 1100px) {

@@ -256,7 +256,7 @@ export default function ConfiguracionPage() {
 						Cancelar
 					</SecondaryButton>
 					<PrimaryButton type="button" onClick={handleSave} disabled={!validations.ok || saving}>
-						{saving ? "Guardando..." : "Guardar Configuración"}
+						{saving ? "Guardando..." : "Guardar"}
 					</PrimaryButton>
 				</div>
 			</div>

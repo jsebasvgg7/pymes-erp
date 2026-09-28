@@ -4,9 +4,9 @@
 }
 
 .set__card {
-	background: #1c1c1c;
+	background: var(--paper);
 	border-radius: 18px;
-	border: 1px solid rgba(255, 255, 255, 0.08);
+	border: 1px solid var(--line);
 	box-shadow: none;
 	padding: 14px;
 	display: grid;
@@ -16,32 +16,32 @@
 .set__state {
 	padding: 48px 24px;
 	text-align: center;
-	color: rgba(245, 245, 245, 0.5);
-	background: #1c1c1c;
+	color: var(--muted);
+	background: var(--paper);
 	border-radius: 14px;
-	border: 1px solid rgba(255, 255, 255, 0.07);
+	border: 1px solid var(--surface);
 }
 
 .set__state--error {
-	color: #fca5a5;
-	background: rgba(248, 113, 113, 0.06);
-	border-color: rgba(248, 113, 113, 0.18);
+	color: #b91c1c;
+	background: rgba(220,38,38,0.06);
+	border-color: rgba(220,38,38,0.18);
 }
 
 .set__formError {
 	font-size: 13px;
-	color: #fca5a5;
-	background: rgba(248, 113, 113, 0.1);
-	border: 1px solid rgba(248, 113, 113, 0.22);
+	color: #b91c1c;
+	background: rgba(220,38,38,0.1);
+	border: 1px solid rgba(220,38,38,0.22);
 	border-radius: 10px;
 	padding: 10px 12px;
 }
 
 .set__formSuccess {
 	font-size: 13px;
-	color: #86efac;
-	background: rgba(74, 222, 128, 0.1);
-	border: 1px solid rgba(74, 222, 128, 0.22);
+	color: rgba(26,163,98,0.95);
+	background: rgba(26,163,98,0.1);
+	border: 1px solid rgba(26,163,98,0.22);
 	border-radius: 10px;
 	padding: 10px 12px;
 }
@@ -51,14 +51,14 @@
 	gap: 12px;
 	padding: 12px;
 	border-radius: 16px;
-	border: 1px solid rgba(255, 255, 255, 0.08);
-	background: rgba(255, 255, 255, 0.02);
+	border: 1px solid var(--line);
+	background: var(--paper);
 }
 
 .set__sectionTitle {
 	font-size: 13px;
 	font-weight: 800;
-	color: #f5f5f5;
+	color: var(--ink);
 }
 
 .set__sectionTitle--soon {
@@ -69,7 +69,7 @@
 
 .set__soonHint {
 	font-size: 12px;
-	color: rgba(245, 245, 245, 0.5);
+	color: var(--muted);
 	margin-top: -6px;
 }
 
@@ -90,7 +90,7 @@
 
 .set__label {
 	font-size: 13px;
-	color: rgba(245, 245, 245, 0.68);
+	color: var(--muted);
 }
 
 .set__input,
@@ -100,21 +100,21 @@
 	height: 44px;
 	padding: 0 12px;
 	border-radius: 12px;
-	border: 1px solid rgba(255, 255, 255, 0.12);
-	background: #171717;
-	color: #f5f5f5;
+	border: 1px solid var(--line);
+	background: var(--paper);
+	color: var(--ink);
 	outline: none;
 	transition: border-color 160ms ease, box-shadow 160ms ease;
 }
 
 .set__input::placeholder {
-	color: rgba(245, 245, 245, 0.34);
+	color: var(--muted);
 }
 
 .set__input:focus,
 .set__select:focus {
-	border-color: rgba(99, 102, 241, 0.5);
-	box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.14);
+	border-color: var(--ink);
+	box-shadow: 0 0 0 4px var(--surface);
 }
 
 .set__input:disabled,
@@ -125,8 +125,8 @@
 }
 
 .set__select option {
-	background: #171717;
-	color: #f5f5f5;
+	background: var(--paper);
+	color: var(--ink);
 }
 
 .set__textarea {
@@ -134,21 +134,21 @@
 	width: 100%;
 	padding: 12px;
 	border-radius: 12px;
-	border: 1px solid rgba(255, 255, 255, 0.12);
-	background: #171717;
-	color: #f5f5f5;
+	border: 1px solid var(--line);
+	background: var(--paper);
+	color: var(--ink);
 	outline: none;
 	resize: vertical;
 	transition: border-color 160ms ease, box-shadow 160ms ease;
 }
 
 .set__textarea::placeholder {
-	color: rgba(245, 245, 245, 0.34);
+	color: var(--muted);
 }
 
 .set__textarea:focus {
-	border-color: rgba(99, 102, 241, 0.5);
-	box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.14);
+	border-color: var(--ink);
+	box-shadow: 0 0 0 4px var(--surface);
 }
 
 .set__row {
@@ -158,8 +158,8 @@
 	justify-content: space-between;
 	padding: 12px;
 	border-radius: 14px;
-	border: 1px solid rgba(255, 255, 255, 0.08);
-	background: rgba(255, 255, 255, 0.02);
+	border: 1px solid var(--line);
+	background: var(--paper);
 }
 
 .set__row--disabled {
@@ -169,12 +169,12 @@
 .set__rowLabel {
 	font-size: 13px;
 	font-weight: 650;
-	color: rgba(245, 245, 245, 0.86);
+	color: var(--ink);
 }
 
 .set__rowHint {
 	font-size: 12px;
-	color: rgba(245, 245, 245, 0.5);
+	color: var(--muted);
 	margin-top: 2px;
 }
 
@@ -182,8 +182,8 @@
 	width: 44px;
 	height: 26px;
 	border-radius: 999px;
-	border: 1px solid rgba(255, 255, 255, 0.12);
-	background: rgba(255, 255, 255, 0.06);
+	border: 1px solid var(--line);
+	background: var(--surface);
 	position: relative;
 	cursor: pointer;
 	transition: background 160ms ease, border-color 160ms ease;
@@ -198,8 +198,8 @@
 	width: 22px;
 	height: 22px;
 	border-radius: 999px;
-	background: #f5f5f5;
-	box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+	background: var(--ink);
+	box-shadow: 0 10px 20px rgba(0,0,0,0.16);
 	position: absolute;
 	top: 1px;
 	left: 1px;
@@ -207,8 +207,8 @@
 }
 
 .set__toggle--on {
-	background: rgba(74, 222, 128, 0.16);
-	border-color: rgba(74, 222, 128, 0.28);
+	background: rgba(26,163,98,0.16);
+	border-color: rgba(26,163,98,0.28);
 }
 
 .set__toggle--on .set__toggleKnob {
@@ -221,29 +221,6 @@
 	justify-content: flex-end;
 }
 
-/* Overrides scoped al tema oscuro para componentes compartidos (PageHeader, StatusBadge,
-   SecondaryButton, PrimaryButton). Mismo patrón que ComprasPage.css/UsuariosPage.css. */
-
-.set .ui-pageHeader__title {
-	color: #f5f5f5;
-}
-
-.set .ui-pageHeader__subtitle {
-	color: rgba(245, 245, 245, 0.5);
-}
-
-.set .ui-badge {
-	color: rgba(245, 245, 245, 0.6);
-	background: rgba(99, 102, 241, 0.1);
-	border-color: rgba(99, 102, 241, 0.2);
-}
-
-.set .ui-badge--pending {
-	color: #fbbf24;
-	background: rgba(251, 191, 36, 0.12);
-	border-color: rgba(251, 191, 36, 0.24);
-}
-
 .set .ui-btnPrimary,
 .set .ui-btnSecondary {
 	height: 44px;
@@ -252,23 +229,6 @@
 	align-items: center;
 	justify-content: center;
 	gap: 8px;
-}
-
-.set .ui-btnSecondary {
-	background: transparent;
-	border: 1px solid rgba(255, 255, 255, 0.12);
-	color: rgba(245, 245, 245, 0.8);
-	box-shadow: none;
-}
-
-.set .ui-btnSecondary:hover {
-	background: rgba(255, 255, 255, 0.06);
-	transform: none;
-	box-shadow: none;
-}
-
-.set .ui-btnSecondary:disabled {
-	opacity: 0.5;
 }
 
 @media (max-width: 860px) {

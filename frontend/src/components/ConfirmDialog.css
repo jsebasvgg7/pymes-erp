@@ -1,6 +1,6 @@
 .ui-confirm__message {
 	margin-top: 2px;
-	color: rgba(10, 18, 34, 0.76);
+	color: var(--muted);
 }
 
 .ui-confirm__actions {
@@ -9,4 +9,3 @@
 	gap: 10px;
 	width: 100%;
 }
-

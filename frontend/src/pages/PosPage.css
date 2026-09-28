@@ -18,16 +18,16 @@
 }
 
 .pos__panel {
-	border: 1px solid rgba(255, 255, 255, 0.08);
+	border: 1px solid var(--line);
 	border-radius: 18px;
-	background: #1c1c1c;
+	background: var(--paper);
 	box-shadow: none;
 	overflow: hidden;
 }
 
 .pos__panelHeader {
 	padding: 14px 16px;
-	border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+	border-bottom: 1px solid var(--line);
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
@@ -37,7 +37,7 @@
 .pos__panelTitle {
 	font-size: 13px;
 	font-weight: 750;
-	color: #f5f5f5;
+	color: var(--ink);
 }
 
 .pos__panelBody {
@@ -51,9 +51,9 @@
 }
 
 .pos__productCard {
-	border: 1px solid rgba(255, 255, 255, 0.08);
+	border: 1px solid var(--line);
 	border-radius: 16px;
-	background: rgba(255, 255, 255, 0.02);
+	background: var(--paper);
 	padding: 12px;
 	display: grid;
 	gap: 10px;
@@ -71,8 +71,8 @@
 	width: 44px;
 	height: 44px;
 	border-radius: 14px;
-	border: 1px solid rgba(255, 255, 255, 0.1);
-	background: linear-gradient(135deg, rgba(99, 102, 241, 0.22), rgba(99, 102, 241, 0.06));
+	border: 1px solid var(--line);
+	background: linear-gradient(135deg, var(--surface), var(--paper));
 	background-size: cover;
 	background-position: center;
 }
@@ -80,7 +80,7 @@
 .pos__productName {
 	font-size: 13px;
 	font-weight: 750;
-	color: rgba(245, 245, 245, 0.9);
+	color: var(--ink);
 	line-height: 1.2;
 }
 
@@ -89,16 +89,16 @@
 	justify-content: space-between;
 	gap: 8px;
 	font-size: 12px;
-	color: rgba(245, 245, 245, 0.55);
+	color: var(--muted);
 }
 
 .pos__productPrice {
 	font-weight: 760;
-	color: #a5b4fc;
+	color: var(--ink);
 }
 
 .pos__productStock {
-	color: rgba(245, 245, 245, 0.55);
+	color: var(--muted);
 }
 
 .pos__productActions {
@@ -122,18 +122,18 @@
 .pos__cartHead {
 	font-size: 12px;
 	font-weight: 750;
-	color: rgba(245, 245, 245, 0.6);
+	color: var(--muted);
 }
 
 .pos__cartRow {
 	padding: 10px 0;
-	border-top: 1px solid rgba(255, 255, 255, 0.07);
+	border-top: 1px solid var(--surface);
 }
 
 .pos__cartName {
 	font-size: 13px;
 	font-weight: 650;
-	color: rgba(245, 245, 245, 0.86);
+	color: var(--ink);
 }
 
 .pos__cartQty {
@@ -153,13 +153,13 @@
 	min-width: 22px;
 	text-align: center;
 	font-weight: 750;
-	color: rgba(245, 245, 245, 0.86);
+	color: var(--ink);
 }
 
 .pos__cellRight {
 	text-align: right;
 	font-weight: 750;
-	color: rgba(245, 245, 245, 0.82);
+	color: var(--ink);
 }
 
 .pos__removeBtn {
@@ -173,7 +173,7 @@
 	gap: 8px;
 	margin-top: 12px;
 	padding-top: 12px;
-	border-top: 1px dashed rgba(255, 255, 255, 0.14);
+	border-top: 1px dashed var(--line);
 }
 
 .pos__totalRow {
@@ -181,12 +181,12 @@
 	justify-content: space-between;
 	gap: 10px;
 	font-size: 13px;
-	color: rgba(245, 245, 245, 0.72);
+	color: var(--muted);
 }
 
 .pos__totalValue {
 	font-weight: 800;
-	color: #f5f5f5;
+	color: var(--ink);
 }
 
 .pos__pay {
@@ -197,7 +197,7 @@
 
 .pos__label {
 	font-size: 13px;
-	color: rgba(245, 245, 245, 0.68);
+	color: var(--muted);
 }
 
 .pos__select,
@@ -207,26 +207,26 @@
 	height: 44px;
 	padding: 0 12px;
 	border-radius: 12px;
-	border: 1px solid rgba(255, 255, 255, 0.12);
-	background: #171717;
-	color: #f5f5f5;
+	border: 1px solid var(--line);
+	background: var(--paper);
+	color: var(--ink);
 	outline: none;
 	transition: border-color 160ms ease, box-shadow 160ms ease;
 }
 
 .pos__input::placeholder {
-	color: rgba(245, 245, 245, 0.34);
+	color: var(--muted);
 }
 
 .pos__select:focus,
 .pos__input:focus {
-	border-color: rgba(99, 102, 241, 0.5);
-	box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.14);
+	border-color: var(--ink);
+	box-shadow: 0 0 0 4px var(--surface);
 }
 
 .pos__select option {
-	background: #171717;
-	color: #f5f5f5;
+	background: var(--paper);
+	color: var(--ink);
 }
 
 .pos__actions {
@@ -246,12 +246,12 @@
 .pos__emptyTitle {
 	font-size: 14px;
 	font-weight: 650;
-	color: rgba(245, 245, 245, 0.86);
+	color: var(--ink);
 }
 
 .pos__emptySubtitle {
 	font-size: 13px;
-	color: rgba(245, 245, 245, 0.55);
+	color: var(--muted);
 }
 
 .pos__receipt {
@@ -270,19 +270,19 @@
 	gap: 6px;
 	padding: 12px;
 	border-radius: 14px;
-	border: 1px solid rgba(255, 255, 255, 0.08);
-	background: rgba(255, 255, 255, 0.02);
+	border: 1px solid var(--line);
+	background: var(--paper);
 }
 
 .pos__receiptLabel {
 	font-size: 12px;
-	color: rgba(245, 245, 245, 0.55);
+	color: var(--muted);
 }
 
 .pos__receiptValue {
 	font-size: 13px;
 	font-weight: 750;
-	color: rgba(245, 245, 245, 0.86);
+	color: var(--ink);
 }
 
 .pos__receiptItems {
@@ -295,7 +295,7 @@
 	justify-content: space-between;
 	gap: 10px;
 	font-size: 13px;
-	color: rgba(245, 245, 245, 0.78);
+	color: var(--muted);
 }
 
 .pos__receiptTotal {
@@ -303,9 +303,9 @@
 	justify-content: space-between;
 	font-size: 14px;
 	font-weight: 800;
-	color: #f5f5f5;
+	color: var(--ink);
 	padding-top: 10px;
-	border-top: 1px dashed rgba(255, 255, 255, 0.14);
+	border-top: 1px dashed var(--line);
 }
 
 .pos__receiptActions {
@@ -318,63 +318,16 @@
 .pos__state {
 	padding: 48px 24px;
 	text-align: center;
-	color: rgba(245, 245, 245, 0.5);
-	background: #1c1c1c;
+	color: var(--muted);
+	background: var(--paper);
 	border-radius: 14px;
-	border: 1px solid rgba(255, 255, 255, 0.07);
+	border: 1px solid var(--surface);
 }
 
 .pos__state--error {
-	color: #fca5a5;
-	background: rgba(248, 113, 113, 0.06);
-	border-color: rgba(248, 113, 113, 0.18);
-}
-
-/* Overrides scoped al tema oscuro para componentes compartidos (PageHeader, SearchBar,
-   Modal, SecondaryButton, PrimaryButton). Mismo patrón que ComprasPage.css/ProveedoresPage.css. */
-
-.posWrap .ui-pageHeader__title {
-	color: #f5f5f5;
-}
-
-.posWrap .ui-pageHeader__subtitle {
-	color: rgba(245, 245, 245, 0.5);
-}
-
-.posWrap .ui-search {
-	background: #1c1c1c;
-	border: 1px solid rgba(255, 255, 255, 0.1);
-	box-shadow: none;
-}
-
-.posWrap .ui-search__icon {
-	color: rgba(245, 245, 245, 0.4);
-}
-
-.posWrap .ui-search__input {
-	color: #f5f5f5;
-}
-
-.posWrap .ui-search__input::placeholder {
-	color: rgba(245, 245, 245, 0.4);
-}
-
-.posWrap .ui-modal__backdrop {
-	background: rgba(0, 0, 0, 0.6);
-}
-
-.posWrap .ui-modal__panel {
-	background: #1c1c1c;
-	border: 1px solid rgba(255, 255, 255, 0.08);
-	box-shadow: 0 22px 55px rgba(0, 0, 0, 0.4);
-}
-
-.posWrap .ui-modal__title {
-	color: #f5f5f5;
-}
-
-.posWrap .ui-modal__body {
-	color: rgba(245, 245, 245, 0.75);
+	color: #b91c1c;
+	background: rgba(220,38,38,0.06);
+	border-color: rgba(220,38,38,0.18);
 }
 
 .posWrap .ui-btnPrimary,
@@ -385,23 +338,6 @@
 	align-items: center;
 	justify-content: center;
 	gap: 8px;
-}
-
-.posWrap .ui-btnSecondary {
-	background: transparent;
-	border: 1px solid rgba(255, 255, 255, 0.12);
-	color: rgba(245, 245, 245, 0.8);
-	box-shadow: none;
-}
-
-.posWrap .ui-btnSecondary:hover {
-	background: rgba(255, 255, 255, 0.06);
-	transform: none;
-	box-shadow: none;
-}
-
-.posWrap .ui-btnSecondary:disabled {
-	opacity: 0.5;
 }
 
 @media (max-width: 1100px) {

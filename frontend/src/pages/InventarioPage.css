@@ -17,7 +17,7 @@
 
 .inv__searchLabel {
 	font-size: 13px;
-	color: rgba(245, 245, 245, 0.68);
+	color: var(--muted);
 	line-height: 1.2;
 	visibility: hidden;
 }
@@ -35,7 +35,7 @@
 
 .inv__filterLabel {
 	font-size: 13px;
-	color: rgba(245, 245, 245, 0.68);
+	color: var(--muted);
 }
 
 .inv__select {
@@ -44,9 +44,9 @@
 	height: 44px;
 	padding: 0 12px;
 	border-radius: 12px;
-	border: 1px solid rgba(255, 255, 255, 0.12);
-	background: #171717;
-	color: #f5f5f5;
+	border: 1px solid var(--line);
+	background: var(--paper);
+	color: var(--ink);
 	outline: none;
 	transition: border-color 160ms ease, box-shadow 160ms ease;
 	font: inherit;
@@ -54,13 +54,13 @@
 }
 
 .inv__select:focus {
-	border-color: rgba(99, 102, 241, 0.5);
-	box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.14);
+	border-color: var(--ink);
+	box-shadow: 0 0 0 4px var(--surface);
 }
 
 .inv__select option {
-	background: #171717;
-	color: #f5f5f5;
+	background: var(--paper);
+	color: var(--ink);
 }
 
 .inv__table {
@@ -95,21 +95,21 @@
 }
 
 .inv__stockBadge--out {
-	color: #fca5a5;
-	background: rgba(248, 113, 113, 0.1);
-	border-color: rgba(248, 113, 113, 0.22);
+	color: #b91c1c;
+	background: rgba(220,38,38,0.1);
+	border-color: rgba(220,38,38,0.22);
 }
 
 .inv__stockBadge--low {
-	color: #fcd34d;
-	background: rgba(245, 158, 11, 0.12);
-	border-color: rgba(245, 158, 11, 0.24);
+	color: rgba(180,105,8,0.95);
+	background: rgba(245,158,11,0.12);
+	border-color: rgba(245,158,11,0.24);
 }
 
 .inv__stockBadge--ok {
-	color: #86efac;
-	background: rgba(74, 222, 128, 0.12);
-	border-color: rgba(74, 222, 128, 0.24);
+	color: rgba(26,163,98,0.95);
+	background: rgba(26,163,98,0.12);
+	border-color: rgba(26,163,98,0.24);
 }
 
 .inv__empty {
@@ -122,12 +122,12 @@
 .inv__emptyTitle {
 	font-size: 14px;
 	font-weight: 650;
-	color: rgba(245, 245, 245, 0.86);
+	color: var(--ink);
 }
 
 .inv__emptySubtitle {
 	font-size: 13px;
-	color: rgba(245, 245, 245, 0.55);
+	color: var(--muted);
 }
 
 .inv__modalActions {
@@ -153,8 +153,8 @@
 	gap: 6px;
 	padding: 12px;
 	border-radius: 14px;
-	border: 1px solid rgba(255, 255, 255, 0.08);
-	background: #171717;
+	border: 1px solid var(--line);
+	background: var(--paper);
 }
 
 .inv__detail--full {
@@ -163,127 +163,49 @@
 
 .inv__detailLabel {
 	font-size: 12px;
-	color: rgba(245, 245, 245, 0.55);
+	color: var(--muted);
 }
 
 .inv__detailValue {
 	font-size: 13px;
 	font-weight: 650;
-	color: rgba(245, 245, 245, 0.9);
+	color: var(--ink);
 	word-break: break-word;
 }
 
 .inv__state {
 	padding: 48px 24px;
 	text-align: center;
-	color: rgba(245, 245, 245, 0.5);
-	background: #1c1c1c;
+	color: var(--muted);
+	background: var(--paper);
 	border-radius: 14px;
-	border: 1px solid rgba(255, 255, 255, 0.07);
+	border: 1px solid var(--surface);
 }
 
 .inv__state--error {
-	color: #fca5a5;
-	background: rgba(248, 113, 113, 0.06);
-	border-color: rgba(248, 113, 113, 0.18);
-}
-
-/* Overrides scoped al tema oscuro para componentes compartidos (PageHeader, SearchBar,
-   DataTable, StatusBadge, Modal, SecondaryButton).
-   Mismo patrón que CategoriasPage.css / ProveedoresPage.css / ProductosPage.css. */
-
-.inv .ui-pageHeader__title {
-	color: #f5f5f5;
-}
-
-.inv .ui-pageHeader__subtitle {
-	color: rgba(245, 245, 245, 0.5);
-}
-
-.inv .ui-search {
-	background: #1c1c1c;
-	border: 1px solid rgba(255, 255, 255, 0.1);
-	box-shadow: none;
-}
-
-.inv .ui-search__icon {
-	color: rgba(245, 245, 245, 0.4);
-}
-
-.inv .ui-search__input {
-	color: #f5f5f5;
-}
-
-.inv .ui-search__input::placeholder {
-	color: rgba(245, 245, 245, 0.4);
+	color: #b91c1c;
+	background: rgba(220,38,38,0.06);
+	border-color: rgba(220,38,38,0.18);
 }
 
 .inv .ui-table__row {
-	border-color: rgba(255, 255, 255, 0.07);
-	background: rgba(255, 255, 255, 0.02);
 	padding: 16px 18px;
 	align-items: center;
 }
 
 .inv .ui-table__row--head {
-	background: rgba(99, 102, 241, 0.08);
-	border-color: rgba(99, 102, 241, 0.16);
 	padding: 12px 18px;
 	align-items: center;
 }
 
 .inv .ui-table__cell {
-	color: rgba(245, 245, 245, 0.82);
 	display: flex;
 	align-items: center;
 }
 
 .inv .ui-table__cell--head {
-	color: rgba(245, 245, 245, 0.6);
 	display: flex;
 	align-items: center;
-}
-
-.inv .ui-table__empty {
-	border-color: rgba(255, 255, 255, 0.14);
-	color: rgba(245, 245, 245, 0.4);
-	background: rgba(255, 255, 255, 0.02);
-}
-
-.inv .ui-badge {
-	color: rgba(245, 245, 245, 0.6);
-	background: rgba(99, 102, 241, 0.1);
-	border-color: rgba(99, 102, 241, 0.2);
-}
-
-.inv .ui-badge--active {
-	color: #86efac;
-	background: rgba(74, 222, 128, 0.12);
-	border-color: rgba(74, 222, 128, 0.24);
-}
-
-.inv .ui-badge--inactive {
-	color: rgba(245, 245, 245, 0.55);
-	background: rgba(255, 255, 255, 0.06);
-	border-color: rgba(255, 255, 255, 0.12);
-}
-
-.inv .ui-modal__backdrop {
-	background: rgba(0, 0, 0, 0.6);
-}
-
-.inv .ui-modal__panel {
-	background: #1c1c1c;
-	border: 1px solid rgba(255, 255, 255, 0.08);
-	box-shadow: 0 22px 55px rgba(0, 0, 0, 0.4);
-}
-
-.inv .ui-modal__title {
-	color: #f5f5f5;
-}
-
-.inv .ui-modal__body {
-	color: rgba(245, 245, 245, 0.75);
 }
 
 .inv .ui-btnSecondary {
@@ -293,16 +215,6 @@
 	align-items: center;
 	justify-content: center;
 	gap: 8px;
-	background: transparent;
-	border: 1px solid rgba(255, 255, 255, 0.12);
-	color: rgba(245, 245, 245, 0.8);
-	box-shadow: none;
-}
-
-.inv .ui-btnSecondary:hover {
-	background: rgba(255, 255, 255, 0.06);
-	transform: none;
-	box-shadow: none;
 }
 
 /* Botones de acción en la tabla */
@@ -318,8 +230,8 @@
 }
 
 .inv .ui-modal__body .inv__select {
-  height: 40px;
-  font-size: 13px;
+	height: 40px;
+	font-size: 13px;
 }
 
 @media (max-width: 860px) {

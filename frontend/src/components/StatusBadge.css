@@ -10,7 +10,7 @@
 
 .ui-badge--active {
 	color: rgba(26, 163, 98, 0.95);
-	background: rgba(26, 163, 98, 0.10);
+	background: rgba(26, 163, 98, 0.1);
 	border-color: rgba(26, 163, 98, 0.18);
 }
 
@@ -21,19 +21,19 @@
 }
 
 .ui-badge--pending {
-	color: rgba(245, 158, 11, 0.95);
+	color: rgba(180, 105, 8, 0.95);
 	background: rgba(245, 158, 11, 0.12);
-	border-color: rgba(245, 158, 11, 0.18);
+	border-color: rgba(245, 158, 11, 0.22);
 }
 
 .ui-badge--paid {
-	color: rgba(11, 74, 166, 0.95);
-	background: rgba(11, 74, 166, 0.10);
-	border-color: rgba(11, 74, 166, 0.18);
+	color: var(--paper);
+	background: var(--ink);
+	border-color: var(--ink);
 }
 
 .ui-badge--void {
-	color: rgba(239, 68, 68, 0.95);
-	background: rgba(239, 68, 68, 0.10);
-	border-color: rgba(239, 68, 68, 0.18);
+	color: #b91c1c;
+	background: rgba(220, 38, 38, 0.08);
+	border-color: rgba(220, 38, 38, 0.2);
 }
