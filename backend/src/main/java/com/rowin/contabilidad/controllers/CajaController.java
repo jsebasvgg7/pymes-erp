@@ -3,6 +3,7 @@ package com.rowin.contabilidad.controllers;
 import com.rowin.contabilidad.dto.caja.CajaCreateRequest;
 import com.rowin.contabilidad.dto.caja.CajaResponse;
 import com.rowin.contabilidad.dto.caja.CajaResumenResponse;
+import com.rowin.contabilidad.dto.caja.FlujoCajaDiarioResponse;
 import com.rowin.contabilidad.dto.caja.MovimientoCajaRequest;
 import com.rowin.contabilidad.dto.caja.MovimientoCajaResponse;
 import com.rowin.contabilidad.services.CajaService;
@@ -78,5 +79,13 @@ public class CajaController {
     @GetMapping("/saldo/{cajaId}")
     public ResponseEntity<BigDecimal> obtenerSaldoActual(@PathVariable Long cajaId) {
         return ResponseEntity.ok(cajaService.obtenerSaldoActual(cajaId));
+    }
+
+    @GetMapping("/movimientos/flujo-diario/{empresaId}")
+    public ResponseEntity<List<FlujoCajaDiarioResponse>> obtenerFlujoCajaDiario(
+        @PathVariable Long empresaId,
+        @RequestParam(required = false) Integer mesesAtras
+    ) {
+        return ResponseEntity.ok(cajaService.obtenerFlujoCajaDiario(empresaId, mesesAtras));
     }
 }

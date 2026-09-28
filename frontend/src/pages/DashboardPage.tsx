@@ -7,16 +7,11 @@ import CashFlowChart from "../components/dashboard/CashFlowChart";
 import CategoryBreakdownChart from "../components/dashboard/CategoryBreakdownChart";
 import { authService } from "../services/authService";
 import { dashboardService, type DashboardResumen } from "../services/dashboardService";
-import { ventaService, type FacturaVentaResponse } from "../services/VentaService";
-import { cajaService, type MovimientoCajaResponse } from "../services/cajaService";
+import { ventaService, type CategoriaVenta } from "../services/VentaService";
+import { cajaService, type MovimientoCajaResponse, type FlujoCajaDiario } from "../services/cajaService";
 import { productoService, type Producto } from "../services/ProductoService";
 import { clienteService, type Cliente } from "../services/clienteService";
-import {
-	calcularVentasPorCategoria,
-	calcularNetoCajaHoy,
-	calcularRegistradosAyer,
-	type CategoriaVenta
-} from "../services/dashboardAnalytics";
+import { calcularNetoCajaHoy, calcularRegistradosAyer } from "../services/dashboardAnalytics";
 import "../components/dashboard/dashboard-charts.css";
 import "./DashboardPage.css";
 
@@ -73,17 +68,19 @@ export default function DashboardPage() {
 		return formatDateInput(d);
 	});
 	const [fechaFin, setFechaFin] = useState(() => formatDateInput(new Date()));
-	const [facturasPeriodo, setFacturasPeriodo] = useState<FacturaVentaResponse[]>([]);
+	const [categoriasVenta, setCategoriasVenta] = useState<CategoriaVenta[]>([]);
+	const [flujoCajaDiario, setFlujoCajaDiario] = useState<FlujoCajaDiario[]>([]);
 	const [productos, setProductos] = useState<Producto[]>([]);
 	const [clientes, setClientes] = useState<Cliente[]>([]);
 
 	const cargarDashboard = useCallback(
 		async (empresaIdActual: number, signalCancelled: () => boolean) => {
-			const [resumenData, cajaData, productosData, clientesData] = await Promise.all([
+			const [resumenData, cajaData, flujoData, productosData, clientesData] = await Promise.all([
 				dashboardService.obtenerResumen(empresaIdActual),
-				cajaService.listarMovimientosPorEmpresa(empresaIdActual, 0, 200),
-				productoService.listarPorEmpresa(empresaIdActual, 0, 500),
-				clienteService.listarPorEmpresa(empresaIdActual, 0, 500)
+				cajaService.listarMovimientosPorEmpresa(empresaIdActual, 0, 50),
+				cajaService.obtenerFlujoCajaDiario(empresaIdActual, 12),
+				productoService.listarPorEmpresa(empresaIdActual, 0, 200),
+				clienteService.listarPorEmpresa(empresaIdActual, 0, 200)
 			]);
 
 			if (signalCancelled()) return;
@@ -92,21 +89,22 @@ export default function DashboardPage() {
 			setMovimientosCaja(
 				[...cajaData.content].sort((a, b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime())
 			);
+			setFlujoCajaDiario(flujoData);
 			setProductos(productosData.content);
 			setClientes(clientesData.content);
 		},
 		[]
 	);
 
-	const cargarFacturasPeriodo = useCallback(
+	const cargarVentasPorCategoria = useCallback(
 		async (empresaIdActual: number, inicio: string, fin: string, signalCancelled: () => boolean) => {
-			const facturas = await ventaService.obtenerPorPeriodo(
+			const categorias = await ventaService.obtenerVentasPorCategoria(
 				empresaIdActual,
 				toInicioDeDia(inicio),
 				toFinDeDia(fin)
 			);
 			if (signalCancelled()) return;
-			setFacturasPeriodo(facturas);
+			setCategoriasVenta(categorias);
 		},
 		[]
 	);
@@ -127,7 +125,7 @@ export default function DashboardPage() {
 			try {
 				await Promise.all([
 					cargarDashboard(empresaIdActual, () => cancelled),
-					cargarFacturasPeriodo(empresaIdActual, fechaInicio, fechaFin, () => cancelled)
+					cargarVentasPorCategoria(empresaIdActual, fechaInicio, fechaFin, () => cancelled)
 				]);
 			} catch (err) {
 				console.error("Error cargando dashboard:", err);
@@ -155,7 +153,7 @@ export default function DashboardPage() {
 		}
 		if (!empresaId) return;
 		let cancelled = false;
-		cargarFacturasPeriodo(empresaId, fechaInicio, fechaFin, () => cancelled).catch((err) => {
+		cargarVentasPorCategoria(empresaId, fechaInicio, fechaFin, () => cancelled).catch((err) => {
 			console.error("Error cargando ventas del período:", err);
 			if (!cancelled) setError("No se pudieron cargar las ventas del período seleccionado.");
 		});
@@ -173,7 +171,7 @@ export default function DashboardPage() {
 			let cancelled = false;
 			await Promise.all([
 				cargarDashboard(empresaId, () => cancelled),
-				cargarFacturasPeriodo(empresaId, fechaInicio, fechaFin, () => cancelled)
+				cargarVentasPorCategoria(empresaId, fechaInicio, fechaFin, () => cancelled)
 			]);
 		} catch {
 			setError("No se pudo actualizar la información. Intenta de nuevo.");
@@ -181,11 +179,6 @@ export default function DashboardPage() {
 			setReloading(false);
 		}
 	}
-
-	const categoriasVenta: CategoriaVenta[] = useMemo(
-		() => calcularVentasPorCategoria(facturasPeriodo, productos),
-		[facturasPeriodo, productos]
-	);
 
 	const netoCajaHoy = useMemo(() => calcularNetoCajaHoy(movimientosCaja), [movimientosCaja]);
 	const variacionCaja =
@@ -314,7 +307,7 @@ export default function DashboardPage() {
 			</section>
 
 			<section className="db__charts" aria-label="Gráficos">
-				<CashFlowChart movimientos={movimientosCaja} />
+				<CashFlowChart puntosDiarios={flujoCajaDiario} />
 				<CategoryBreakdownChart
 					categorias={categoriasVenta}
 					fechaInicio={fechaInicio}

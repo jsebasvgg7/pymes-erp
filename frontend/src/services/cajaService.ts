@@ -46,6 +46,12 @@ export type MovimientoCajaResponse = {
   referenciaId: number;
 };
 
+export type FlujoCajaDiario = {
+  fecha: string;
+  ingreso: number;
+  egreso: number;
+};
+
 export type CajaResumen = {
   cajaId: number;
   cajaNombre: string;
@@ -99,6 +105,13 @@ export const cajaService = {
 
   async obtenerSaldo(cajaId: number): Promise<number> {
     const response = await http.get(`/api/caja/saldo/${cajaId}`);
+    return response.data;
+  },
+
+  async obtenerFlujoCajaDiario(empresaId: number, mesesAtras?: number): Promise<FlujoCajaDiario[]> {
+    const response = await http.get(`/api/caja/movimientos/flujo-diario/${empresaId}`, {
+      params: mesesAtras ? { mesesAtras } : undefined
+    });
     return response.data;
   }
 };

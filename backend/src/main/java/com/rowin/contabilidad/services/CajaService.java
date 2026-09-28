@@ -3,6 +3,7 @@ package com.rowin.contabilidad.services;
 import com.rowin.contabilidad.dto.caja.CajaCreateRequest;
 import com.rowin.contabilidad.dto.caja.CajaResponse;
 import com.rowin.contabilidad.dto.caja.CajaResumenResponse;
+import com.rowin.contabilidad.dto.caja.FlujoCajaDiarioResponse;
 import com.rowin.contabilidad.dto.caja.MovimientoCajaRequest;
 import com.rowin.contabilidad.dto.caja.MovimientoCajaResponse;
 import org.springframework.data.domain.Page;
@@ -30,4 +31,6 @@ public interface CajaService {
     List<CajaResumenResponse> obtenerResumenTodasCajas(Long empresaId);
 
     BigDecimal obtenerSaldoActual(Long cajaId);
+
+    List<FlujoCajaDiarioResponse> obtenerFlujoCajaDiario(Long empresaId, Integer mesesAtras);
 }

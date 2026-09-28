@@ -2,6 +2,7 @@ package com.rowin.contabilidad.services;
 
 import java.math.BigDecimal;
 import com.rowin.contabilidad.dto.detalle.DetalleFacturaRequest;
+import com.rowin.contabilidad.dto.factura.CategoriaVentaResponse;
 import com.rowin.contabilidad.dto.factura.FacturaVentaCreateRequest;
 import com.rowin.contabilidad.dto.factura.FacturaVentaResponse;
 import com.rowin.contabilidad.dto.factura.FacturaVentaUpdateRequest;
@@ -313,5 +314,19 @@ public class FacturaVentaServiceImpl extends BaseCrudService implements FacturaV
         }
 
         return facturaVentaRepository.sumTotalByEmpresaAndFechaBetween(empresaId, inicio, fin);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<CategoriaVentaResponse> obtenerVentasPorCategoria(Long empresaId, LocalDateTime inicio, LocalDateTime fin) {
+        Empresa empresa = getByIdOrThrow(empresaRepository, empresaId, "Empresa");
+        if (!isActive(empresa)) {
+            throw new ResourceNotFoundException("Empresa no encontrada: " + empresaId);
+        }
+
+        return facturaVentaRepository.sumVentasPorCategoria(empresaId, inicio, fin)
+            .stream()
+            .map(row -> new CategoriaVentaResponse((String) row[0], (BigDecimal) row[1]))
+            .toList();
     }
 }

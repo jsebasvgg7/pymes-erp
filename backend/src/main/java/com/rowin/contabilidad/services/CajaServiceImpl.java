@@ -3,12 +3,14 @@ package com.rowin.contabilidad.services;
 import com.rowin.contabilidad.dto.caja.CajaCreateRequest;
 import com.rowin.contabilidad.dto.caja.CajaResponse;
 import com.rowin.contabilidad.dto.caja.CajaResumenResponse;
+import com.rowin.contabilidad.dto.caja.FlujoCajaDiarioResponse;
 import com.rowin.contabilidad.dto.caja.MovimientoCajaRequest;
 import com.rowin.contabilidad.dto.caja.MovimientoCajaResponse;
 import com.rowin.contabilidad.entities.Caja;
 import com.rowin.contabilidad.entities.Empresa;
 import com.rowin.contabilidad.entities.FormaPago;
 import com.rowin.contabilidad.entities.MovimientoCaja;
+import com.rowin.contabilidad.entities.TipoMovimientoCaja;
 import com.rowin.contabilidad.exceptions.ResourceNotFoundException;
 import com.rowin.contabilidad.repositories.CajaRepository;
 import com.rowin.contabilidad.repositories.EmpresaRepository;
@@ -227,5 +229,38 @@ public class CajaServiceImpl extends BaseCrudService implements CajaService {
             throw new ResourceNotFoundException("Caja no encontrada: " + cajaId);
         }
         return caja.getSaldoActual();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<FlujoCajaDiarioResponse> obtenerFlujoCajaDiario(Long empresaId, Integer mesesAtras) {
+        Empresa empresa = getByIdOrThrow(empresaRepository, empresaId, "Empresa");
+        if (!isActive(empresa)) {
+            throw new ResourceNotFoundException("Empresa no encontrada: " + empresaId);
+        }
+
+        LocalDateTime desde = mesesAtras != null
+            ? LocalDateTime.now().minusMonths(mesesAtras).withDayOfMonth(1).toLocalDate().atStartOfDay()
+            : null;
+
+        List<Object[]> filas = movimientoCajaRepository.sumFlujoCajaPorDia(empresaId, desde);
+
+        java.util.Map<java.time.LocalDate, BigDecimal[]> porDia = new java.util.LinkedHashMap<>();
+        for (Object[] fila : filas) {
+            java.time.LocalDate dia = (java.time.LocalDate) fila[0];
+            TipoMovimientoCaja tipo = (TipoMovimientoCaja) fila[1];
+            BigDecimal total = (BigDecimal) fila[2];
+
+            BigDecimal[] par = porDia.computeIfAbsent(dia, d -> new BigDecimal[]{BigDecimal.ZERO, BigDecimal.ZERO});
+            if (tipo == TipoMovimientoCaja.INGRESO) {
+                par[0] = total;
+            } else {
+                par[1] = total;
+            }
+        }
+
+        return porDia.entrySet().stream()
+            .map(e -> new FlujoCajaDiarioResponse(e.getKey(), e.getValue()[0], e.getValue()[1]))
+            .toList();
     }
 }

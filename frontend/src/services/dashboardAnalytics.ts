@@ -1,6 +1,4 @@
-import type { MovimientoCajaResponse } from "./cajaService";
-import type { FacturaVentaResponse } from "./VentaService";
-import type { Producto } from "./ProductoService";
+import type { FlujoCajaDiario, MovimientoCajaResponse } from "./cajaService";
 
 export type Periodo = "semanal" | "mensual" | "anual";
 
@@ -78,7 +76,7 @@ function ultimasClavesSemana(cantidad: number): string[] {
 }
 
 export function calcularFlujoCaja(
-	movimientos: MovimientoCajaResponse[],
+	puntosDiarios: FlujoCajaDiario[],
 	periodo: Periodo
 ): FlujoCajaResultado {
 	const claveFn = periodo === "semanal" ? claveSemana : periodo === "mensual" ? claveMes : claveAnio;
@@ -86,17 +84,14 @@ export function calcularFlujoCaja(
 
 	const grupos = new Map<string, { ingreso: number; egreso: number }>();
 
-	for (const mov of movimientos) {
-		const fecha = new Date(mov.fecha);
+	for (const punto of puntosDiarios) {
+		const fecha = new Date(punto.fecha + "T00:00:00");
 		if (Number.isNaN(fecha.getTime())) continue;
 
 		const clave = claveFn(fecha);
 		const actual = grupos.get(clave) ?? { ingreso: 0, egreso: 0 };
-		if (mov.tipo === "INGRESO") {
-			actual.ingreso += mov.monto;
-		} else {
-			actual.egreso += mov.monto;
-		}
+		actual.ingreso += punto.ingreso;
+		actual.egreso += punto.egreso;
 		grupos.set(clave, actual);
 	}
 
@@ -116,40 +111,12 @@ export function calcularFlujoCaja(
 		return { label: etiquetaFn(clave), ingreso, egreso };
 	});
 
-	const flujoNeto = movimientos.reduce(
-		(acc, m) => acc + (m.tipo === "INGRESO" ? m.monto : -m.monto),
+	const flujoNeto = puntosDiarios.reduce(
+		(acc, p) => acc + (p.ingreso - p.egreso),
 		0
 	);
 
 	return { puntos, flujoNeto };
-}
-
-/**
- * Cruza el detalle de facturas de venta (productoId, totalLinea) contra
- * el catálogo de productos (categoriaNombre) para agregar el total
- * vendido por categoría. Ordenado de mayor a menor.
- */
-export function calcularVentasPorCategoria(
-	facturas: FacturaVentaResponse[],
-	productos: Producto[]
-): CategoriaVenta[] {
-	const categoriaPorProducto = new Map<number, string>();
-	for (const p of productos) {
-		categoriaPorProducto.set(p.id, p.categoriaNombre || "Sin categoría");
-	}
-
-	const totales = new Map<string, number>();
-
-	for (const factura of facturas) {
-		for (const detalle of factura.detalles ?? []) {
-			const categoria = categoriaPorProducto.get(detalle.productoId) ?? "Sin categoría";
-			totales.set(categoria, (totales.get(categoria) ?? 0) + detalle.totalLinea);
-		}
-	}
-
-	return [...totales.entries()]
-		.map(([categoria, total]) => ({ categoria, total }))
-		.sort((a, b) => b.total - a.total);
 }
 
 export function totalVentasPorCategoria(items: CategoriaVenta[]): number {

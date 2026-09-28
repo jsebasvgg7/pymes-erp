@@ -5,7 +5,7 @@ import { BarSquares } from "../charts/bar-squares";
 import { Grid } from "../charts/grid";
 import { BarXAxis } from "../charts/bar-x-axis";
 import { ChartTooltip } from "../charts/tooltip/chart-tooltip";
-import type { MovimientoCajaResponse } from "../../services/cajaService";
+import type { FlujoCajaDiario } from "../../services/cajaService";
 import { calcularFlujoCaja, type Periodo } from "../../services/dashboardAnalytics";
 import "./dashboard-charts.css";
 
@@ -14,7 +14,7 @@ function formatCurrencyShort(value: number) {
 }
 
 type CashFlowChartProps = {
-	movimientos: MovimientoCajaResponse[];
+	puntosDiarios: FlujoCajaDiario[];
 };
 
 const PERIODOS: Array<{ value: Periodo; label: string }> = [
@@ -23,12 +23,12 @@ const PERIODOS: Array<{ value: Periodo; label: string }> = [
 	{ value: "anual", label: "Anual" }
 ];
 
-export default function CashFlowChart({ movimientos }: CashFlowChartProps) {
+export default function CashFlowChart({ puntosDiarios }: CashFlowChartProps) {
 	const [periodo, setPeriodo] = useState<Periodo>("mensual");
 
 	const { puntos, flujoNeto } = useMemo(
-		() => calcularFlujoCaja(movimientos, periodo),
-		[movimientos, periodo]
+		() => calcularFlujoCaja(puntosDiarios, periodo),
+		[puntosDiarios, periodo]
 	);
 
 	const hayDatos = puntos.length > 0;

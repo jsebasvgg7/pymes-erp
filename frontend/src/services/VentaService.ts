@@ -50,6 +50,11 @@ export type FacturaVentaUpdateRequest = {
   estado: string;
 };
 
+export type CategoriaVenta = {
+  categoria: string;
+  total: number;
+};
+
 export const ventaService = {
   async listar(page: number = 0, size: number = 20): Promise<{ content: FacturaVentaResponse[]; totalElements: number }> {
     const response = await http.get(`/api/facturas-venta/listar?page=${page}&size=${size}`);
@@ -87,6 +92,11 @@ export const ventaService = {
 
   async obtenerTotalPeriodo(empresaId: number, inicio: string, fin: string): Promise<number> {
     const response = await http.get(`/api/facturas-venta/total-ventas-periodo/${empresaId}?inicio=${inicio}&fin=${fin}`);
+    return response.data;
+  },
+
+  async obtenerVentasPorCategoria(empresaId: number, inicio: string, fin: string): Promise<CategoriaVenta[]> {
+    const response = await http.get(`/api/facturas-venta/ventas-por-categoria/${empresaId}?inicio=${inicio}&fin=${fin}`);
     return response.data;
   }
 };

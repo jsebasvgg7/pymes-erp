@@ -1,5 +1,6 @@
 package com.rowin.contabilidad.services;
 
+import com.rowin.contabilidad.dto.factura.CategoriaVentaResponse;
 import com.rowin.contabilidad.dto.factura.FacturaVentaCreateRequest;
 import com.rowin.contabilidad.dto.factura.FacturaVentaResponse;
 import com.rowin.contabilidad.dto.factura.FacturaVentaUpdateRequest;
@@ -29,4 +30,6 @@ public interface FacturaVentaService {
     List<FacturaVentaResponse> obtenerVentasPorPeriodo(Long empresaId, LocalDateTime inicio, LocalDateTime fin);
 
     BigDecimal obtenerTotalVentasPorPeriodo(Long empresaId, LocalDateTime inicio, LocalDateTime fin);
+
+    List<CategoriaVentaResponse> obtenerVentasPorCategoria(Long empresaId, LocalDateTime inicio, LocalDateTime fin);
 }

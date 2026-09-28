@@ -1,5 +1,6 @@
 package com.rowin.contabilidad.controllers;
 
+import com.rowin.contabilidad.dto.factura.CategoriaVentaResponse;
 import com.rowin.contabilidad.dto.factura.FacturaVentaCreateRequest;
 import com.rowin.contabilidad.dto.factura.FacturaVentaResponse;
 import com.rowin.contabilidad.dto.factura.FacturaVentaUpdateRequest;
@@ -90,5 +91,14 @@ public class FacturaVentaController {
         @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime fin
     ) {
         return ResponseEntity.ok(facturaVentaService.obtenerTotalVentasPorPeriodo(empresaId, inicio, fin));
+    }
+
+    @GetMapping("/ventas-por-categoria/{empresaId}")
+    public ResponseEntity<List<CategoriaVentaResponse>> obtenerVentasPorCategoria(
+        @PathVariable Long empresaId,
+        @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime inicio,
+        @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime fin
+    ) {
+        return ResponseEntity.ok(facturaVentaService.obtenerVentasPorCategoria(empresaId, inicio, fin));
     }
 }
