@@ -13,6 +13,7 @@ frontend/dist/
 frontend/dist-ssr/
 frontend/*.local
 digest.txt
+ERP_PLAN.md
 # === Variables de entorno / secretos ===
 .env
 .env.local
