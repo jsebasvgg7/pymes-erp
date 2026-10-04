@@ -1,20 +1,18 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Plus } from "lucide-react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { Pencil, UserCheck, UserPlus, UserX } from "lucide-react";
+import Avatar from "../components/Avatar";
 import ConfirmDialog from "../components/ConfirmDialog";
-import DataTable, { DataTableColumn } from "../components/DataTable";
 import LoadingState from "../components/LoadingState";
 import Modal from "../components/Modal";
-import PageHeader from "../components/PageHeader";
 import PrimaryButton from "../components/PrimaryButton";
 import SearchBar from "../components/SearchBar";
 import SecondaryButton from "../components/SecondaryButton";
 import StatusBadge from "../components/StatusBadge";
 import { authService } from "../services/authService";
+import { empresaService } from "../services/empresaService";
 import { rolService, type Rol } from "../services/rolService";
 import { usuarioService, type Usuario } from "../services/usuarioService";
 import "./UsuariosPage.css";
-
-type UserFilter = "Todos" | "Activos" | "Inactivos";
 
 type UserFormState = {
 	username: string;
@@ -30,10 +28,12 @@ const defaultFormState: UserFormState = {
 	rolIds: []
 };
 
-function formatDateTime(value?: string) {
+function formatFecha(value?: string) {
 	if (!value) return "—";
 	const d = new Date(value);
-	return Number.isNaN(d.getTime()) ? value : d.toLocaleString("es-CO");
+	return Number.isNaN(d.getTime())
+		? value
+		: d.toLocaleDateString("en-GB", { day: "2-digit", month: "2-digit", year: "numeric" });
 }
 
 function normalizeText(value: string) {
@@ -57,6 +57,7 @@ export default function UsuariosPage() {
 
 	const [users, setUsers] = useState<Usuario[]>([]);
 	const [roles, setRoles] = useState<Rol[]>([]);
+	const [empresaNombre, setEmpresaNombre] = useState("");
 
 	const [modalOpen, setModalOpen] = useState(false);
 	const [editingUserId, setEditingUserId] = useState<number | null>(null);
@@ -64,13 +65,10 @@ export default function UsuariosPage() {
 	const [formError, setFormError] = useState<string | null>(null);
 	const [saving, setSaving] = useState(false);
 
-	const [selectedFilter, setSelectedFilter] = useState<UserFilter>("Todos");
 	const [searchText, setSearchText] = useState("");
 
 	const [confirmOpen, setConfirmOpen] = useState(false);
 	const [confirmTarget, setConfirmTarget] = useState<{ id: number; nextActive: boolean } | null>(null);
-
-	const searchRef = useRef<HTMLDivElement | null>(null);
 
 	const loadData = useCallback(async () => {
 		if (!empresaId) {
@@ -82,10 +80,15 @@ export default function UsuariosPage() {
 		setLoading(true);
 		setError(null);
 		try {
-			const [usuariosData, rolesData] = await Promise.all([
+			const [usuariosData, rolesData, nombreEmpresa] = await Promise.all([
 				usuarioService.listarPorEmpresa(empresaId, 0, 200),
-				rolService.listarPorEmpresa(empresaId, 0, 200)
+				rolService.listarPorEmpresa(empresaId, 0, 200),
+				empresaService
+					.obtenerPorId(empresaId)
+					.then((e) => e.nombre)
+					.catch(() => "")
 			]);
+			setEmpresaNombre(nombreEmpresa);
 			setUsers(usuariosData.content);
 			setRoles(rolesData.content.filter((r) => r.active));
 		} catch {
@@ -98,17 +101,6 @@ export default function UsuariosPage() {
 	useEffect(() => {
 		loadData();
 	}, [loadData]);
-
-	useEffect(() => {
-		const container = searchRef.current;
-		if (!container) return;
-		const input = container.querySelector("input");
-		if (!input) return;
-
-		const handler = () => setSearchText(input.value);
-		input.addEventListener("input", handler);
-		return () => input.removeEventListener("input", handler);
-	}, []);
 
 	const openCreateModal = () => {
 		setEditingUserId(null);
@@ -204,68 +196,9 @@ export default function UsuariosPage() {
 
 	const filteredUsers = useMemo(() => {
 		const q = normalizeText(searchText);
-		return users.filter((u) => {
-			const matchesFilter =
-				selectedFilter === "Todos" ||
-				(selectedFilter === "Activos" && u.active) ||
-				(selectedFilter === "Inactivos" && !u.active);
-
-			if (!matchesFilter) return false;
-			if (!q) return true;
-
-			const haystack = `${u.username} ${u.email}`.toLowerCase();
-			return haystack.includes(q);
-		});
-	}, [searchText, selectedFilter, users]);
-
-	const columns: Array<DataTableColumn<Usuario>> = useMemo(
-		() => [
-			{
-				key: "avatar",
-				header: "",
-				render: (r) => (
-					<div className="usr__avatarCell" aria-hidden="true">
-						{r.username.trim().slice(0, 1).toUpperCase()}
-					</div>
-				)
-			},
-			{ key: "username", header: "Usuario", render: (r) => r.username },
-			{ key: "email", header: "Correo", render: (r) => r.email },
-			{
-				key: "roles",
-				header: "Roles",
-				render: (r) => (r.roles.length > 0 ? r.roles.map((rol) => rol.nombre).join(", ") : "Sin rol asignado")
-			},
-			{ key: "active", header: "Estado", render: (r) => <StatusBadge status={r.active ? "Activo" : "Inactivo"} /> },
-			{ key: "updatedAt", header: "Última actualización", render: (r) => formatDateTime(r.updatedAt) },
-			{
-				key: "acciones",
-				header: "Acciones",
-				align: "right",
-				render: (r) => (
-					<div className="usr__actions">
-						<SecondaryButton type="button" className="usr__actionBtn" onClick={() => openEditModal(r)}>
-							Editar
-						</SecondaryButton>
-						{r.id === currentUserId ? null : r.active ? (
-							<SecondaryButton
-								type="button"
-								className="usr__actionBtn usr__actionBtn--danger"
-								onClick={() => openConfirmStatusChange(r)}
-							>
-								Desactivar
-							</SecondaryButton>
-						) : (
-							<SecondaryButton type="button" className="usr__actionBtn" onClick={() => openConfirmStatusChange(r)}>
-								Activar
-							</SecondaryButton>
-						)}
-					</div>
-				)
-			}
-		],
-		[currentUserId, openConfirmStatusChange, openEditModal]
-	);
+		if (!q) return users;
+		return users.filter((u) => `${u.username} ${u.email}`.toLowerCase().includes(q));
+	}, [searchText, users]);
 
 	if (loading) {
 		return (
@@ -285,15 +218,21 @@ export default function UsuariosPage() {
 
 	return (
 		<div className="usr">
-			<PageHeader
-				title="Usuarios"
-				subtitle="Administra los usuarios que podrán acceder al sistema."
-				actions={
+			<header className="usr__header">
+				<div className="usr__heading">
+					<h1 className="usr__title">Usuarios y Roles</h1>
+					<p className="usr__subtitle">Administra las credenciales y niveles de acceso del sistema.</p>
+				</div>
+				<div className="usr__tools">
+					<div className="usr__search">
+						<SearchBar placeholder="Buscar usuario..." value={searchText} onChange={setSearchText} />
+					</div>
 					<PrimaryButton type="button" onClick={openCreateModal}>
-						<Plus size={16} strokeWidth={2} /> Nuevo Usuario
+						<UserPlus size={16} strokeWidth={2.2} />
+						<span>Añadir Nuevo</span>
 					</PrimaryButton>
-				}
-			/>
+				</div>
+			</header>
 
 			{roles.length === 0 ? (
 				<div className="usr__state">
@@ -302,56 +241,82 @@ export default function UsuariosPage() {
 				</div>
 			) : null}
 
-			<div className="usr__controls">
-				<div className="usr__search">
-					<div ref={searchRef}>
-						<SearchBar placeholder="Buscar usuario..." />
+			{filteredUsers.length === 0 ? (
+				users.length === 0 ? (
+					<div className="usr__empty">
+						<div className="usr__emptyTitle">No hay usuarios registrados.</div>
+						<div className="usr__emptySubtitle">Crea el primer usuario del sistema.</div>
 					</div>
-				</div>
-				<div className="usr__filters" aria-label="Filtro visual">
-					<SecondaryButton
-						type="button"
-						className={["usr__filterBtn", selectedFilter === "Todos" ? "usr__filterBtn--active" : ""].join(" ")}
-						onClick={() => setSelectedFilter("Todos")}
-					>
-						Todos
-					</SecondaryButton>
-					<SecondaryButton
-						type="button"
-						className={["usr__filterBtn", selectedFilter === "Activos" ? "usr__filterBtn--active" : ""].join(" ")}
-						onClick={() => setSelectedFilter("Activos")}
-					>
-						Activos
-					</SecondaryButton>
-					<SecondaryButton
-						type="button"
-						className={["usr__filterBtn", selectedFilter === "Inactivos" ? "usr__filterBtn--active" : ""].join(" ")}
-						onClick={() => setSelectedFilter("Inactivos")}
-					>
-						Inactivos
-					</SecondaryButton>
-				</div>
-			</div>
-
-			<div className="usr__table">
-				<DataTable
-					columns={columns}
-					data={filteredUsers}
-					emptyState={
-						users.length === 0 ? (
-							<div className="usr__empty">
-								<div className="usr__emptyTitle">No hay usuarios registrados.</div>
-								<div className="usr__emptySubtitle">Crea el primer usuario del sistema.</div>
+				) : (
+					<div className="usr__empty">
+						<div className="usr__emptyTitle">No se encontraron usuarios.</div>
+						<div className="usr__emptySubtitle">Prueba modificando la búsqueda.</div>
+					</div>
+				)
+			) : (
+				<div className="usr__cards">
+					{filteredUsers.map((u) => (
+						<article key={u.id} className="usr__card">
+							<div className="usr__cardTop">
+								<Avatar
+									name={u.username}
+									size={84}
+									className="usr__avatarImg"
+									fallbackClassName="usr__avatarFallback"
+								/>
+								<StatusBadge status={u.active ? "Activo" : "Inactivo"} />
 							</div>
-						) : (
-							<div className="usr__empty">
-								<div className="usr__emptyTitle">No se encontraron usuarios.</div>
-								<div className="usr__emptySubtitle">Prueba modificando la búsqueda o el filtro.</div>
+							<div className="usr__identity">
+								<div className="usr__name" title={u.username}>
+									{u.username}
+								</div>
+								<div className="usr__role">
+									{u.roles.length > 0 ? u.roles.map((rol) => rol.nombre).join(", ") : "Sin rol asignado"}
+								</div>
 							</div>
-						)
-					}
-				/>
-			</div>
+							<div className="usr__meta">
+								<div className="usr__metaItem">
+									<span className="usr__metaLabel">Negocio</span>
+									<span className="usr__metaValue">{empresaNombre || "—"}</span>
+								</div>
+								<div className="usr__metaItem">
+									<span className="usr__metaLabel">Actualizado</span>
+									<span className="usr__metaValue">{formatFecha(u.updatedAt)}</span>
+								</div>
+							</div>
+							<div className="usr__cardBottom">
+								<div className="usr__contact" title={u.email}>
+									{u.email}
+								</div>
+								<div className="usr__actions">
+									<button type="button" className="usr__iconBtn" aria-label="Editar usuario" onClick={() => openEditModal(u)}>
+										<Pencil size={15} strokeWidth={2} />
+									</button>
+									{u.id === currentUserId ? null : u.active ? (
+										<button
+											type="button"
+											className="usr__iconBtn usr__iconBtn--danger"
+											aria-label="Desactivar usuario"
+											onClick={() => openConfirmStatusChange(u)}
+										>
+											<UserX size={15} strokeWidth={2} />
+										</button>
+									) : (
+										<button
+											type="button"
+											className="usr__iconBtn"
+											aria-label="Activar usuario"
+											onClick={() => openConfirmStatusChange(u)}
+										>
+											<UserCheck size={15} strokeWidth={2} />
+										</button>
+									)}
+								</div>
+							</div>
+						</article>
+					))}
+				</div>
+			)}
 
 			<Modal
 				open={modalOpen}

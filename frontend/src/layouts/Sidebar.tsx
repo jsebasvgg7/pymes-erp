@@ -22,6 +22,7 @@ import {
 	Bell,
 	Mail
 } from "lucide-react";
+import Avatar from "../components/Avatar";
 import { authService } from "../services/authService";
 import { empresaService } from "../services/empresaService";
 import logo from "../assets/logo-black.png";
@@ -73,46 +74,9 @@ const menuGroups: MenuGroup[] = [
 
 const TOPBAR_ALERTS_ENABLED = false;
 
-function getInitial(nombre?: string | null) {
-	if (!nombre) return "?";
-	return nombre.trim().charAt(0).toUpperCase();
-}
-
 function getRoleLabel(roles?: Array<{ nombre: string }>) {
 	if (!roles || roles.length === 0) return "Sin rol asignado";
 	return roles.map((r) => r.nombre).join(" · ");
-}
-
-function blobatarUrl(name: string, size = 64) {
-	return `https://blobatar.dev/avatar/${encodeURIComponent(name)}?size=${size}&background=circle`;
-}
-
-type AvatarProps = {
-	name: string;
-	size: number;
-	className: string;
-	fallbackClassName: string;
-};
-
-function Avatar({ name, size, className, fallbackClassName }: AvatarProps) {
-	const [failed, setFailed] = useState(false);
-
-	if (!name || failed) {
-		return (
-			<div className={fallbackClassName} aria-hidden="true">
-				{getInitial(name)}
-			</div>
-		);
-	}
-
-	return (
-		<img
-			src={blobatarUrl(name, size)}
-			alt=""
-			className={className}
-			onError={() => setFailed(true)}
-		/>
-	);
 }
 
 export default function Sidebar() {

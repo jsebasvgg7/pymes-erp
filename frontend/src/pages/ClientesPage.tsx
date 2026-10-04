@@ -1,10 +1,8 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Plus, Pencil, Trash2 } from "lucide-react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { Pencil, Trash2, User, UserPlus } from "lucide-react";
 import ConfirmDialog from "../components/ConfirmDialog";
-import DataTable, { DataTableColumn } from "../components/DataTable";
 import LoadingState from "../components/LoadingState";
 import Modal from "../components/Modal";
-import PageHeader from "../components/PageHeader";
 import PrimaryButton from "../components/PrimaryButton";
 import SearchBar from "../components/SearchBar";
 import SecondaryButton from "../components/SecondaryButton";
@@ -37,7 +35,6 @@ export default function ClientesPage() {
 	const [error, setError] = useState<string | null>(null);
 
 	const [searchQuery, setSearchQuery] = useState("");
-	const searchRef = useRef<HTMLDivElement | null>(null);
 
 	const [modalOpen, setModalOpen] = useState(false);
 	const [editingClienteId, setEditingClienteId] = useState<number | null>(null);
@@ -99,8 +96,8 @@ export default function ClientesPage() {
 	}, []);
 
 	const handleSave = useCallback(async () => {
-		if (!form.nombre.trim()) {
-			setFormError("El nombre es obligatorio.");
+		if (!form.nombre.trim() || !form.documento.trim() || !form.telefono.trim() || !form.email.trim()) {
+			setFormError("Completa los campos obligatorios (*).");
 			return;
 		}
 
@@ -161,65 +158,16 @@ export default function ClientesPage() {
 		}
 	}, [closeConfirm, confirmTarget]);
 
-	useEffect(() => {
-		const el = searchRef.current;
-		if (!el) return;
-
-		const input = el.querySelector("input");
-		if (!input) return;
-
-		const onInput = (e: Event) => {
-			const target = e.target as HTMLInputElement | null;
-			setSearchQuery(target?.value ?? "");
-		};
-
-		input.addEventListener("input", onInput);
-		return () => {
-			input.removeEventListener("input", onInput);
-		};
-	}, []);
-
 	const filteredClientes = useMemo(() => {
 		const q = searchQuery.trim().toLowerCase();
 		if (!q) return clientes;
-		return clientes.filter(
-			(c) =>
-				c.nombre.toLowerCase().includes(q) ||
-				(c.documento ?? "").toLowerCase().includes(q) ||
-				(c.email ?? "").toLowerCase().includes(q)
-		);
+		return clientes.filter((c) => c.nombre.toLowerCase().includes(q));
 	}, [clientes, searchQuery]);
 
-	const columns: Array<DataTableColumn<Cliente>> = useMemo(
-		() => [
-			{ key: "nombre", header: "Nombre", render: (r) => r.nombre },
-			{ key: "documento", header: "Documento", render: (r) => r.documento || "—" },
-			{ key: "telefono", header: "Teléfono", render: (r) => r.telefono || "—" },
-			{ key: "email", header: "Correo", render: (r) => r.email || "—" },
-			{ key: "estado", header: "Estado", render: (r) => <StatusBadge status={r.active ? "Activo" : "Inactivo"} /> },
-			{
-				key: "acciones",
-				header: "Acciones",
-				align: "right",
-				render: (r) => (
-					<div className="cli__actions">
-						<SecondaryButton type="button" className="cli__actionBtn" onClick={() => openEditModal(r)}>
-							<Pencil size={14} strokeWidth={2} />
-							<span>Editar</span>
-						</SecondaryButton>
-						<SecondaryButton
-							type="button"
-							className="cli__actionBtn cli__actionBtn--danger"
-							onClick={() => openConfirmDelete(r)}
-						>
-							<Trash2 size={14} strokeWidth={2} />
-							<span>Eliminar</span>
-						</SecondaryButton>
-					</div>
-				)
-			}
-		],
-		[openConfirmDelete, openEditModal]
+	const formatFecha = useCallback(
+		(iso: string) =>
+			new Date(iso).toLocaleDateString("en-GB", { day: "2-digit", month: "2-digit", year: "numeric" }),
+		[]
 	);
 
 	const emptyState = useMemo(() => {
@@ -258,32 +206,89 @@ export default function ClientesPage() {
 
 	return (
 		<div className="cli">
-			<PageHeader
-				title="Clientes"
-				subtitle="Administración de clientes registrados."
-				actions={
-					<PrimaryButton type="button" onClick={openCreateModal}>
-						<Plus size={16} strokeWidth={2.2} />
-						<span>Nuevo Cliente</span>
-					</PrimaryButton>
-				}
-			/>
-
-			<div className="cli__controls">
-				<div className="cli__search">
-					<div ref={searchRef}>
-						<SearchBar placeholder="Buscar cliente..." />
-					</div>
+			<header className="cli__header">
+				<div className="cli__heading">
+					<h1 className="cli__title">Directorio de Clientes</h1>
+					<p className="cli__subtitle">Gestión de contactos</p>
 				</div>
-			</div>
+				<div className="cli__tools">
+					<div className="cli__search">
+						<SearchBar placeholder="Buscar por nombre..." value={searchQuery} onChange={setSearchQuery} />
+					</div>
+					<PrimaryButton type="button" onClick={openCreateModal}>
+						<UserPlus size={16} strokeWidth={2.2} />
+						<span>Añadir Nuevo</span>
+					</PrimaryButton>
+				</div>
+			</header>
 
-			<div className="cli__table">
-				<DataTable columns={columns} data={filteredClientes} emptyState={emptyState} />
-			</div>
+			{filteredClientes.length === 0 ? (
+				emptyState
+			) : (
+				<div className="cli__grid-cards">
+					{filteredClientes.map((c) => (
+						<article key={c.id} className="cli__card">
+							<div className="cli__cardTop">
+								<span className="cli__avatar" aria-hidden="true">
+									<User size={22} strokeWidth={1.8} />
+								</span>
+								<StatusBadge status={c.active ? "Activo" : "Inactivo"} />
+							</div>
+							<div className="cli__identity">
+								<div className="cli__name" title={c.nombre}>
+									{c.nombre}
+								</div>
+								<div className="cli__role">Cliente</div>
+							</div>
+							<div className="cli__meta">
+								<div className="cli__metaItem">
+									<span className="cli__metaLabel">Documento</span>
+									<span className="cli__metaValue">{c.documento || "—"}</span>
+								</div>
+								<div className="cli__metaItem">
+									<span className="cli__metaLabel">Creado</span>
+									<span className="cli__metaValue">{formatFecha(c.createdAt)}</span>
+								</div>
+							</div>
+							<div className="cli__cardBottom">
+								<div className="cli__contact">
+									<span title={c.email}>{c.email || "—"}</span>
+									<span>{c.telefono || "—"}</span>
+								</div>
+								<div className="cli__actions">
+									<button type="button" className="cli__iconBtn" aria-label="Editar cliente" onClick={() => openEditModal(c)}>
+										<Pencil size={15} strokeWidth={2} />
+									</button>
+									<button
+										type="button"
+										className="cli__iconBtn cli__iconBtn--danger"
+										aria-label="Eliminar cliente"
+										onClick={() => openConfirmDelete(c)}
+									>
+										<Trash2 size={15} strokeWidth={2} />
+									</button>
+								</div>
+							</div>
+						</article>
+					))}
+				</div>
+			)}
 
 			<Modal
 				open={modalOpen}
-				title={editingClienteId ? "Editar Cliente" : "Nuevo Cliente"}
+				title={
+					<div className="cli__modalHead">
+						<div className="cli__modalTitle">
+							<User size={20} strokeWidth={2} />
+							<span>{editingClienteId ? "Editar cliente" : "Crear nuevo cliente"}</span>
+						</div>
+						<p className="cli__modalSubtitle">
+							{editingClienteId
+								? "Modifica los datos del cliente."
+								: "Ingresa los datos del cliente para agregarlo al directorio."}
+						</p>
+					</div>
+				}
 				onClose={closeModal}
 				footer={
 					<div className="cli__modalActions">
@@ -299,7 +304,9 @@ export default function ClientesPage() {
 				<form className="cli__form" onSubmit={(e) => e.preventDefault()}>
 					<div className="cli__grid">
 						<div className="cli__field">
-							<label className="cli__label">Nombre</label>
+							<label className="cli__label">
+								Nombre <span className="cli__req">*</span>
+							</label>
 							<input
 								className="cli__input"
 								type="text"
@@ -309,7 +316,9 @@ export default function ClientesPage() {
 							/>
 						</div>
 						<div className="cli__field">
-							<label className="cli__label">Documento</label>
+							<label className="cli__label">
+								Documento <span className="cli__req">*</span>
+							</label>
 							<input
 								className="cli__input"
 								type="text"
@@ -319,7 +328,9 @@ export default function ClientesPage() {
 							/>
 						</div>
 						<div className="cli__field">
-							<label className="cli__label">Teléfono</label>
+							<label className="cli__label">
+								Teléfono <span className="cli__req">*</span>
+							</label>
 							<input
 								className="cli__input"
 								type="text"
@@ -329,7 +340,9 @@ export default function ClientesPage() {
 							/>
 						</div>
 						<div className="cli__field">
-							<label className="cli__label">Correo</label>
+							<label className="cli__label">
+								Correo <span className="cli__req">*</span>
+							</label>
 							<input
 								className="cli__input"
 								type="email"
@@ -339,10 +352,9 @@ export default function ClientesPage() {
 							/>
 						</div>
 						<div className="cli__field cli__field--full">
-							<label className="cli__label">Dirección</label>
-							<input
-								className="cli__input"
-								type="text"
+							<label className="cli__label">Dirección (opcional)</label>
+							<textarea
+								className="cli__input cli__textarea"
 								placeholder="Dirección"
 								value={form.direccion}
 								onChange={(e) => setForm((prev) => ({ ...prev, direccion: e.target.value }))}

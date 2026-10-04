@@ -3,7 +3,7 @@ import "./Modal.css";
 
 type ModalProps = {
 	open: boolean;
-	title?: string;
+	title?: ReactNode;
 	children: ReactNode;
 	footer?: ReactNode;
 	onClose?: () => void;
@@ -23,4 +23,3 @@ export default function Modal({ open, title, children, footer, onClose }: ModalP
 		</div>
 	);
 }
-
