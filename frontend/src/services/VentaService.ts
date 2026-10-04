@@ -64,7 +64,7 @@ export const ventaService = {
   },
 
   async listarPorEmpresa(empresaId: number, page: number = 0, size: number = 20): Promise<{ content: FacturaVentaResponse[]; totalElements: number }> {
-    const response = await http.get(`/api/facturas-venta/listar-por-empresa/${empresaId}?page=${page}&size=${size}`);
+    const response = await http.get(`/api/facturas-venta/listar-por-empresa/${empresaId}?page=${page}&size=${size}&sort=fechaEmision,desc`);
     return response.data;
   },
 

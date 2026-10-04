@@ -84,7 +84,7 @@
 
 .db__metrics {
 	display: grid;
-	grid-template-columns: repeat(4, minmax(0, 1fr));
+	grid-template-columns: repeat(5, minmax(0, 1fr));
 	gap: 14px;
 	min-width: 0;
 }
@@ -180,6 +180,12 @@
 .db__movBadge--egreso {
 	color: var(--paper);
 	background: var(--ink);
+}
+
+@media (max-width: 1280px) {
+	.db__metrics {
+		grid-template-columns: repeat(3, minmax(0, 1fr));
+	}
 }
 
 @media (max-width: 1100px) {

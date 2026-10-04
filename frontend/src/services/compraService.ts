@@ -60,7 +60,7 @@ export const compraService = {
   },
 
   async listarPorEmpresa(empresaId: number, page: number = 0, size: number = 20): Promise<{ content: CompraResponse[]; totalElements: number }> {
-    const response = await http.get(`/api/compras/listar-por-empresa/${empresaId}?page=${page}&size=${size}`);
+    const response = await http.get(`/api/compras/listar-por-empresa/${empresaId}?page=${page}&size=${size}&sort=fechaCompra,desc`);
     return response.data;
   },
 

@@ -79,12 +79,12 @@ export const cajaService = {
   },
 
   async listarMovimientosPorCaja(cajaId: number, page: number = 0, size: number = 20): Promise<{ content: MovimientoCajaResponse[]; totalElements: number }> {
-    const response = await http.get(`/api/caja/movimientos/caja/${cajaId}?page=${page}&size=${size}`);
+    const response = await http.get(`/api/caja/movimientos/caja/${cajaId}?page=${page}&size=${size}&sort=fecha,desc`);
     return response.data;
   },
 
   async listarMovimientosPorEmpresa(empresaId: number, page: number = 0, size: number = 20): Promise<{ content: MovimientoCajaResponse[]; totalElements: number }> {
-    const response = await http.get(`/api/caja/movimientos/empresa/${empresaId}?page=${page}&size=${size}`);
+    const response = await http.get(`/api/caja/movimientos/empresa/${empresaId}?page=${page}&size=${size}&sort=fecha,desc`);
     return response.data;
   },
 

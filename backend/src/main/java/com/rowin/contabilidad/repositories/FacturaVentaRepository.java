@@ -48,7 +48,8 @@ public interface FacturaVentaRepository extends JpaRepository<FacturaVenta, Long
     @Query("SELECT COALESCE(MAX(f.numero), '0') FROM FacturaVenta f WHERE f.empresa.id = :empresaId")
     String findMaxNumeroByEmpresa(@Param("empresaId") Long empresaId);
 
-    @Query("SELECT COALESCE(c.nombre, 'Sin categoría') AS categoria, SUM(d.totalLinea) AS total " +
+    @Query("SELECT COALESCE(c.nombre, 'Sin categoría') AS categoria, " +
+           "SUM(CASE WHEN f.subtotal > 0 THEN d.totalLinea - (f.descuento * d.totalLinea / f.subtotal) ELSE d.totalLinea END) AS total " +
            "FROM FacturaVenta f " +
            "JOIN f.detalles d " +
            "LEFT JOIN d.producto p " +
@@ -56,7 +57,7 @@ public interface FacturaVentaRepository extends JpaRepository<FacturaVenta, Long
            "WHERE f.empresa.id = :empresaId AND f.active = true " +
            "AND f.fechaEmision BETWEEN :inicio AND :fin " +
            "GROUP BY c.nombre " +
-           "ORDER BY SUM(d.totalLinea) DESC")
+           "ORDER BY SUM(CASE WHEN f.subtotal > 0 THEN d.totalLinea - (f.descuento * d.totalLinea / f.subtotal) ELSE d.totalLinea END) DESC")
     List<Object[]> sumVentasPorCategoria(@Param("empresaId") Long empresaId,
                                           @Param("inicio") LocalDateTime inicio,
                                           @Param("fin") LocalDateTime fin);

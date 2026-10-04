@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { RefreshCw, Users, Package, AlertTriangle, Wallet, Info, Check } from "lucide-react";
+import { RefreshCw, Users, Package, AlertTriangle, Wallet, Info, Check, ShoppingCart } from "lucide-react";
 import DataTable, { DataTableColumn } from "../components/DataTable";
 import LoadingState from "../components/LoadingState";
 import StatCard from "../components/StatCard";
@@ -11,7 +11,15 @@ import { ventaService, type CategoriaVenta } from "../services/VentaService";
 import { cajaService, type MovimientoCajaResponse, type FlujoCajaDiario } from "../services/cajaService";
 import { productoService, type Producto } from "../services/ProductoService";
 import { clienteService, type Cliente } from "../services/clienteService";
-import { calcularNetoCajaHoy, calcularRegistradosAyer } from "../services/dashboardAnalytics";
+import { calcularNetoCajaHoy } from "../services/dashboardAnalytics";
+import {
+	cargarVentasHoyAyer,
+	contarEnDia,
+	etiquetaVentas,
+	variacionNuevosHoy,
+	variacionVsAyer,
+	type VentasHoyAyer
+} from "../services/comparacionDiaria";
 import "../components/dashboard/dashboard-charts.css";
 import "./DashboardPage.css";
 
@@ -72,10 +80,11 @@ export default function DashboardPage() {
 	const [flujoCajaDiario, setFlujoCajaDiario] = useState<FlujoCajaDiario[]>([]);
 	const [productos, setProductos] = useState<Producto[]>([]);
 	const [clientes, setClientes] = useState<Cliente[]>([]);
+	const [ventasDia, setVentasDia] = useState<VentasHoyAyer | null>(null);
 
 	const cargarDashboard = useCallback(
 		async (empresaIdActual: number, signalCancelled: () => boolean) => {
-			const [resumenData, cajaData, flujoData, productosData, clientesData] = await Promise.all([
+			const [resumenData, cajaData, flujoData, productosData, clientesData, ventasDiaData] = await Promise.all([
 				dashboardService.obtenerResumen(empresaIdActual),
 				cajaService.listarMovimientosPorEmpresa(empresaIdActual, 0, 50),
 				cajaService.obtenerFlujoCajaDiario(empresaIdActual, 12).catch((e) => {
@@ -83,7 +92,11 @@ export default function DashboardPage() {
 					return [] as FlujoCajaDiario[];
 				}),
 				productoService.listarPorEmpresa(empresaIdActual, 0, 200),
-				clienteService.listarPorEmpresa(empresaIdActual, 0, 200)
+				clienteService.listarPorEmpresa(empresaIdActual, 0, 200),
+				cargarVentasHoyAyer(empresaIdActual).catch((e) => {
+					console.error("Ventas de hoy no disponibles:", e);
+					return null;
+				})
 			]);
 
 			if (signalCancelled()) return;
@@ -95,6 +108,7 @@ export default function DashboardPage() {
 			setFlujoCajaDiario(flujoData);
 			setProductos(productosData.content);
 			setClientes(clientesData.content);
+			setVentasDia(ventasDiaData);
 		},
 		[]
 	);
@@ -193,13 +207,20 @@ export default function DashboardPage() {
 			  }
 			: undefined;
 
-	const clientesAyer = useMemo(() => calcularRegistradosAyer(clientes), [clientes]);
-	const variacionClientes =
-		clientesAyer !== 0 ? { direction: "up" as const, text: `${clientesAyer} ayer` } : undefined;
+	const variacionClientes = useMemo(
+		() => variacionNuevosHoy(contarEnDia(clientes.map((c) => c.createdAt), 0)),
+		[clientes]
+	);
 
-	const productosAyer = useMemo(() => calcularRegistradosAyer(productos), [productos]);
-	const variacionProductos =
-		productosAyer !== 0 ? { direction: "up" as const, text: `${productosAyer} ayer` } : undefined;
+	const variacionProductos = useMemo(
+		() => variacionNuevosHoy(contarEnDia(productos.map((p) => p.createdAt), 0)),
+		[productos]
+	);
+
+	const variacionVentas = useMemo(
+		() => (ventasDia ? variacionVsAyer(ventasDia.hoy.total, ventasDia.ayer.total, formatCurrency) : undefined),
+		[ventasDia]
+	);
 
 	const movimientosUnificados: MovimientoUnificado[] = useMemo(
 		() =>
@@ -281,6 +302,13 @@ export default function DashboardPage() {
 			</div>
 
 			<section className="db__metrics" aria-label="Indicadores">
+				<StatCard
+					icon={<ShoppingCart size={20} strokeWidth={1.8} />}
+					title="Ventas de hoy"
+					value={formatCurrency(ventasDia?.hoy.total ?? 0)}
+					color="green"
+					variation={variacionVentas}
+				/>
 				<StatCard
 					icon={<Users size={20} strokeWidth={1.8} />}
 					title="Clientes registrados"

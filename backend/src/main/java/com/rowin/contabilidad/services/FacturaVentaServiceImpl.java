@@ -248,6 +248,7 @@ public class FacturaVentaServiceImpl extends BaseCrudService implements FacturaV
             detalle.setFacturaVenta(savedFactura);
             detalleFacturaRepository.save(detalle);
         }
+        savedFactura.getDetalles().addAll(detalles);
 
         // 11. Registrar movimiento de caja (ingreso)
         MovimientoCaja movimiento = new MovimientoCaja();

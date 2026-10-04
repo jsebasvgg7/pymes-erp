@@ -10,6 +10,15 @@ import { cajaService, type MovimientoCajaResponse } from "../services/cajaServic
 import { compraService, type CompraResponse } from "../services/compraService";
 import { productoService, type Producto } from "../services/ProductoService";
 import { ventaService, type FacturaVentaResponse } from "../services/VentaService";
+import {
+	cargarVentasHoyAyer,
+	contarEnDia,
+	etiquetaCompras,
+	etiquetaVentas,
+	variacionNuevosHoy,
+	variacionVsAyer,
+	type VentasHoyAyer
+} from "../services/comparacionDiaria";
 import "./ReportesPage.css";
 
 function formatCurrency(value: number) {
@@ -43,6 +52,8 @@ export default function ReportesPage() {
 	const [products, setProducts] = useState<Producto[]>([]);
 	const [cashMovements, setCashMovements] = useState<MovimientoCajaResponse[]>([]);
 	const [saldoCaja, setSaldoCaja] = useState(0);
+	const [totales, setTotales] = useState({ ventas: 0, compras: 0, productos: 0 });
+	const [ventasDia, setVentasDia] = useState<VentasHoyAyer | null>(null);
 
 	const loadData = useCallback(async () => {
 		if (!empresaId) {
@@ -54,12 +65,13 @@ export default function ReportesPage() {
 		setLoading(true);
 		setError(null);
 		try {
-			const [ventasData, comprasData, productosData, movimientosData, resumenes] = await Promise.all([
+			const [ventasData, comprasData, productosData, movimientosData, resumenes, ventasDiaData] = await Promise.all([
 				ventaService.listarPorEmpresa(empresaId, 0, 100),
 				compraService.listarPorEmpresa(empresaId, 0, 100),
 				productoService.listarPorEmpresa(empresaId, 0, 200),
 				cajaService.listarMovimientosPorEmpresa(empresaId, 0, 100),
-				cajaService.obtenerResumenTodas(empresaId)
+				cajaService.obtenerResumenTodas(empresaId),
+				cargarVentasHoyAyer(empresaId).catch(() => null)
 			]);
 
 			setSales(ventasData.content);
@@ -67,6 +79,12 @@ export default function ReportesPage() {
 			setProducts(productosData.content);
 			setCashMovements(movimientosData.content);
 			setSaldoCaja(resumenes.reduce((acc, r) => acc + r.saldoActual, 0));
+			setTotales({
+				ventas: ventasData.totalElements,
+				compras: comprasData.totalElements,
+				productos: productosData.totalElements
+			});
+			setVentasDia(ventasDiaData);
 		} catch {
 			setError("No se pudo cargar la información de reportes. Verifica tu conexión con el servidor.");
 		} finally {
@@ -80,12 +98,32 @@ export default function ReportesPage() {
 
 	const computed = useMemo(
 		() => ({
-			ventasRegistradas: sales.length,
-			comprasRegistradas: purchases.length,
-			productosRegistrados: products.length,
+			ventasRegistradas: totales.ventas,
+			comprasRegistradas: totales.compras,
+			productosRegistrados: totales.productos,
 			saldoCaja
 		}),
-		[sales.length, purchases.length, products.length, saldoCaja]
+		[totales, saldoCaja]
+	);
+
+	const variacionVentas = useMemo(
+		() => (ventasDia ? variacionVsAyer(ventasDia.hoy.cantidad, ventasDia.ayer.cantidad, etiquetaVentas) : undefined),
+		[ventasDia]
+	);
+
+	const variacionCompras = useMemo(
+		() =>
+			variacionVsAyer(
+				contarEnDia(purchases.map((c) => c.fechaCompra), 0),
+				contarEnDia(purchases.map((c) => c.fechaCompra), -1),
+				etiquetaCompras
+			),
+		[purchases]
+	);
+
+	const variacionProductos = useMemo(
+		() => variacionNuevosHoy(contarEnDia(products.map((p) => p.createdAt), 0)),
+		[products]
 	);
 
 	const recentSales = useMemo(() => {
@@ -117,6 +155,12 @@ export default function ReportesPage() {
 				render: (r) => sumCantidad(r.detalles).toLocaleString("es-CO")
 			},
 			{ key: "formaPagoNombre", header: "Método de pago", render: (r) => r.formaPagoNombre },
+			{
+				key: "descuento",
+				header: "Descuento",
+				align: "right",
+				render: (r) => (r.descuento > 0 ? formatCurrency(r.descuento) : "—")
+			},
 			{ key: "total", header: "Total", align: "right", render: (r) => formatCurrency(r.total) }
 		],
 		[]
@@ -197,10 +241,10 @@ export default function ReportesPage() {
 			<PageHeader title="Reportes" subtitle="Consulta la información general del negocio." />
 
 			<section className="rep__metrics" aria-label="Resumen">
-				<StatCard icon={<CreditCard size={20} strokeWidth={1.8} />} title="Ventas registradas" value={computed.ventasRegistradas.toLocaleString("es-CO")} color="blue" />
-				<StatCard icon={<Receipt size={20} strokeWidth={1.8} />} title="Compras registradas" value={computed.comprasRegistradas.toLocaleString("es-CO")} color="amber" />
-				<StatCard icon={<Package size={20} strokeWidth={1.8} />} title="Productos registrados" value={computed.productosRegistrados.toLocaleString("es-CO")} color="green" />
-				<StatCard icon={<Wallet size={20} strokeWidth={1.8} />} title="Saldo actual de Caja" value={formatCurrency(computed.saldoCaja)} color="blue" footnote="Suma de todas las cajas activas" />
+				<StatCard icon={<CreditCard size={20} strokeWidth={1.8} />} title="Ventas registradas" value={computed.ventasRegistradas.toLocaleString("es-CO")} color="blue" variation={variacionVentas} />
+				<StatCard icon={<Receipt size={20} strokeWidth={1.8} />} title="Compras registradas" value={computed.comprasRegistradas.toLocaleString("es-CO")} color="amber" variation={variacionCompras} />
+				<StatCard icon={<Package size={20} strokeWidth={1.8} />} title="Productos registrados" value={computed.productosRegistrados.toLocaleString("es-CO")} color="green" variation={variacionProductos} />
+				<StatCard icon={<Wallet size={20} strokeWidth={1.8} />} title="Saldo actual de Caja" value={formatCurrency(computed.saldoCaja)} color="blue" />
 			</section>
 
 			<section className="rep__panels" aria-label="Secciones">
