@@ -2,7 +2,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { KeyboardEvent } from "react";
 import { Link } from "react-router-dom";
 import { AlertTriangle, Check, ChevronDown, Minus, Package, Plus, Printer, Receipt, Trash2 } from "lucide-react";
-import ConfirmDialog from "../components/ConfirmDialog";
 import LoadingState from "../components/LoadingState";
 import Modal from "../components/Modal";
 import PrimaryButton from "../components/PrimaryButton";
@@ -32,8 +31,6 @@ type SaleReceipt = {
 };
 
 type StockStatus = "ok" | "low" | "out";
-
-const QUICK_BILLS = [5000, 10000, 20000, 50000, 100000];
 
 const UNIT_LABELS: Record<string, [string, string]> = {
 	UNIDAD: ["unidad", "unidades"],
@@ -110,6 +107,7 @@ export default function PosPage() {
 	const [formaPagoId, setFormaPagoId] = useState<string>("");
 	const [clienteId, setClienteId] = useState<string>("");
 	const [receivedDigits, setReceivedDigits] = useState("");
+	const [discountDigits, setDiscountDigits] = useState("");
 
 	const [searchQuery, setSearchQuery] = useState("");
 	const [categoryFilter, setCategoryFilter] = useState<number | null>(null);
@@ -189,7 +187,9 @@ export default function PosPage() {
 	const quantityById = useMemo(() => new Map(lines.map((l) => [l.productId, l.quantity])), [lines]);
 
 	const subtotal = useMemo(() => cartItems.reduce((acc, i) => acc + i.quantity * i.product.precioVenta, 0), [cartItems]);
-	const total = subtotal;
+	const discount = Math.min(discountDigits ? Number(discountDigits) : 0, subtotal);
+	const discountPercent = subtotal > 0 ? (discount / subtotal) * 100 : 0;
+	const total = subtotal - discount;
 	const unitsCount = useMemo(() => cartItems.reduce((acc, i) => acc + i.quantity, 0), [cartItems]);
 
 	const selectedFormaPago = useMemo(() => formasPago.find((f) => String(f.id) === formaPagoId), [formaPagoId, formasPago]);
@@ -243,6 +243,7 @@ export default function PosPage() {
 		setLines([]);
 		setClienteId("");
 		setReceivedDigits("");
+		setDiscountDigits("");
 		setSaleError(null);
 	}, []);
 
@@ -274,6 +275,7 @@ export default function PosPage() {
 				empresaId,
 				clienteId: clienteId ? Number(clienteId) : undefined,
 				formaPagoId: Number(formaPagoId),
+				descuento: discount > 0 ? discount : undefined,
 				detalles: cartItems.map((i) => ({
 					productoId: i.productId,
 					descripcion: i.product.nombre,
@@ -298,7 +300,7 @@ export default function PosPage() {
 		} finally {
 			setSaving(false);
 		}
-	}, [canFinalize, cartItems, cashPayment, clienteId, empresaId, formaPagoId, received, resetOrder]);
+	}, [canFinalize, cartItems, cashPayment, clienteId, discount, empresaId, formaPagoId, received, resetOrder]);
 
 	const closeReceipt = () => {
 		setReceipt(null);
@@ -491,111 +493,126 @@ export default function PosPage() {
 					<h2 className="pos__sectionTitle pos__sectionTitle--order">Venta actual</h2>
 
 					<div className="pos__card">
-						{cartItems.length === 0 ? (
-							<div className="pos__empty pos__empty--card">
-								<div className="pos__emptyTitle">Sin productos en el pedido.</div>
-								<div className="pos__emptySubtitle">Selecciona productos de la lista para iniciar.</div>
-							</div>
-						) : (
-							<>
-								<div className="pos__line pos__line--head">
-									<span>Total productos</span>
-									<span className="pos__num">
-										{pad2(unitsCount)} {unitsCount === 1 ? "producto" : "productos"}
-									</span>
+						<div className="pos__orderScroll">
+							{cartItems.length === 0 ? (
+								<div className="pos__empty pos__empty--card">
+									<div className="pos__emptyTitle">Sin productos en el pedido.</div>
+									<div className="pos__emptySubtitle">Selecciona productos de la lista para iniciar.</div>
 								</div>
-								<ul className="pos__lines">
-									{cartItems.map((i) => (
-										<li key={i.productId} className="pos__line">
-											<span className="pos__lineName">
-												{i.product.nombre}
-												{i.quantity > 1 ? <span className="pos__lineQty"> ×{i.quantity}</span> : null}
-											</span>
-											<span className="pos__num">{formatCurrency(i.quantity * i.product.precioVenta)}</span>
-										</li>
-									))}
-								</ul>
-								<div className="pos__line pos__line--sub">
-									<span>Subtotal</span>
-									<span className="pos__num">{formatCurrency(subtotal)}</span>
-								</div>
-							</>
-						)}
-
-						<div className="pos__divider" />
-
-						<div className="pos__line">
-							<label htmlFor="pos-cliente">Cliente</label>
-							<div className="pos__pill">
-								<select id="pos-cliente" value={clienteId} onChange={(e) => setClienteId(e.target.value)}>
-									<option value="">Sin cliente</option>
-									{clientes.map((c) => (
-										<option key={c.id} value={c.id}>
-											{c.nombre}
-										</option>
-									))}
-								</select>
-								<ChevronDown size={13} strokeWidth={2} aria-hidden="true" />
-							</div>
-						</div>
-						{clienteId ? <p className="pos__hint">Se creará una cuenta por cobrar para este cliente.</p> : null}
-
-						<div className="pos__line">
-							<label htmlFor="pos-pago">Método de pago</label>
-							<div className="pos__pill">
-								<select id="pos-pago" value={formaPagoId} onChange={(e) => setFormaPagoId(e.target.value)}>
-									{formasPago.length === 0 ? <option value="">Sin formas de pago</option> : null}
-									{formasPago.map((f) => (
-										<option key={f.id} value={f.id}>
-											{f.nombre}
-										</option>
-									))}
-								</select>
-								<ChevronDown size={13} strokeWidth={2} aria-hidden="true" />
-							</div>
-						</div>
-
-						{cashPayment && cartItems.length > 0 ? (
-							<div className="pos__cash">
-								<div className="pos__line">
-									<label htmlFor="pos-recibido">Recibido</label>
-									<input
-										id="pos-recibido"
-										className="pos__received"
-										type="text"
-										inputMode="numeric"
-										placeholder="$ 0"
-										value={receivedDigits ? Number(receivedDigits).toLocaleString("es-CO") : ""}
-										onChange={(e) => setReceivedDigits(e.target.value.replace(/\D/g, "").slice(0, 9))}
-									/>
-								</div>
-								<div className="pos__bills">
-									<button type="button" className="pos__chip pos__chip--sm" onClick={() => setReceivedDigits(String(total))}>
-										Exacto
-									</button>
-									{QUICK_BILLS.map((b) => (
-										<button
-											key={b}
-											type="button"
-											className="pos__chip pos__chip--sm"
-											onClick={() => setReceivedDigits(String(b))}
-										>
-											{b.toLocaleString("es-CO")}
-										</button>
-									))}
-								</div>
-								{received > 0 ? (
-									<div className={`pos__line pos__line--change${insufficientCash ? " pos__line--danger" : ""}`}>
-										<span>{insufficientCash ? "Faltan" : "Cambio"}</span>
-										<span className="pos__num">{formatCurrency(Math.abs(changeDue))}</span>
+							) : (
+								<>
+									<div className="pos__line pos__line--head">
+										<span>Total productos</span>
+										<span className="pos__num">
+											{pad2(unitsCount)} {unitsCount === 1 ? "producto" : "productos"}
+										</span>
 									</div>
-								) : null}
-							</div>
-						) : null}
+									<ul className="pos__lines">
+										{cartItems.map((i) => (
+											<li key={i.productId} className="pos__line">
+												<span className="pos__lineName">
+													{i.product.nombre}
+													{i.quantity > 1 ? <span className="pos__lineQty"> ×{i.quantity}</span> : null}
+												</span>
+												<span className="pos__num">{formatCurrency(i.quantity * i.product.precioVenta)}</span>
+											</li>
+										))}
+									</ul>
+								</>
+							)}
+						</div>
 
-						<div className="pos__line pos__line--total" aria-live="polite">
-							<span>Total</span>
-							<span className="pos__num">{formatCurrency(total)}</span>
+						<div className="pos__summary">
+							{cartItems.length > 0 ? (
+								<div className="pos__line">
+									<span>Subtotal</span>
+									<span className="pos__num pos__num--ink">{formatCurrency(subtotal)}</span>
+								</div>
+							) : null}
+
+							{cartItems.length > 0 ? (
+								<>
+									<div className="pos__line">
+										<label htmlFor="pos-descuento">Descuento</label>
+										<input
+											id="pos-descuento"
+											className="pos__received pos__discount"
+											type="text"
+											inputMode="numeric"
+											placeholder="$ 0"
+											value={discountDigits ? discount.toLocaleString("es-CO") : ""}
+											onChange={(e) => {
+												const digits = e.target.value.replace(/\D/g, "").slice(0, 9);
+												setDiscountDigits(digits ? String(Math.min(Number(digits), subtotal)) : "");
+											}}
+										/>
+									</div>
+									{discount > 0 ? (
+										<p className="pos__hint">
+											Equivale al {discountPercent.toLocaleString("es-CO", { maximumFractionDigits: 1 })}% del subtotal
+										</p>
+									) : null}
+								</>
+							) : null}
+
+							<div className="pos__line">
+								<label htmlFor="pos-cliente">Cliente</label>
+								<div className="pos__pill">
+									<select id="pos-cliente" value={clienteId} onChange={(e) => setClienteId(e.target.value)}>
+										<option value="">Sin cliente</option>
+										{clientes.map((c) => (
+											<option key={c.id} value={c.id}>
+												{c.nombre}
+											</option>
+										))}
+									</select>
+									<ChevronDown size={13} strokeWidth={2} aria-hidden="true" />
+								</div>
+							</div>
+							{clienteId ? <p className="pos__hint">Se creará una cuenta por cobrar para este cliente.</p> : null}
+
+							<div className="pos__line">
+								<label htmlFor="pos-pago">Método de pago</label>
+								<div className="pos__pill">
+									<select id="pos-pago" value={formaPagoId} onChange={(e) => setFormaPagoId(e.target.value)}>
+										{formasPago.length === 0 ? <option value="">Sin formas de pago</option> : null}
+										{formasPago.map((f) => (
+											<option key={f.id} value={f.id}>
+												{f.nombre}
+											</option>
+										))}
+									</select>
+									<ChevronDown size={13} strokeWidth={2} aria-hidden="true" />
+								</div>
+							</div>
+
+							{cashPayment && cartItems.length > 0 ? (
+								<div className="pos__cash">
+									<div className="pos__line">
+										<label htmlFor="pos-recibido">Recibido</label>
+										<input
+											id="pos-recibido"
+											className="pos__received"
+											type="text"
+											inputMode="numeric"
+											placeholder="$ 0"
+											value={receivedDigits ? Number(receivedDigits).toLocaleString("es-CO") : ""}
+											onChange={(e) => setReceivedDigits(e.target.value.replace(/\D/g, "").slice(0, 9))}
+										/>
+									</div>
+									{received > 0 ? (
+										<div className={`pos__line pos__line--change${insufficientCash ? " pos__line--danger" : ""}`}>
+											<span>{insufficientCash ? "Faltan" : "Cambio"}</span>
+											<span className="pos__num">{formatCurrency(Math.abs(changeDue))}</span>
+										</div>
+									) : null}
+								</div>
+							) : null}
+
+							<div className="pos__line pos__line--total" aria-live="polite">
+								<span>Total</span>
+								<span className="pos__num">{formatCurrency(total)}</span>
+							</div>
 						</div>
 					</div>
 
@@ -692,6 +709,12 @@ export default function PosPage() {
 								<span>Subtotal</span>
 								<span className="pos__num">{formatCurrency(receipt.sale.subtotal)}</span>
 							</div>
+							{receipt.sale.descuento > 0 ? (
+								<div>
+									<span>Descuento</span>
+									<span className="pos__num">- {formatCurrency(receipt.sale.descuento)}</span>
+								</div>
+							) : null}
 							<div className="pos__ticketTotal">
 								<span>Total</span>
 								<span className="pos__num">{formatCurrency(receipt.sale.total)}</span>
@@ -713,15 +736,44 @@ export default function PosPage() {
 				) : null}
 			</Modal>
 
-			<ConfirmDialog
+			<Modal
 				open={confirmCancelOpen}
-				title="Cancelar pedido"
-				message="¿Deseas vaciar el pedido actual? Se quitarán todos los productos seleccionados."
-				confirmText="Vaciar pedido"
-				cancelText="Volver"
-				onConfirm={confirmCancel}
-				onCancel={() => setConfirmCancelOpen(false)}
-			/>
+				title={
+					<div className="pos__confirmHead">
+						<span className="pos__confirmIcon" aria-hidden="true">
+							<Trash2 size={18} strokeWidth={2} />
+						</span>
+						<div className="pos__modalHead">
+							<div className="pos__modalTitle">
+								<span>Vaciar pedido</span>
+							</div>
+							<p className="pos__modalSubtitle">Esta acción no se puede deshacer</p>
+						</div>
+					</div>
+				}
+				onClose={() => setConfirmCancelOpen(false)}
+				footer={
+					<div className="pos__modalActions pos__modalActions--split">
+						<SecondaryButton type="button" autoFocus onClick={() => setConfirmCancelOpen(false)}>
+							Volver
+						</SecondaryButton>
+						<PrimaryButton type="button" onClick={confirmCancel}>
+							<Trash2 size={14} strokeWidth={2} />
+							<span>Vaciar pedido</span>
+						</PrimaryButton>
+					</div>
+				}
+			>
+				<div className="pos__confirm">
+					<p className="pos__confirmText">Se quitarán todos los productos del pedido actual y volverás a empezar con un pedido vacío.</p>
+					<div className="pos__confirmSummary">
+						<span>
+							{pad2(unitsCount)} {unitsCount === 1 ? "producto" : "productos"}
+						</span>
+						<strong className="pos__num">{formatCurrency(total)}</strong>
+					</div>
+				</div>
+			</Modal>
 		</div>
 	);
 }

@@ -54,6 +54,9 @@ public class FacturaVenta extends BaseEntity {
 	private BigDecimal subtotal = BigDecimal.ZERO;
 
 	@Column(nullable = false, precision = 19, scale = 2)
+	private BigDecimal descuento = BigDecimal.ZERO;
+
+	@Column(nullable = false, precision = 19, scale = 2)
 	private BigDecimal totalImpuestos = BigDecimal.ZERO;
 
 	@Column(nullable = false, precision = 19, scale = 2)
@@ -98,6 +101,10 @@ public class FacturaVenta extends BaseEntity {
 
 	public BigDecimal getSubtotal() {
 		return subtotal;
+	}
+
+	public BigDecimal getDescuento() {
+		return descuento;
 	}
 
 	public BigDecimal getTotalImpuestos() {
@@ -148,6 +155,10 @@ public class FacturaVenta extends BaseEntity {
 
 	public void setSubtotal(BigDecimal subtotal) {
 		this.subtotal = subtotal;
+	}
+
+	public void setDescuento(BigDecimal descuento) {
+		this.descuento = descuento;
 	}
 
 	public void setTotalImpuestos(BigDecimal totalImpuestos) {

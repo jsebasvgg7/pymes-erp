@@ -13,6 +13,7 @@ export type FacturaVentaCreateRequest = {
   clienteId?: number;
   formaPagoId: number;
   numero?: string;
+  descuento?: number;
   detalles: DetalleFacturaRequest[];
 };
 
@@ -41,6 +42,7 @@ export type FacturaVentaResponse = {
   fechaEmision: string;
   estado: string;
   subtotal: number;
+  descuento: number;
   totalImpuestos: number;
   total: number;
   detalles: DetalleFacturaResponse[];

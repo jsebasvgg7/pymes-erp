@@ -28,6 +28,7 @@ public interface FacturaVentaMapper {
     @Mapping(target = "fechaEmision", ignore = true)
     @Mapping(target = "estado", ignore = true)
     @Mapping(target = "subtotal", ignore = true)
+    @Mapping(target = "descuento", ignore = true)
     @Mapping(target = "totalImpuestos", ignore = true)
     @Mapping(target = "total", ignore = true)
     @Mapping(target = "fechaVencimiento", ignore = true)

@@ -21,6 +21,7 @@ public record FacturaVentaResponse(
     LocalDateTime fechaEmision,
     FacturaEstado estado,
     BigDecimal subtotal,
+    BigDecimal descuento,
     BigDecimal totalImpuestos,
     BigDecimal total,
     List<DetalleFacturaResponse> detalles

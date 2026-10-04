@@ -226,10 +226,19 @@ public class FacturaVentaServiceImpl extends BaseCrudService implements FacturaV
             detalles.add(detalle);
         }
 
-        // 8. Actualizar totales de la factura
+        // 8. Aplicar descuento y actualizar totales de la factura
+        BigDecimal descuento = request.descuento() == null ? BigDecimal.ZERO : request.descuento();
+        if (descuento.signum() < 0) {
+            throw new IllegalArgumentException("El descuento no puede ser negativo");
+        }
+        if (descuento.compareTo(subtotal) > 0) {
+            throw new IllegalArgumentException("El descuento no puede superar el subtotal de la venta");
+        }
+
         factura.setSubtotal(subtotal);
+        factura.setDescuento(descuento);
         factura.setTotalImpuestos(totalImpuestos);
-        factura.setTotal(subtotal.add(totalImpuestos));
+        factura.setTotal(subtotal.subtract(descuento).add(totalImpuestos));
 
         // 9. Guardar factura
         FacturaVenta savedFactura = facturaVentaRepository.save(factura);
