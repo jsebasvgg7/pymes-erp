@@ -1,10 +1,31 @@
 # Pymes ERP
 
+![Java](https://img.shields.io/badge/Java-21-orange)
+![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.3.4-6DB33F)
+![React](https://img.shields.io/badge/React-18-61DAFB)
+![TypeScript](https://img.shields.io/badge/TypeScript-blue)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Neon-4169E1)
+![Status](https://img.shields.io/badge/estado-en%20desarrollo-yellow)
+
 ERP ligero con Punto de Venta (POS) para pequeños negocios de Cartagena de Indias: restaurantes y comidas rápidas, cafeterías y panaderías, tiendas de barrio y minimercados, papelerías y ferreterías pequeñas.
 
 Integra productos, inventario, compras, ventas, caja y reportes, y genera información contable de forma automática a partir de la operación diaria — sin que el usuario tenga que llevar contabilidad por su cuenta.
 
 Proyecto académico (Tecnología en Desarrollo de Software, Fundación Universitaria Tecnológico Comfenalco) con vocación comercial (SaaS).
+
+---
+
+## Tabla de contenido
+
+- [Filosofía](#filosofía)
+- [Arquitectura](#arquitectura)
+- [Módulos](#módulos)
+- [Instalación y ejecución local](#instalación-y-ejecución-local)
+- [Decisiones de producto](#decisiones-de-producto)
+- [Diseño y marca](#diseño-y-marca)
+- [Seguridad](#seguridad)
+- [Próximos pasos](#próximos-pasos)
+- [Equipo](#equipo)
 
 ---
 
@@ -71,6 +92,55 @@ Debe existir una **Caja activa** para la empresa, o la venta falla.
 | Usuarios y Roles | Multi-rol por usuario |
 
 **Formas de pago:** Efectivo, Tarjeta, Transferencia como catálogo base, configurable por empresa.
+
+---
+
+## Instalación y ejecución local
+
+### Requisitos previos
+
+- Java 21
+- Maven
+- Node.js 18+ y npm
+- Una base de datos PostgreSQL (local vía Docker, o una instancia en Neon)
+
+### Backend
+
+```bash
+git clone https://github.com/jsebasvgg7/pymes-erp.git
+cd pymes-erp/backend
+```
+
+Crea un archivo `.env` en la raíz del backend con las credenciales de la base de datos:
+
+```
+DB_URL=jdbc:postgresql://<host>:<puerto>/<base>
+DB_USER=<usuario>
+DB_PASSWORD=<contraseña>
+```
+
+Ejecuta las migraciones y levanta el servidor:
+
+```bash
+mvn clean install
+mvn spring-boot:run
+```
+
+El backend queda disponible en `http://localhost:8080`, con la documentación de la API en `http://localhost:8080/swagger-ui.html`.
+
+### Frontend
+
+```bash
+cd pymes-erp/frontend
+npm install
+npm run dev
+```
+
+El frontend queda disponible en `http://localhost:5173`.
+
+### Primer arranque (base de datos vacía)
+
+Para poblar el primer usuario en una base vacía hoy se requiere pasar manualmente por Swagger: crear Empresa → Rol admin → Usuario admin → Formas de pago → Caja inicial, en ese orden. Ver `ERP_PLAN.md` para el detalle y el estado de un flujo de registro automático que resolvería esto.
 
 ---
 
