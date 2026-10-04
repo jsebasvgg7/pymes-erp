@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Pencil, UserCheck, UserPlus, UserX } from "lucide-react";
+import { Pencil, User, UserCheck, UserPlus, UserX } from "lucide-react";
 import Avatar from "../components/Avatar";
 import ConfirmDialog from "../components/ConfirmDialog";
 import LoadingState from "../components/LoadingState";
@@ -320,7 +320,19 @@ export default function UsuariosPage() {
 
 			<Modal
 				open={modalOpen}
-				title={editingUserId ? "Editar Usuario" : "Nuevo Usuario"}
+				title={
+					<div className="usr__modalHead">
+						<div className="usr__modalTitle">
+							<User size={20} strokeWidth={2} />
+							<span>{editingUserId ? "Editar usuario" : "Crear nuevo usuario"}</span>
+						</div>
+						<p className="usr__modalSubtitle">
+							{editingUserId
+								? "Modifica los datos y los roles del usuario."
+								: "Ingresa los datos del usuario para darle acceso al sistema."}
+						</p>
+					</div>
+				}
 				onClose={closeModal}
 				footer={
 					<div className="usr__modalActions">
@@ -334,24 +346,28 @@ export default function UsuariosPage() {
 				}
 			>
 				<form className="usr__form" onSubmit={(e) => e.preventDefault()}>
-					{formError ? <div className="usr__formError">{formError}</div> : null}
-
 					<div className="usr__grid">
 						<div className="usr__field">
-							<label className="usr__label">Nombre de usuario *</label>
+							<label className="usr__label">
+								Usuario <span className="usr__req">*</span>
+							</label>
 							<input
 								className="usr__input"
 								type="text"
+								placeholder="Nombre de usuario"
 								value={form.username}
 								onChange={(e) => setForm((v) => ({ ...v, username: e.target.value }))}
 							/>
 						</div>
 
 						<div className="usr__field">
-							<label className="usr__label">Correo electrónico *</label>
+							<label className="usr__label">
+								Correo <span className="usr__req">*</span>
+							</label>
 							<input
 								className="usr__input"
 								type="email"
+								placeholder="correo@negocio.com"
 								value={form.email}
 								onChange={(e) => setForm((v) => ({ ...v, email: e.target.value }))}
 							/>
@@ -359,12 +375,18 @@ export default function UsuariosPage() {
 
 						<div className="usr__field usr__field--full">
 							<label className="usr__label">
-								{editingUserId ? "Nueva contraseña (dejar en blanco para no cambiarla)" : "Contraseña *"}
+								{editingUserId ? (
+									"Nueva contraseña (opcional)"
+								) : (
+									<>
+										Contraseña <span className="usr__req">*</span>
+									</>
+								)}
 							</label>
 							<input
 								className="usr__input"
 								type="password"
-								placeholder="Mínimo 6 caracteres"
+								placeholder={editingUserId ? "Déjala en blanco para no cambiarla" : "Mínimo 6 caracteres"}
 								value={form.password}
 								onChange={(e) => setForm((v) => ({ ...v, password: e.target.value }))}
 							/>
@@ -389,6 +411,8 @@ export default function UsuariosPage() {
 								</div>
 							)}
 						</div>
+
+						{formError ? <div className="usr__field usr__field--full usr__formError">{formError}</div> : null}
 					</div>
 				</form>
 			</Modal>

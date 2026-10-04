@@ -237,8 +237,6 @@
 
 .usr__form {
 	margin-top: 2px;
-	display: grid;
-	gap: 12px;
 }
 
 .usr__formError {
@@ -253,12 +251,12 @@
 .usr__grid {
 	display: grid;
 	grid-template-columns: repeat(2, minmax(0, 1fr));
-	gap: 12px;
+	gap: 14px 16px;
 }
 
 .usr__field {
 	display: grid;
-	gap: 8px;
+	gap: 6px;
 }
 
 .usr__field--full {
@@ -266,19 +264,71 @@
 }
 
 .usr__label {
-	font-size: 13px;
-	color: var(--muted);
+	font-size: 12px;
+	color: var(--ink);
+}
+
+.usr__req {
+	color: var(--usr-danger);
+}
+
+.usr__modalHead {
+	display: grid;
+	gap: 4px;
+}
+
+.usr__modalTitle {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	font-size: 17px;
+	font-weight: 500;
+	color: var(--ink);
+}
+
+.usr__modalSubtitle {
+	margin: 0;
+	font-size: 11.5px;
+	font-weight: 400;
+	color: color-mix(in srgb, var(--muted) 75%, transparent);
+}
+
+.usr .ui-modal__panel {
+	width: min(432px, 92vw);
+	padding: 22px 24px 20px;
+	border-radius: 16px;
+	box-shadow: 0 18px 44px rgba(0, 0, 0, 0.12);
+}
+
+.usr .ui-modal__title {
+	margin-bottom: 16px;
+	padding-bottom: 12px;
+	border-bottom: 1px solid var(--line);
+	font-weight: 400;
+}
+
+.usr .ui-modal__footer {
+	margin-top: 16px;
+}
+
+.usr .usr__modalActions .ui-btnPrimary,
+.usr .usr__modalActions .ui-btnSecondary {
+	height: 34px;
+	padding: 0 16px;
+	border-radius: 9px;
+	font-size: 12px;
 }
 
 .usr__input,
 .usr__select {
 	box-sizing: border-box;
 	width: 100%;
-	height: 44px;
+	height: 34px;
 	padding: 0 12px;
-	border-radius: 12px;
-	border: 1px solid var(--line);
-	background: var(--paper);
+	font-size: 12px;
+	border-radius: 8px;
+	border: 1px solid transparent;
+	background: var(--surface);
 	color: var(--ink);
 	outline: none;
 	transition: border-color 160ms ease, box-shadow 160ms ease;
@@ -291,31 +341,31 @@
 .usr__input:focus,
 .usr__select:focus {
 	border-color: var(--ink);
-	box-shadow: 0 0 0 4px var(--surface);
+	background: var(--paper);
 }
 
 .usr__rolesGrid {
 	display: grid;
 	grid-template-columns: repeat(2, minmax(0, 1fr));
 	gap: 8px;
-	padding: 12px;
-	border-radius: 12px;
-	border: 1px solid var(--line);
-	background: var(--paper);
+	padding: 10px 12px;
+	border-radius: 8px;
+	border: 1px solid transparent;
+	background: var(--surface);
 }
 
 .usr__roleOption {
 	display: flex;
 	align-items: center;
 	gap: 8px;
-	font-size: 13px;
+	font-size: 12px;
 	color: var(--ink);
 	cursor: pointer;
 }
 
 .usr__roleOption input[type="checkbox"] {
-	width: 16px;
-	height: 16px;
+	width: 15px;
+	height: 15px;
 	accent-color: var(--ink);
 }
 
