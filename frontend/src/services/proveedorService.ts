@@ -1,5 +1,6 @@
 import { http } from "./http";
 import type { Page } from "./CategoriaProductoService";
+import { fetchAllPages } from "./pagination";
 
 export type Proveedor = {
 	id: number;
@@ -43,6 +44,16 @@ export const proveedorService = {
 	},
 
 	async listarPorEmpresa(empresaId: number, pageable?: { page?: number; size?: number }): Promise<Proveedor[]> {
+		if (!pageable) {
+			return fetchAllPages(async (page, size) => {
+				const response = await http.get<Page<Proveedor>>(
+					`/api/proveedores/listar-por-empresa/${empresaId}`,
+					{ params: { page, size } }
+				);
+				return response.data;
+			});
+		}
+
 		const response = await http.get<Page<Proveedor>>(`/api/proveedores/listar-por-empresa/${empresaId}`, {
 			params: {
 				page: pageable?.page ?? 0,

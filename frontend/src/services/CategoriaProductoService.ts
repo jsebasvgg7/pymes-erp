@@ -1,4 +1,5 @@
 import { http } from "./http";
+import { fetchAllPages } from "./pagination";
 
 export type Page<T> = {
 	content: T[];
@@ -39,6 +40,16 @@ export const categoriaProductoService = {
 	},
 
 	async listarPorEmpresa(empresaId: number, pageable?: { page?: number; size?: number }): Promise<CategoriaProducto[]> {
+		if (!pageable) {
+			return fetchAllPages(async (page, size) => {
+				const response = await http.get<Page<CategoriaProducto>>(
+					`/api/categorias-producto/listar-por-empresa/${empresaId}`,
+					{ params: { page, size } }
+				);
+				return response.data;
+			});
+		}
+
 		const response = await http.get<Page<CategoriaProducto>>(
 			`/api/categorias-producto/listar-por-empresa/${empresaId}`,
 			{
@@ -52,6 +63,16 @@ export const categoriaProductoService = {
 	},
 
 	async listarInactivasPorEmpresa(empresaId: number, pageable?: { page?: number; size?: number }): Promise<CategoriaProducto[]> {
+		if (!pageable) {
+			return fetchAllPages(async (page, size) => {
+				const response = await http.get<Page<CategoriaProducto>>(
+					`/api/categorias-producto/listar-inactivas-por-empresa/${empresaId}`,
+					{ params: { page, size } }
+				);
+				return response.data;
+			});
+		}
+
 		const response = await http.get<Page<CategoriaProducto>>(
 			`/api/categorias-producto/listar-inactivas-por-empresa/${empresaId}`,
 			{

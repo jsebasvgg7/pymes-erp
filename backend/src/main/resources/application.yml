@@ -1,6 +1,10 @@
 server:
   port: 8080
 
+app:
+  security:
+    admin-recovery-key: ${ADMIN_RECOVERY_KEY:}
+
 spring:
   datasource:
     url: ${DB_URL}

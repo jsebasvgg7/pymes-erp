@@ -39,7 +39,6 @@
 	border-radius: 12px;
 	border: 1px solid rgba(0, 0, 0, 0.08);
 	background: #e9e6e2;
-	cursor: pointer;
 }
 
 .dash__brand {
@@ -90,11 +89,6 @@
 	white-space: nowrap;
 	overflow: hidden;
 	text-overflow: ellipsis;
-}
-
-.dash__brandCaret {
-	color: var(--muted);
-	flex-shrink: 0;
 }
 
 .dash__sidebarClose {
@@ -223,14 +217,7 @@
 	border-radius: 10px;
 	background: transparent;
 	border: 1px solid transparent;
-	cursor: pointer;
 	text-align: left;
-	transition: background 140ms ease, border-color 140ms ease;
-}
-
-.dash__userCard:hover {
-	background: var(--paper);
-	border-color: var(--line);
 }
 
 .dash__avatar {
@@ -296,10 +283,7 @@
 	text-overflow: ellipsis;
 }
 
-.dash__userCaret {
-	color: var(--muted);
-	flex-shrink: 0;
-}
+
 
 .dash__main {
 	margin-left: 245px;
@@ -380,64 +364,91 @@
 	flex-shrink: 0;
 }
 
-.dash__headerSearch.ui-search {
-	width: 220px;
-	height: 36px;
+.dash__account {
+	position: relative;
 }
 
-.dash__iconBtn {
-	width: 36px;
-	height: 36px;
-	border-radius: 9px;
-	border: 1px solid var(--line);
-	background: transparent;
-	color: var(--muted);
-	display: none;
-	align-items: center;
-	justify-content: center;
-	cursor: pointer;
-	transition: background 140ms ease, color 140ms ease;
-	flex-shrink: 0;
-}
-
-.dash__iconBtn:hover {
-	background: var(--surface);
-	color: var(--ink);
-}
-
-.dash__iconBtn--hidden {
-	display: none;
-}
-
-.dash__iconBtn--logout {
-	display: inline-flex;
-}
-
-.dash__iconBtn--logout:hover {
-	background: color-mix(in srgb, #ef4444 8%, transparent);
-	color: #ef4444;
-	border-color: color-mix(in srgb, #ef4444 24%, var(--line));
-}
-
-.dash__headerAvatar {
-	width: 34px;
-	height: 34px;
+.dash__accountTrigger {
+	width: 38px;
+	height: 38px;
+	padding: 2px;
+	border: 0;
 	border-radius: 999px;
-	flex-shrink: 0;
+	background: transparent;
 	cursor: pointer;
+}
+
+.dash__accountTrigger:focus-visible {
+	outline: 2px solid var(--ink);
+	outline-offset: 2px;
+}
+
+.dash__accountDropdown {
+	position: absolute;
+	z-index: 40;
+	top: calc(100% + 10px);
+	right: 0;
+	width: min(280px, calc(100vw - 32px));
+	padding: 8px;
+	border: 1px solid var(--line);
+	border-radius: 12px;
+	background: var(--paper);
+	box-shadow: 0 12px 32px rgba(0, 0, 0, 0.14);
+}
+
+.dash__accountDetails {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+	padding: 10px;
+	border-bottom: 1px solid var(--line);
+}
+
+.dash__accountDetails strong {
+	color: var(--ink);
+	font-size: 14px;
+	font-weight: 650;
+	overflow-wrap: anywhere;
+}
+
+.dash__accountDetails span {
+	color: var(--muted);
+	font-size: 13px;
+	overflow-wrap: anywhere;
+}
+
+.dash__accountLogout {
+	display: flex;
+	align-items: center;
+	gap: 9px;
+	width: 100%;
+	margin-top: 6px;
+	padding: 9px 10px;
+	border: 0;
+	border-radius: 8px;
+	background: transparent;
+	color: var(--ink);
+	text-align: left;
+	font: inherit;
+	cursor: pointer;
+}
+
+.dash__accountLogout:hover,
+.dash__accountLogout:focus-visible {
+	background: var(--surface);
 }
 
 .dash__headerAvatarImg {
-	width: 100%;
-	height: 100%;
+	width: 34px;
+	height: 34px;
 	border-radius: 999px;
 	display: block;
 	border: 1px solid var(--line);
 }
 
 .dash__headerAvatarFallback {
-	width: 100%;
-	height: 100%;
+	width: 34px;
+	height: 34px;
 	border-radius: 999px;
 	display: grid;
 	place-items: center;
@@ -488,9 +499,6 @@
 		transform: translateX(0);
 	}
 
-	.dash__headerSearch {
-		display: none;
-	}
 }
 
 @media (max-width: 520px) {

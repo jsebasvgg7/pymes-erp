@@ -1,0 +1,198 @@
+PYMES ERP - RESUMEN DE CAMBIOS REALIZADOS
+Fecha: 4 de octubre de 2026
+
+Este documento resume los cambios implementados durante el trabajo en las vistas y
+el acceso inicial de Pymes ERP. No contiene contraseñas, claves de recuperación,
+tokens ni credenciales.
+
+
+1. CONFIGURACION INICIAL DE LA EMPRESA Y DEL ADMINISTRADOR
+
+Se agregó un flujo de configuración inicial para una instalación que todavía no
+tenga usuarios activos:
+
+- El sistema puede informar si la configuración inicial está disponible.
+- La pantalla /setup permite registrar los datos de la empresa y crear la primera
+  cuenta administradora.
+- Si ya existe exactamente una empresa activa, se puede asociar a ella el primer
+  administrador, sin crear otra empresa.
+- Al terminar, se inicia sesión con la cuenta creada.
+- Se restringió el endpoint de configuración para que no se convierta en un
+  registro público después de la inicialización.
+- Se agregó documentación de arranque en README.md.
+
+Archivos principales:
+- backend/src/main/java/com/rowin/contabilidad/controllers/AuthController.java
+- backend/src/main/java/com/rowin/contabilidad/services/AuthService.java
+- backend/src/main/java/com/rowin/contabilidad/services/AuthServiceImpl.java
+- backend/src/main/java/com/rowin/contabilidad/config/SecurityConfig.java
+- frontend/src/pages/SetupPage.tsx
+- frontend/src/pages/SetupPage.css
+- frontend/src/pages/LoginPage.tsx
+- frontend/src/routes/AppRouter.tsx
+- frontend/src/services/authService.ts
+- README.md
+
+
+2. RECUPERACION PROTEGIDA DEL ACCESO ADMINISTRADOR
+
+Se incorporó un procedimiento separado para recuperar el acceso cuando ya hay
+usuarios activos:
+
+- El endpoint de recuperación requiere una clave temporal configurada en el
+  entorno del backend mediante ADMIN_RECOVERY_KEY.
+- La clave debe tener al menos 32 caracteres.
+- La recuperación se limita a una única empresa activa y crea un usuario con rol
+  ADMIN, aplicando hash a la contraseña.
+- Se bloquean claves incorrectas, usuarios/correos duplicados y escenarios
+  ambiguos con varias empresas activas.
+- Se sincroniza el acceso desde la página /recover-admin.
+- Se recomienda quitar la variable de entorno al terminar la recuperación y no
+  guardar la clave en el repositorio.
+- La recuperación no reinicializa ni elimina datos de la base.
+
+Archivos principales:
+- backend/src/main/java/com/rowin/contabilidad/dto/auth/AdminRecoveryRequest.java
+- backend/src/main/java/com/rowin/contabilidad/controllers/AuthController.java
+- backend/src/main/java/com/rowin/contabilidad/services/AuthServiceImpl.java
+- backend/src/main/resources/application.yml
+- backend/src/test/java/com/rowin/contabilidad/services/AuthServiceImplTest.java
+- frontend/src/pages/AdminRecoveryPage.tsx
+- frontend/src/routes/AppRouter.tsx
+- frontend/src/services/authService.ts
+- README.md
+
+
+3. BUSQUEDAS EN PRODUCTOS, INVENTARIO, CATEGORIAS Y PROVEEDORES
+
+Se conectaron los campos de búsqueda al estado de React para que filtren los
+resultados de las listas:
+
+- Productos: nombre, SKU y descripción.
+- Inventario: nombre del producto y SKU; conserva los filtros de categoría y
+  estado de stock.
+- Categorías: nombre.
+- Proveedores: nombre, documento, correo electrónico, teléfono y dirección.
+- La búsqueda se combina con los filtros existentes en Productos e Inventario.
+- Se corrigió el uso de los campos para que la tabla responda al escribir y al
+  borrar el texto.
+
+Archivos principales:
+- frontend/src/pages/ProductosPage.tsx
+- frontend/src/pages/InventarioPage.tsx
+- frontend/src/pages/CategoriasPage.tsx
+- frontend/src/pages/ProveedoresPage.tsx
+- frontend/src/components/SearchBar.tsx (componente compartido existente)
+
+
+4. PAGINACION Y ACCESO A TODOS LOS REGISTROS
+
+Se agregó paginación visual reutilizable para las tablas y se aplicó a Productos,
+Inventario, Categorías y Proveedores:
+
+- Controles Anterior y Siguiente.
+- Selector de 10, 25, 50 o 100 filas por página.
+- Indicador del rango mostrado y del total de resultados.
+- Al cambiar los datos por búsqueda o filtros, la tabla vuelve a la primera
+  página.
+- En productos, categorías y proveedores se recorren las páginas del backend en
+  vez de limitar la carga a una sola página de hasta 200 registros.
+- La carga de varias páginas se realiza por lotes para no enviar todas las
+  solicitudes a la vez.
+- Las búsquedas y los filtros se aplican sobre el conjunto cargado antes de
+  paginarlo.
+
+Archivos principales:
+- frontend/src/components/DataTable.tsx
+- frontend/src/components/DataTable.css
+- frontend/src/services/pagination.ts
+- frontend/src/services/ProductoService.ts
+- frontend/src/services/CategoriaProductoService.ts
+- frontend/src/services/proveedorService.ts
+- frontend/src/pages/ProductosPage.tsx
+- frontend/src/pages/InventarioPage.tsx
+- frontend/src/pages/CategoriasPage.tsx
+- frontend/src/pages/ProveedoresPage.tsx
+
+
+5. CONTROLES DEL ENCABEZADO Y OPCIONES DE CUENTA
+
+Se definió el comportamiento de los controles del encabezado:
+
+- Se retiró la búsqueda general porque era solo visual/deshabilitada y no hay un
+  servicio de búsqueda global implementado. Cada vista conserva su propio filtro.
+- El nombre de la empresa permanece como etiqueta informativa, sin presentar un
+  selector que no puede cambiar la empresa de la sesión.
+- Se retiraron los accesos a Notificaciones y Mensajes porque no hay bandejas ni
+  servicios de esas funciones.
+- El avatar del encabezado ahora abre un menú que muestra el nombre de usuario y
+  el correo, y ofrece Cerrar sesión.
+- El menú se cierra al pulsar Escape o hacer clic fuera.
+- La información de usuario que aparecía como falsa opción interactiva en el pie
+  de la barra lateral se dejó como elemento informativo.
+
+Archivos principales:
+- frontend/src/layouts/Sidebar.tsx
+- frontend/src/layouts/Sidebar.css
+
+
+6. FILTROS DE PERIODO Y EXPORTACION DE REPORTES
+
+Se amplió la página de Reportes:
+
+- Se añadieron campos Desde y Hasta; al entrar se selecciona el mes actual.
+- Las ventas y compras se solicitan al backend para el intervalo indicado,
+  incluyendo el día final completo.
+- La tabla de movimientos de Caja se filtra por fecha. Se cargan las páginas
+  disponibles del endpoint de movimientos.
+- El inventario con poco stock, las tarjetas de conteos y el saldo de Caja
+  mantienen su significado de estado actual; no son históricos por período.
+- Se validan fechas faltantes o un rango cuya fecha inicial sea posterior a la
+  fecha final.
+- Se añadió Exportar CSV en Ventas, Compras, Productos con poco inventario y
+  Movimientos de Caja.
+- Ventas, Compras y Caja exportan las filas del período elegido; inventario bajo
+  exporta la lista actual.
+- El CSV utiliza UTF-8 con BOM, separador compatible con Excel y escape de
+  comillas. Se protegen textos que pudieran interpretarse como fórmulas al abrir
+  el archivo en una hoja de cálculo.
+- Las tablas de reportes también pueden paginarse localmente.
+
+Archivos principales:
+- frontend/src/pages/ReportesPage.tsx
+- frontend/src/pages/ReportesPage.css
+- frontend/src/utils/csv.ts
+- frontend/src/services/VentaService.ts
+- frontend/src/services/compraService.ts
+- frontend/src/services/cajaService.ts
+- frontend/src/services/pagination.ts
+
+
+VERIFICACIONES REALIZADAS
+
+- Las pruebas automatizadas del backend para el flujo de autenticación y
+  recuperación finalizaron con 6 pruebas exitosas.
+- El bundle de producción de Vite se compiló satisfactoriamente después de los
+  cambios de búsqueda, paginación, encabezado y reportes.
+- El navegador confirmó el funcionamiento de búsqueda y paginación, incluidos el
+  cambio de página, el tamaño de página y la combinación con búsqueda.
+- En Reportes se verificó el rango de fechas, el cambio de resultados al cambiar
+  el período y la paginación de tablas. Se comprobó el botón de exportación en
+  una tabla con resultados; no se verificó manualmente la apertura del CSV en
+  Excel.
+- El análisis del editor no reportó errores en los archivos específicos
+  modificados para estas tareas.
+
+OBSERVACIONES
+
+- La compilación completa con npm run build está afectada por configuración y
+  errores previos del proyecto: tsconfig.json establece ignoreDeprecations en
+  "6.0", valor que no acepta el compilador instalado. Al omitir temporalmente ese
+  bloqueo, el chequeo global detecta errores en otros archivos (componentes de
+  gráficas y CajaPage) que no forman parte de estos cambios. El bundle de Vite sí
+  se verificó por separado.
+- En el equipo se detectaron dos copias del proyecto. El frontend actualizado
+  está disponible en http://localhost:5174; localhost:5173 seguía atendiendo una
+  copia anterior ubicada en OneDrive.
+- Los cambios descritos permanecen sin commit al momento de generar este
+  resumen. No se realizó una reinicialización ni eliminación de datos de la base.

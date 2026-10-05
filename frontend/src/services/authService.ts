@@ -12,6 +12,28 @@ export type RegisterRequest = {
   rolIds?: number[];
 };
 
+export type BootstrapRequest = {
+  empresa: {
+    nombre: string;
+    nit: string | null;
+    direccion: string | null;
+    telefono: string | null;
+    email: string | null;
+  };
+  administrador: {
+    username: string;
+    email: string;
+    password: string;
+  };
+};
+
+export type AdminRecoveryRequest = {
+  recoveryKey: string;
+  username: string;
+  email: string;
+  password: string;
+};
+
 export type UsuarioResponse = {
   id: number;
   createdAt: string;
@@ -30,6 +52,11 @@ export type LoginResponse = {
 };
 
 export const authService = {
+  async getBootstrapStatus(): Promise<{ initialized: boolean; companyExists: boolean; setupAvailable: boolean }> {
+    const response = await http.get<{ initialized: boolean; companyExists: boolean; setupAvailable: boolean }>("/api/auth/bootstrap-status");
+    return response.data;
+  },
+
   async login(data: LoginRequest): Promise<LoginResponse> {
     const response = await http.post<LoginResponse>("/api/auth/login", data);
     if (response.data.token) {
@@ -41,6 +68,24 @@ export const authService = {
 
   async register(data: RegisterRequest): Promise<LoginResponse> {
     const response = await http.post<LoginResponse>("/api/auth/register", data);
+    if (response.data.token) {
+      localStorage.setItem("token", response.data.token);
+      localStorage.setItem("usuario", JSON.stringify(response.data.usuario));
+    }
+    return response.data;
+  },
+
+  async bootstrap(data: BootstrapRequest): Promise<LoginResponse> {
+    const response = await http.post<LoginResponse>("/api/auth/bootstrap", data);
+    if (response.data.token) {
+      localStorage.setItem("token", response.data.token);
+      localStorage.setItem("usuario", JSON.stringify(response.data.usuario));
+    }
+    return response.data;
+  },
+
+  async recoverAdmin(data: AdminRecoveryRequest): Promise<LoginResponse> {
+    const response = await http.post<LoginResponse>("/api/auth/recover-admin", data);
     if (response.data.token) {
       localStorage.setItem("token", response.data.token);
       localStorage.setItem("usuario", JSON.stringify(response.data.usuario));

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import {
 	LayoutDashboard,
@@ -14,13 +14,9 @@ import {
 	UserCog,
 	Settings,
 	LogOut,
-	ChevronsUpDown,
 	ChevronDown,
 	Menu,
-	X,
-	Search,
-	Bell,
-	Mail
+	X
 } from "lucide-react";
 import Avatar from "../components/Avatar";
 import { authService } from "../services/authService";
@@ -72,8 +68,6 @@ const menuGroups: MenuGroup[] = [
 	}
 ];
 
-const TOPBAR_ALERTS_ENABLED = false;
-
 function getRoleLabel(roles?: Array<{ nombre: string }>) {
 	if (!roles || roles.length === 0) return "Sin rol asignado";
 	return roles.map((r) => r.nombre).join(" · ");
@@ -82,6 +76,8 @@ function getRoleLabel(roles?: Array<{ nombre: string }>) {
 export default function Sidebar() {
 	const [sidebarOpen, setSidebarOpen] = useState(false);
 	const [nombreEmpresa, setNombreEmpresa] = useState<string | null>(null);
+	const [accountMenuOpen, setAccountMenuOpen] = useState(false);
+	const accountMenuRef = useRef<HTMLDivElement>(null);
 	const location = useLocation();
 	const navigate = useNavigate();
 
@@ -102,6 +98,27 @@ export default function Sidebar() {
 			activo = false;
 		};
 	}, [usuario?.empresaId]);
+
+	useEffect(() => {
+		if (!accountMenuOpen) return;
+
+		function closeOnOutsideClick(event: PointerEvent) {
+			if (event.target instanceof Node && !accountMenuRef.current?.contains(event.target)) {
+				setAccountMenuOpen(false);
+			}
+		}
+
+		function closeOnEscape(event: KeyboardEvent) {
+			if (event.key === "Escape") setAccountMenuOpen(false);
+		}
+
+		document.addEventListener("pointerdown", closeOnOutsideClick);
+		document.addEventListener("keydown", closeOnEscape);
+		return () => {
+			document.removeEventListener("pointerdown", closeOnOutsideClick);
+			document.removeEventListener("keydown", closeOnEscape);
+		};
+	}, [accountMenuOpen]);
 
 	const breadcrumb = useMemo(() => {
 		for (const group of menuGroups) {
@@ -132,7 +149,6 @@ export default function Sidebar() {
 						</div>
 					</div>
 
-					<ChevronsUpDown size={15} className="dash__brandCaret" aria-hidden="true" />
 				</div>
 
 				<button
@@ -185,7 +201,7 @@ export default function Sidebar() {
 			</nav>
 
 			<div className="dash__sidebarFooter">
-				<button className="dash__userCard" type="button" aria-label="Opciones de cuenta">
+				<div className="dash__userCard">
 					<div className="dash__avatar">
 						<Avatar
 							name={usuario?.username ?? ""}
@@ -199,8 +215,7 @@ export default function Sidebar() {
 						<div className="dash__userName">{usuario?.username ?? "Usuario"}</div>
 						<div className="dash__userRole">{getRoleLabel(usuario?.roles)}</div>
 					</div>
-					<ChevronsUpDown size={15} className="dash__userCaret" aria-hidden="true" />
-				</button>
+				</div>
 			</div>
 		</aside>
 	);
@@ -235,43 +250,39 @@ export default function Sidebar() {
 					</div>
 
 					<div className="dash__headerRight">
-						<div className="ui-search dash__headerSearch">
-							<Search size={16} className="ui-search__icon" aria-hidden="true" />
-							<input className="ui-search__input" placeholder="Buscar..." disabled />
-						</div>
-
-						<button
-							type="button"
-							className={`dash__iconBtn ${TOPBAR_ALERTS_ENABLED ? "" : "dash__iconBtn--hidden"}`}
-							aria-label="Notificaciones"
-						>
-							<Bell size={17} strokeWidth={1.8} />
-						</button>
-
-						<button
-							type="button"
-							className={`dash__iconBtn ${TOPBAR_ALERTS_ENABLED ? "" : "dash__iconBtn--hidden"}`}
-							aria-label="Mensajes"
-						>
-							<Mail size={17} strokeWidth={1.8} />
-						</button>
-
-						<button
-							type="button"
-							className="dash__iconBtn dash__iconBtn--logout"
-							aria-label="Cerrar sesión"
-							onClick={handleLogout}
-						>
-							<LogOut size={17} strokeWidth={1.8} />
-						</button>
-
-						<div className="dash__headerAvatar">
-							<Avatar
-								name={usuario?.username ?? ""}
-								size={72}
-								className="dash__headerAvatarImg"
-								fallbackClassName="dash__headerAvatarFallback"
-							/>
+						<div ref={accountMenuRef} className="dash__account">
+							<button
+								type="button"
+								className="dash__accountTrigger"
+								aria-label="Opciones de cuenta"
+								aria-haspopup="menu"
+								aria-expanded={accountMenuOpen}
+								onClick={() => setAccountMenuOpen((open) => !open)}
+							>
+								<Avatar
+									name={usuario?.username ?? ""}
+									size={72}
+									className="dash__headerAvatarImg"
+									fallbackClassName="dash__headerAvatarFallback"
+								/>
+							</button>
+							{accountMenuOpen && (
+								<div className="dash__accountDropdown" role="menu" aria-label="Opciones de cuenta">
+									<div className="dash__accountDetails" role="group" aria-label="Perfil">
+										<strong>{usuario?.username || "Usuario"}</strong>
+										<span>{usuario?.email || "Correo no disponible"}</span>
+									</div>
+									<button
+										type="button"
+										className="dash__accountLogout"
+										role="menuitem"
+										onClick={handleLogout}
+									>
+										<LogOut size={16} strokeWidth={1.8} />
+										<span>Cerrar sesión</span>
+									</button>
+								</div>
+							)}
 						</div>
 					</div>
 				</header>

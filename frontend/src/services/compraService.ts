@@ -89,7 +89,9 @@ export const compraService = {
   },
 
   async obtenerPorPeriodo(empresaId: number, inicio: string, fin: string): Promise<CompraResponse[]> {
-    const response = await http.get(`/api/compras/por-periodo/${empresaId}?inicio=${inicio}&fin=${fin}`);
+    const response = await http.get<CompraResponse[]>(`/api/compras/por-periodo/${empresaId}`, {
+      params: { inicio, fin }
+    });
     return response.data;
   },
 

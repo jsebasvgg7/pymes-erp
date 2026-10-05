@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { SlidersHorizontal, History } from "lucide-react";
 import DataTable, { DataTableColumn } from "../components/DataTable";
 import LoadingState from "../components/LoadingState";
@@ -68,7 +68,6 @@ export default function InventarioPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("Todos");
   const [selectedStockStatus, setSelectedStockStatus] = useState<StockLevel | "Todos">("Todos");
-  const searchRef = useRef<HTMLDivElement | null>(null);
 
   // Modal de ajuste
   const [ajusteOpen, setAjusteOpen] = useState(false);
@@ -106,24 +105,6 @@ export default function InventarioPage() {
     loadInventario();
   }, [loadInventario]);
 
-  useEffect(() => {
-    const el = searchRef.current;
-    if (!el) return;
-
-    const input = el.querySelector("input");
-    if (!input) return;
-
-    const onInput = (e: Event) => {
-      const target = e.target as HTMLInputElement | null;
-      setSearchQuery(target?.value ?? "");
-    };
-
-    input.addEventListener("input", onInput);
-    return () => {
-      input.removeEventListener("input", onInput);
-    };
-  }, []);
-
   const categoryOptions = useMemo(() => {
     const names = Array.from(new Set(inventarios.map((i) => i.categoriaNombre).filter(Boolean) as string[]));
     return ["Todos", ...names];
@@ -147,7 +128,10 @@ export default function InventarioPage() {
   const filteredRows = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
     return rows.filter((r) => {
-      const matchesSearch = q.length === 0 || r.productoNombre.toLowerCase().includes(q);
+      const matchesSearch =
+        q.length === 0 ||
+        r.productoNombre.toLowerCase().includes(q) ||
+        (r.productoSku?.toLowerCase().includes(q) ?? false);
       const matchesCategory = selectedCategory === "Todos" || r.categoriaNombre === selectedCategory;
       const matchesStock = selectedStockStatus === "Todos" || r.estadoInventario === selectedStockStatus;
       return matchesSearch && matchesCategory && matchesStock;
@@ -314,9 +298,11 @@ export default function InventarioPage() {
           <label className="inv__searchLabel" aria-hidden="true">
             Buscar
           </label>
-          <div ref={searchRef}>
-            <SearchBar placeholder="Buscar producto..." />
-          </div>
+          <SearchBar
+            placeholder="Buscar producto..."
+            value={searchQuery}
+            onChange={setSearchQuery}
+          />
         </div>
 
         <div className="inv__filters" aria-label="Filtros">
@@ -348,7 +334,7 @@ export default function InventarioPage() {
       </div>
 
       <div className="inv__table">
-        <DataTable columns={columns} data={filteredRows} emptyState={emptyState} />
+        <DataTable columns={columns} data={filteredRows} emptyState={emptyState} pageSize={10} />
       </div>
 
       {/* ============ MODAL AJUSTE ============ */}

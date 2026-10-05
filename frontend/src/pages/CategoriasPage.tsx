@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Plus, Pencil, Trash2, RotateCcw } from "lucide-react";
 import ConfirmDialog from "../components/ConfirmDialog";
 import DataTable, { DataTableColumn } from "../components/DataTable";
@@ -29,7 +29,6 @@ export default function CategoriasPage() {
 	const [error, setError] = useState<string | null>(null);
 
 	const [searchQuery, setSearchQuery] = useState("");
-	const searchRef = useRef<HTMLDivElement | null>(null);
 
 	const [modalOpen, setModalOpen] = useState(false);
 	const [editingCategoryId, setEditingCategoryId] = useState<number | null>(null);
@@ -161,24 +160,6 @@ export default function CategoriasPage() {
 		}
 	}, []);
 
-	useEffect(() => {
-		const el = searchRef.current;
-		if (!el) return;
-
-		const input = el.querySelector("input");
-		if (!input) return;
-
-		const onInput = (e: Event) => {
-			const target = e.target as HTMLInputElement | null;
-			setSearchQuery(target?.value ?? "");
-		};
-
-		input.addEventListener("input", onInput);
-		return () => {
-			input.removeEventListener("input", onInput);
-		};
-	}, []);
-
 	const filteredCategories = useMemo(() => {
 		const q = searchQuery.trim().toLowerCase();
 		if (!q) return categories;
@@ -278,14 +259,16 @@ export default function CategoriasPage() {
 
 			<div className="cat__controls">
 				<div className="cat__search">
-					<div ref={searchRef}>
-						<SearchBar placeholder="Buscar categoría..." />
-					</div>
+					<SearchBar
+						placeholder="Buscar categoría..."
+						value={searchQuery}
+						onChange={setSearchQuery}
+					/>
 				</div>
 			</div>
 
 			<div className="cat__table">
-				<DataTable columns={columns} data={filteredCategories} emptyState={emptyState} />
+				<DataTable columns={columns} data={filteredCategories} emptyState={emptyState} pageSize={10} />
 			</div>
 
 			<Modal
