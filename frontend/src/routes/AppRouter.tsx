@@ -9,6 +9,8 @@ import CajaPage from "../pages/CajaPage";
 import InventarioPage from "../pages/InventarioPage";
 import LandingPage from "../landing/LandingPage";
 import LoginPage from "../pages/LoginPage";
+import SetupPage from "../pages/SetupPage";
+import AdminRecoveryPage from "../pages/AdminRecoveryPage";
 import NotFoundPage from "../pages/NotFoundPage";
 import PosPage from "../pages/PosPage";
 import ReportesPage from "../pages/ReportesPage";
@@ -30,6 +32,8 @@ export default function AppRouter() {
   return (
     <Routes>
       <Route path="/login" element={<LoginPage />} />
+      <Route path="/setup" element={<SetupPage />} />
+      <Route path="/recover-admin" element={<AdminRecoveryPage />} />
       <Route path="/" element={<LandingPage />} />
 
       <Route

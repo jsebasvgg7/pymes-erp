@@ -13,6 +13,7 @@ import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.server.ResponseStatusException;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
@@ -44,6 +45,12 @@ public class GlobalExceptionHandler {
 	public ResponseEntity<ApiErrorResponse> handleConflict(DataIntegrityViolationException ex, HttpServletRequest request) {
 		log.error("Conflicto de integridad de datos en {}", request.getRequestURI(), ex);
 		return build(HttpStatus.CONFLICT, "Conflicto de integridad de datos", request.getRequestURI(), null);
+	}
+
+	@ExceptionHandler(ResponseStatusException.class)
+	public ResponseEntity<ApiErrorResponse> handleResponseStatus(ResponseStatusException ex, HttpServletRequest request) {
+		HttpStatus status = HttpStatus.valueOf(ex.getStatusCode().value());
+		return build(status, ex.getReason() == null ? status.getReasonPhrase() : ex.getReason(), request.getRequestURI(), null);
 	}
 
 	@ExceptionHandler(Exception.class)

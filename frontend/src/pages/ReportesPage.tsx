@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { CreditCard, Package, Receipt, Wallet } from "lucide-react";
+import { CreditCard, Download, Package, Receipt, Wallet } from "lucide-react";
 import DataTable, { DataTableColumn } from "../components/DataTable";
 import LoadingState from "../components/LoadingState";
 import PageHeader from "../components/PageHeader";
@@ -8,6 +8,7 @@ import StatusBadge from "../components/StatusBadge";
 import { authService } from "../services/authService";
 import { cajaService, type MovimientoCajaResponse } from "../services/cajaService";
 import { compraService, type CompraResponse } from "../services/compraService";
+import { fetchAllPages } from "../services/pagination";
 import { productoService, type Producto } from "../services/ProductoService";
 import { ventaService, type FacturaVentaResponse } from "../services/VentaService";
 import {
@@ -19,7 +20,23 @@ import {
 	variacionVsAyer,
 	type VentasHoyAyer
 } from "../services/comparacionDiaria";
+import { downloadCsv } from "../utils/csv";
 import "./ReportesPage.css";
+
+function fechaLocal(fecha: Date) {
+	const año = fecha.getFullYear();
+	const mes = String(fecha.getMonth() + 1).padStart(2, "0");
+	const dia = String(fecha.getDate()).padStart(2, "0");
+	return `${año}-${mes}-${dia}`;
+}
+
+function periodoMesActual() {
+	const hoy = new Date();
+	return {
+		inicio: fechaLocal(new Date(hoy.getFullYear(), hoy.getMonth(), 1)),
+		fin: fechaLocal(hoy)
+	};
+}
 
 function formatCurrency(value: number) {
 	return value.toLocaleString("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 });
@@ -43,12 +60,16 @@ function sumCantidad(detalles: Array<{ cantidad: number }>) {
 
 export default function ReportesPage() {
 	const empresaId = authService.getUsuario()?.empresaId;
+	const [periodo, setPeriodo] = useState(periodoMesActual);
 
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
+	const [loadingPeriodo, setLoadingPeriodo] = useState(true);
+	const [errorPeriodo, setErrorPeriodo] = useState<string | null>(null);
 
 	const [sales, setSales] = useState<FacturaVentaResponse[]>([]);
 	const [purchases, setPurchases] = useState<CompraResponse[]>([]);
+	const [purchasesForVariation, setPurchasesForVariation] = useState<CompraResponse[]>([]);
 	const [products, setProducts] = useState<Producto[]>([]);
 	const [cashMovements, setCashMovements] = useState<MovimientoCajaResponse[]>([]);
 	const [saldoCaja, setSaldoCaja] = useState(0);
@@ -65,24 +86,24 @@ export default function ReportesPage() {
 		setLoading(true);
 		setError(null);
 		try {
-			const [ventasData, comprasData, productosData, movimientosData, resumenes, ventasDiaData] = await Promise.all([
-				ventaService.listarPorEmpresa(empresaId, 0, 100),
+			const [ventasData, comprasData, productosData, productosTotal, movimientosData, resumenes, ventasDiaData] = await Promise.all([
+				ventaService.listarPorEmpresa(empresaId, 0, 1),
 				compraService.listarPorEmpresa(empresaId, 0, 100),
-				productoService.listarPorEmpresa(empresaId, 0, 200),
-				cajaService.listarMovimientosPorEmpresa(empresaId, 0, 100),
+				productoService.listarTodosPorEmpresa(empresaId),
+				productoService.listarPorEmpresa(empresaId, 0, 1),
+				fetchAllPages((page, size) => cajaService.listarMovimientosPorEmpresa(empresaId, page, size)),
 				cajaService.obtenerResumenTodas(empresaId),
 				cargarVentasHoyAyer(empresaId).catch(() => null)
 			]);
 
-			setSales(ventasData.content);
-			setPurchases(comprasData.content);
-			setProducts(productosData.content);
-			setCashMovements(movimientosData.content);
+			setProducts(productosData);
+			setCashMovements(movimientosData);
+			setPurchasesForVariation(comprasData.content);
 			setSaldoCaja(resumenes.reduce((acc, r) => acc + r.saldoActual, 0));
 			setTotales({
 				ventas: ventasData.totalElements,
 				compras: comprasData.totalElements,
-				productos: productosData.totalElements
+				productos: productosTotal.totalElements
 			});
 			setVentasDia(ventasDiaData);
 		} catch {
@@ -91,6 +112,55 @@ export default function ReportesPage() {
 			setLoading(false);
 		}
 	}, [empresaId]);
+
+	useEffect(() => {
+		if (!empresaId) return;
+		if (!periodo.inicio || !periodo.fin) {
+			setErrorPeriodo("Selecciona las dos fechas del período.");
+			setSales([]);
+			setPurchases([]);
+			setLoadingPeriodo(false);
+			return;
+		}
+		if (periodo.inicio > periodo.fin) {
+			setErrorPeriodo("La fecha inicial no puede ser posterior a la fecha final.");
+			setSales([]);
+			setPurchases([]);
+			setLoadingPeriodo(false);
+			return;
+		}
+
+		let activo = true;
+		setSales([]);
+		setPurchases([]);
+		setLoadingPeriodo(true);
+		setErrorPeriodo(null);
+		const inicio = `${periodo.inicio}T00:00:00`;
+		const fin = `${periodo.fin}T23:59:59.999999999`;
+		void Promise.all([
+			ventaService.obtenerPorPeriodo(empresaId, inicio, fin),
+			compraService.obtenerPorPeriodo(empresaId, inicio, fin)
+		])
+			.then(([ventasPeriodo, comprasPeriodo]) => {
+				if (activo) {
+					setSales(ventasPeriodo);
+					setPurchases(comprasPeriodo);
+				}
+			})
+			.catch(() => {
+				if (activo) {
+					setSales([]);
+					setPurchases([]);
+					setErrorPeriodo("No se pudieron cargar las ventas y compras del período seleccionado.");
+				}
+			})
+			.finally(() => {
+				if (activo) setLoadingPeriodo(false);
+			});
+		return () => {
+			activo = false;
+		};
+	}, [empresaId, periodo.fin, periodo.inicio]);
 
 	useEffect(() => {
 		loadData();
@@ -114,11 +184,11 @@ export default function ReportesPage() {
 	const variacionCompras = useMemo(
 		() =>
 			variacionVsAyer(
-				contarEnDia(purchases.map((c) => c.fechaCompra), 0),
-				contarEnDia(purchases.map((c) => c.fechaCompra), -1),
+				contarEnDia(purchasesForVariation.map((c) => c.fechaCompra), 0),
+				contarEnDia(purchasesForVariation.map((c) => c.fechaCompra), -1),
 				etiquetaCompras
 			),
-		[purchases]
+		[purchasesForVariation]
 	);
 
 	const variacionProductos = useMemo(
@@ -141,8 +211,71 @@ export default function ReportesPage() {
 	}, [products]);
 
 	const recentCash = useMemo(() => {
-		return [...cashMovements].sort((a, b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime());
-	}, [cashMovements]);
+		return cashMovements
+			.filter((movement) => {
+				const date = movement.fecha.slice(0, 10);
+				return date >= periodo.inicio && date <= periodo.fin;
+			})
+			.sort((a, b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime());
+	}, [cashMovements, periodo.fin, periodo.inicio]);
+
+	const filePeriod = `${periodo.inicio}_${periodo.fin}`;
+
+	const exportSales = useCallback(() => {
+		downloadCsv(
+			`ventas_${filePeriod}.csv`,
+			["Número", "Fecha", "Cantidad de productos", "Método de pago", "Descuento", "Total"],
+			recentSales.map((sale) => [
+				sale.numero,
+				sale.fechaEmision,
+				sumCantidad(sale.detalles),
+				sale.formaPagoNombre,
+				sale.descuento,
+				sale.total
+			])
+		);
+	}, [filePeriod, recentSales]);
+
+	const exportPurchases = useCallback(() => {
+		downloadCsv(
+			`compras_${filePeriod}.csv`,
+			["Número", "Proveedor", "Fecha", "Cantidad de productos", "Total"],
+			recentPurchases.map((purchase) => [
+				purchase.numeroDocumento,
+				purchase.proveedorNombre,
+				purchase.fechaCompra,
+				sumCantidad(purchase.detalles),
+				purchase.total
+			])
+		);
+	}, [filePeriod, recentPurchases]);
+
+	const exportLowStock = useCallback(() => {
+		downloadCsv(
+			"productos_con_poco_inventario.csv",
+			["Producto", "Stock actual", "Stock mínimo", "Estado"],
+			lowStockProducts.map((product) => [
+				product.nombre,
+				product.stockActual,
+				product.stockMinimo,
+				product.active ? "Activo" : "Inactivo"
+			])
+		);
+	}, [lowStockProducts]);
+
+	const exportCash = useCallback(() => {
+		downloadCsv(
+			`movimientos_caja_${filePeriod}.csv`,
+			["Fecha", "Tipo", "Concepto", "Caja", "Valor"],
+			recentCash.map((movement) => [
+				movement.fecha,
+				movement.tipo,
+				movement.descripcion,
+				movement.cajaNombre,
+				movement.monto
+			])
+		);
+	}, [filePeriod, recentCash]);
 
 	const salesColumns: Array<DataTableColumn<FacturaVentaResponse>> = useMemo(
 		() => [
@@ -240,6 +373,31 @@ export default function ReportesPage() {
 		<div className="rep">
 			<PageHeader title="Reportes" subtitle="Consulta la información general del negocio." />
 
+			<section className="rep__period" aria-label="Filtro de período">
+				<div className="rep__periodFields">
+					<label className="rep__dateField">
+						<span>Desde</span>
+						<input
+							type="date"
+							value={periodo.inicio}
+							max={periodo.fin || undefined}
+							onChange={(event) => setPeriodo((current) => ({ ...current, inicio: event.target.value }))}
+						/>
+					</label>
+					<label className="rep__dateField">
+						<span>Hasta</span>
+						<input
+							type="date"
+							value={periodo.fin}
+							min={periodo.inicio || undefined}
+							onChange={(event) => setPeriodo((current) => ({ ...current, fin: event.target.value }))}
+						/>
+					</label>
+				</div>
+				<p className="rep__periodHint">El período filtra ventas, compras y movimientos de Caja. El inventario y el saldo muestran el estado actual.</p>
+				{errorPeriodo && <p className="rep__periodError" role="alert">{errorPeriodo}</p>}
+			</section>
+
 			<section className="rep__metrics" aria-label="Resumen">
 				<StatCard icon={<CreditCard size={20} strokeWidth={1.8} />} title="Ventas registradas" value={computed.ventasRegistradas.toLocaleString("es-CO")} color="blue" variation={variacionVentas} />
 				<StatCard icon={<Receipt size={20} strokeWidth={1.8} />} title="Compras registradas" value={computed.comprasRegistradas.toLocaleString("es-CO")} color="amber" variation={variacionCompras} />
@@ -250,15 +408,20 @@ export default function ReportesPage() {
 			<section className="rep__panels" aria-label="Secciones">
 				<article className="rep__panel">
 					<div className="rep__panelHead">
-						<PageHeader title="Ventas recientes" />
+						<PageHeader title="Ventas del período" />
+						<button type="button" className="rep__exportButton" onClick={exportSales} disabled={loadingPeriodo || recentSales.length === 0}>
+							<Download size={15} />
+							<span>Exportar CSV</span>
+						</button>
 					</div>
 					<DataTable
 						columns={salesColumns}
 						data={recentSales}
+						pageSize={10}
 						emptyState={
 							<div className="rep__empty">
-								<div className="rep__emptyTitle">No existen ventas registradas.</div>
-								<div className="rep__emptySubtitle">Finaliza una venta en POS para verla aquí.</div>
+								<div className="rep__emptyTitle">{loadingPeriodo ? "Cargando ventas..." : "No existen ventas en este período."}</div>
+								<div className="rep__emptySubtitle">{loadingPeriodo ? "Espera mientras se actualiza el informe." : "Ajusta las fechas o finaliza una venta en POS."}</div>
 							</div>
 						}
 					/>
@@ -266,15 +429,20 @@ export default function ReportesPage() {
 
 				<article className="rep__panel">
 					<div className="rep__panelHead">
-						<PageHeader title="Compras recientes" />
+						<PageHeader title="Compras del período" />
+						<button type="button" className="rep__exportButton" onClick={exportPurchases} disabled={loadingPeriodo || recentPurchases.length === 0}>
+							<Download size={15} />
+							<span>Exportar CSV</span>
+						</button>
 					</div>
 					<DataTable
 						columns={purchasesColumns}
 						data={recentPurchases}
+						pageSize={10}
 						emptyState={
 							<div className="rep__empty">
-								<div className="rep__emptyTitle">No existen compras registradas.</div>
-								<div className="rep__emptySubtitle">Registra una compra para verla aquí.</div>
+								<div className="rep__emptyTitle">{loadingPeriodo ? "Cargando compras..." : "No existen compras en este período."}</div>
+								<div className="rep__emptySubtitle">{loadingPeriodo ? "Espera mientras se actualiza el informe." : "Ajusta las fechas o registra una compra."}</div>
 							</div>
 						}
 					/>
@@ -283,10 +451,15 @@ export default function ReportesPage() {
 				<article className="rep__panel">
 					<div className="rep__panelHead">
 						<PageHeader title="Productos con poco inventario" />
+						<button type="button" className="rep__exportButton" onClick={exportLowStock} disabled={lowStockProducts.length === 0}>
+							<Download size={15} />
+							<span>Exportar CSV</span>
+						</button>
 					</div>
 					<DataTable
 						columns={lowStockColumns}
 						data={lowStockProducts}
+						pageSize={10}
 						emptyState={
 							<div className="rep__empty">
 								<div className="rep__emptyTitle">No hay productos con poco inventario.</div>
@@ -299,14 +472,19 @@ export default function ReportesPage() {
 				<article className="rep__panel">
 					<div className="rep__panelHead">
 						<PageHeader title="Movimientos recientes de Caja" />
+						<button type="button" className="rep__exportButton" onClick={exportCash} disabled={recentCash.length === 0}>
+							<Download size={15} />
+							<span>Exportar CSV</span>
+						</button>
 					</div>
 					<DataTable
 						columns={cashColumns}
 						data={recentCash}
+						pageSize={10}
 						emptyState={
 							<div className="rep__empty">
-								<div className="rep__emptyTitle">No existen movimientos registrados.</div>
-								<div className="rep__emptySubtitle">Registra movimientos manuales para verlos aquí.</div>
+								<div className="rep__emptyTitle">No existen movimientos de Caja en este período.</div>
+								<div className="rep__emptySubtitle">Ajusta las fechas para consultar otros movimientos.</div>
 							</div>
 						}
 					/>

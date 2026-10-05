@@ -138,9 +138,15 @@ npm run dev
 
 El frontend queda disponible en `http://localhost:5173`.
 
-### Primer arranque (base de datos vacía)
+### Primer arranque
 
-Para poblar el primer usuario en una base vacía hoy se requiere pasar manualmente por Swagger: crear Empresa → Rol admin → Usuario admin → Formas de pago → Caja inicial, en ese orden. Ver `ERP_PLAN.md` para el detalle y el estado de un flujo de registro automático que resolvería esto.
+Abre `http://localhost:5173/login`. Si todavía no hay usuarios activos, el sistema ofrece la configuración inicial para crear la empresa (si no existe una activa) y la cuenta administradora. Al finalizar, inicia sesión automáticamente. Esta configuración solo se permite una vez; si ya existe una cuenta activa, usa sus credenciales.
+
+Después del primer acceso, configura las formas de pago y la caja inicial desde sus módulos antes de registrar ventas en el POS.
+
+### Recuperación de acceso de administrador
+
+Si ya hay usuarios activos y se perdió el acceso, conserva la base de datos y configura temporalmente una clave de recuperación de al menos 32 caracteres en el entorno del backend como `ADMIN_RECOVERY_KEY`. Inicia o reinicia el backend con esa variable y abre `http://localhost:5173/recover-admin` para crear otra cuenta administradora. Usa una clave aleatoria, no la guardes en el repositorio ni la compartas, y elimina la variable del entorno al terminar; la recuperación solo funciona si hay exactamente una empresa activa.
 
 ---
 

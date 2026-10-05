@@ -88,7 +88,9 @@ export const ventaService = {
   },
 
   async obtenerPorPeriodo(empresaId: number, inicio: string, fin: string): Promise<FacturaVentaResponse[]> {
-    const response = await http.get(`/api/facturas-venta/por-periodo/${empresaId}?inicio=${inicio}&fin=${fin}`);
+    const response = await http.get<FacturaVentaResponse[]>(`/api/facturas-venta/por-periodo/${empresaId}`, {
+      params: { inicio, fin }
+    });
     return response.data;
   },
 

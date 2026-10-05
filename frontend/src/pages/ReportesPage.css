@@ -11,6 +11,53 @@
 	min-width: 0;
 }
 
+.rep__period {
+	display: grid;
+	gap: 8px;
+	padding: 14px 16px;
+	border: 1px solid var(--line);
+	border-radius: 14px;
+	background: var(--paper);
+}
+
+.rep__periodFields {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 12px;
+}
+
+.rep__dateField {
+	display: grid;
+	gap: 5px;
+	color: var(--muted);
+	font-size: 12px;
+	font-weight: 600;
+}
+
+.rep__dateField input {
+	min-height: 38px;
+	padding: 0 10px;
+	border: 1px solid var(--line);
+	border-radius: 8px;
+	background: var(--paper);
+	color: var(--ink);
+	font: inherit;
+}
+
+.rep__periodHint,
+.rep__periodError {
+	margin: 0;
+	font-size: 12px;
+}
+
+.rep__periodHint {
+	color: var(--muted);
+}
+
+.rep__periodError {
+	color: #b91c1c;
+}
+
 .rep__panels {
 	display: grid;
 	grid-template-columns: 1fr 1fr;
@@ -38,7 +85,35 @@
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
+	gap: 10px;
 	margin-bottom: 12px;
+}
+
+.rep__exportButton {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 7px;
+	min-height: 34px;
+	padding: 0 10px;
+	border: 1px solid var(--line);
+	border-radius: 8px;
+	background: var(--paper);
+	color: var(--ink);
+	font: inherit;
+	font-size: 12px;
+	font-weight: 600;
+	white-space: nowrap;
+	cursor: pointer;
+}
+
+.rep__exportButton:hover:not(:disabled) {
+	background: var(--surface);
+}
+
+.rep__exportButton:disabled {
+	opacity: 0.5;
+	cursor: not-allowed;
 }
 
 .rep__empty {
@@ -126,5 +201,22 @@
 @media (max-width: 520px) {
 	.rep__metrics {
 		grid-template-columns: 1fr;
+	}
+
+	.rep__periodFields,
+	.rep__dateField {
+		width: 100%;
+	}
+
+	.rep__panelHead {
+		align-items: flex-start;
+	}
+
+	.rep__panelHead .ui-pageHeader {
+		min-width: 0;
+	}
+
+	.rep__exportButton {
+		flex-shrink: 0;
 	}
 }

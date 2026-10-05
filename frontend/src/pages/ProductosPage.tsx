@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Plus, Pencil, Trash2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import ConfirmDialog from "../components/ConfirmDialog";
@@ -62,7 +62,6 @@ export default function ProductosPage() {
 
 	const [searchQuery, setSearchQuery] = useState("");
 	const [selectedCategory, setSelectedCategory] = useState<string>("Todos");
-	const searchRef = useRef<HTMLDivElement | null>(null);
 
 	const [modalOpen, setModalOpen] = useState(false);
 	const [editingProduct, setEditingProduct] = useState<Producto | null>(null);
@@ -85,10 +84,10 @@ export default function ProductosPage() {
 		setError(null);
 		try {
 			const [productosRes, categoriasRes] = await Promise.all([
-				productoService.listarPorEmpresa(empresaId, 0, 200),
+				productoService.listarTodosPorEmpresa(empresaId),
 				categoriaProductoService.listarPorEmpresa(empresaId)
 			]);
-			setProducts(productosRes.content);
+			setProducts(productosRes);
 			setCategories(categoriasRes);
 		} catch {
 			setError("No se pudo cargar los productos. Verifica tu conexión con el servidor.");
@@ -209,24 +208,6 @@ export default function ProductosPage() {
 		}
 	}, [closeConfirm, confirmTarget]);
 
-	useEffect(() => {
-		const el = searchRef.current;
-		if (!el) return;
-
-		const input = el.querySelector("input");
-		if (!input) return;
-
-		const onInput = (e: Event) => {
-			const target = e.target as HTMLInputElement | null;
-			setSearchQuery(target?.value ?? "");
-		};
-
-		input.addEventListener("input", onInput);
-		return () => {
-			input.removeEventListener("input", onInput);
-		};
-	}, []);
-
 	const categoryFilterOptions = useMemo(() => ["Todos", ...categories.map((c) => c.nombre)], [categories]);
 
 	useEffect(() => {
@@ -337,9 +318,11 @@ export default function ProductosPage() {
 					<label className="prod__searchLabel" aria-hidden="true">
 						Buscar
 					</label>
-					<div ref={searchRef}>
-						<SearchBar placeholder="Buscar producto..." />
-					</div>
+					<SearchBar
+						placeholder="Buscar producto..."
+						value={searchQuery}
+						onChange={setSearchQuery}
+					/>
 				</div>
 
 				<div className="prod__filters" aria-label="Filtros">
@@ -361,7 +344,7 @@ export default function ProductosPage() {
 			</div>
 
 			<div className="prod__table">
-				<DataTable columns={columns} data={filteredProducts} emptyState={emptyState} />
+				<DataTable columns={columns} data={filteredProducts} emptyState={emptyState} pageSize={10} />
 			</div>
 
 			<Modal

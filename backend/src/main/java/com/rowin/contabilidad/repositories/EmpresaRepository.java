@@ -15,5 +15,9 @@ public interface EmpresaRepository extends JpaRepository<Empresa, Long> {
     // Método para obtener todas las empresas activas (sin paginación)
     List<Empresa> findByActiveTrue();
 
+    boolean existsByActiveTrue();
+
+    long countByActiveTrue();
+
     Optional<Empresa> findByIdAndActiveTrue(Long id);
 }

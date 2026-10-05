@@ -256,6 +256,18 @@
 	transform: translateY(0) scale(0.98);
 }
 
+.login__recoveryLink {
+	margin-top: 14px;
+	color: var(--muted, #5c606a);
+	font-size: 13px;
+	text-decoration: none;
+}
+
+.login__recoveryLink:hover {
+	color: var(--ink, #000);
+	text-decoration: underline;
+}
+
 .login__footer {
 	margin-top: 28px;
 	text-align: center;

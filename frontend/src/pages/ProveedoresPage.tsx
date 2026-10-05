@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Plus, Pencil, Trash2 } from "lucide-react";
 import ConfirmDialog from "../components/ConfirmDialog";
 import DataTable, { DataTableColumn } from "../components/DataTable";
@@ -37,7 +37,6 @@ export default function ProveedoresPage() {
 	const [error, setError] = useState<string | null>(null);
 
 	const [searchQuery, setSearchQuery] = useState("");
-	const searchRef = useRef<HTMLDivElement | null>(null);
 
 	const [modalOpen, setModalOpen] = useState(false);
 	const [editingProveedorId, setEditingProveedorId] = useState<number | null>(null);
@@ -161,24 +160,6 @@ export default function ProveedoresPage() {
 		}
 	}, [closeConfirm, confirmTarget]);
 
-	useEffect(() => {
-		const el = searchRef.current;
-		if (!el) return;
-
-		const input = el.querySelector("input");
-		if (!input) return;
-
-		const onInput = (e: Event) => {
-			const target = e.target as HTMLInputElement | null;
-			setSearchQuery(target?.value ?? "");
-		};
-
-		input.addEventListener("input", onInput);
-		return () => {
-			input.removeEventListener("input", onInput);
-		};
-	}, []);
-
 	const filteredProveedores = useMemo(() => {
 		const q = searchQuery.trim().toLowerCase();
 		if (!q) return proveedores;
@@ -186,7 +167,9 @@ export default function ProveedoresPage() {
 			(p) =>
 				p.nombre.toLowerCase().includes(q) ||
 				(p.documento ?? "").toLowerCase().includes(q) ||
-				(p.email ?? "").toLowerCase().includes(q)
+				(p.email ?? "").toLowerCase().includes(q) ||
+				(p.telefono ?? "").toLowerCase().includes(q) ||
+				(p.direccion ?? "").toLowerCase().includes(q)
 		);
 	}, [proveedores, searchQuery]);
 
@@ -271,14 +254,16 @@ export default function ProveedoresPage() {
 
 			<div className="prov__controls">
 				<div className="prov__search">
-					<div ref={searchRef}>
-						<SearchBar placeholder="Buscar proveedor..." />
-					</div>
+					<SearchBar
+						placeholder="Buscar proveedor..."
+						value={searchQuery}
+						onChange={setSearchQuery}
+					/>
 				</div>
 			</div>
 
 			<div className="prov__table">
-				<DataTable columns={columns} data={filteredProveedores} emptyState={emptyState} />
+				<DataTable columns={columns} data={filteredProveedores} emptyState={emptyState} pageSize={10} />
 			</div>
 
 			<Modal
