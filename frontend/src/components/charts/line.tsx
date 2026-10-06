@@ -110,7 +110,7 @@ function LineSeriesStroke({
   animatedPathD: string;
   curve: CurveFactory;
   getY: (datum: Record<string, unknown>) => number;
-  pathRef: RefObject<SVGPathElement | null>;
+  pathRef: RefObject<SVGPathElement>;
   renderData: Record<string, unknown>[];
   strokeWidth: number;
   useDataTransitionPath: boolean;

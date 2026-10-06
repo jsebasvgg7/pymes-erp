@@ -9,6 +9,8 @@ type StatCardProps = {
 	color?: "blue" | "green" | "amber" | "red";
 	/** Variación respecto a ayer. direction decide el ícono; text es lo que se muestra, p. ej. "3 ayer". Si se omite, se muestra "sin cambios". */
 	variation?: { direction: "up" | "down"; text: string };
+	/** Texto fijo al pie, sin indicador de tendencia. Tiene prioridad sobre variation. */
+	footnote?: string;
 };
 
 const colorClass: Record<NonNullable<StatCardProps["color"]>, string> = {
@@ -18,7 +20,7 @@ const colorClass: Record<NonNullable<StatCardProps["color"]>, string> = {
 	red: "ui-statCard__icon--red"
 };
 
-export default function StatCard({ icon, title, value, color = "blue", variation }: StatCardProps) {
+export default function StatCard({ icon, title, value, color = "blue", variation, footnote }: StatCardProps) {
 	const direction = variation?.direction ?? "none";
 	const text = variation?.text ?? "sin cambios";
 
@@ -34,16 +36,22 @@ export default function StatCard({ icon, title, value, color = "blue", variation
 				</div>
 			</div>
 			<div className="ui-statCard__foot">
-				<span className={`ui-statCard__trend ui-statCard__trend--${direction}`}>
-					{direction === "up" ? (
-						<ArrowUp size={14} strokeWidth={2.25} />
-					) : direction === "down" ? (
-						<ArrowDown size={14} strokeWidth={2.25} />
-					) : (
-						<Minus size={14} strokeWidth={2.25} />
-					)}
-				</span>
-				<span className="ui-statCard__footText">{text}</span>
+				{footnote !== undefined ? (
+					<span className="ui-statCard__footText">{footnote}</span>
+				) : (
+					<>
+						<span className={`ui-statCard__trend ui-statCard__trend--${direction}`}>
+							{direction === "up" ? (
+								<ArrowUp size={14} strokeWidth={2.25} />
+							) : direction === "down" ? (
+								<ArrowDown size={14} strokeWidth={2.25} />
+							) : (
+								<Minus size={14} strokeWidth={2.25} />
+							)}
+						</span>
+						<span className="ui-statCard__footText">{text}</span>
+					</>
+				)}
 			</div>
 		</article>
 	);
