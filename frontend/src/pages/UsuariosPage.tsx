@@ -12,6 +12,7 @@ import { authService } from "../services/authService";
 import { empresaService } from "../services/empresaService";
 import { rolService, type Rol } from "../services/rolService";
 import { usuarioService, type Usuario } from "../services/usuarioService";
+import { useAccionRapida } from "../hooks/useAccionRapida";
 import "./UsuariosPage.css";
 
 type UserFormState = {
@@ -108,6 +109,8 @@ export default function UsuariosPage() {
 		setFormError(null);
 		setModalOpen(true);
 	};
+
+	useAccionRapida("nuevo", openCreateModal);
 
 	const openEditModal = useCallback((user: Usuario) => {
 		setEditingUserId(user.id);

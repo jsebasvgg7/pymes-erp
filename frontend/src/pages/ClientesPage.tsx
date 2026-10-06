@@ -9,6 +9,7 @@ import SecondaryButton from "../components/SecondaryButton";
 import StatusBadge from "../components/StatusBadge";
 import { authService } from "../services/authService";
 import { clienteService, type Cliente } from "../services/clienteService";
+import { useAccionRapida } from "../hooks/useAccionRapida";
 import "./ClientesPage.css";
 
 type ClienteFormState = {
@@ -81,6 +82,8 @@ export default function ClientesPage() {
 		setFormError(null);
 		setModalOpen(true);
 	}, []);
+
+	useAccionRapida("nuevo", openCreateModal);
 
 	const openEditModal = useCallback((cliente: Cliente) => {
 		setEditingClienteId(cliente.id);

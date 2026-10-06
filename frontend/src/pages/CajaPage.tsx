@@ -10,6 +10,7 @@ import StatCard from "../components/StatCard";
 import StatusBadge from "../components/StatusBadge";
 import { authService } from "../services/authService";
 import { cajaService, type CajaResumen, type MovimientoCajaResponse } from "../services/cajaService";
+import { useAccionRapida } from "../hooks/useAccionRapida";
 import "./CajaPage.css";
 
 type CashFormState = {
@@ -128,6 +129,8 @@ export default function CajaPage() {
 		setModalOpen(true);
 	}, []);
 
+	useAccionRapida("movimiento", openModal);
+
 	const closeModal = useCallback(() => {
 		setModalOpen(false);
 		setFormError(null);
@@ -167,6 +170,8 @@ export default function CajaPage() {
 		setNewCajaError(null);
 		setNewCajaModalOpen(true);
 	}, []);
+
+	useAccionRapida("nueva-caja", openNewCajaModal);
 
 	const closeNewCajaModal = useCallback(() => {
 		setNewCajaModalOpen(false);

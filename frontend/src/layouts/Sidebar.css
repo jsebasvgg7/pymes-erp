@@ -364,6 +364,66 @@
 	flex-shrink: 0;
 }
 
+.dash__headerSearch.ui-search {
+	width: 220px;
+	height: 36px;
+	cursor: pointer;
+	font: inherit;
+	color: var(--muted);
+	text-align: left;
+}
+
+.dash__headerSearch.ui-search:hover {
+	border-color: var(--muted);
+}
+
+.dash__headerSearchText {
+	flex: 1;
+	font-size: 13px;
+}
+
+.dash__headerSearchKbd {
+	font-family: inherit;
+	font-size: 11px;
+	line-height: 1;
+	padding: 4px 6px;
+	border-radius: 6px;
+	border: 1px solid var(--line);
+	background: var(--surface);
+	color: var(--muted);
+	flex-shrink: 0;
+}
+
+.dash__iconBtn {
+	width: 36px;
+	height: 36px;
+	border-radius: 9px;
+	border: 1px solid var(--line);
+	background: transparent;
+	color: var(--muted);
+	display: none;
+	align-items: center;
+	justify-content: center;
+	cursor: pointer;
+	transition: background 140ms ease, color 140ms ease;
+	flex-shrink: 0;
+}
+
+.dash__iconBtn:hover {
+	background: var(--surface);
+	color: var(--ink);
+}
+
+.dash__iconBtn--logout {
+	display: inline-flex;
+}
+
+.dash__iconBtn--logout:hover {
+	background: color-mix(in srgb, #ef4444 8%, transparent);
+	color: #ef4444;
+	border-color: color-mix(in srgb, #ef4444 24%, var(--line));
+}
+
 .dash__account {
 	position: relative;
 }
@@ -479,6 +539,17 @@
 }
 
 @media (max-width: 980px) {
+	.dash__headerSearch.ui-search {
+		width: 36px;
+		padding: 0;
+		justify-content: center;
+	}
+
+	.dash__headerSearchText,
+	.dash__headerSearchKbd {
+		display: none;
+	}
+
 	.dash__main {
 		margin-left: 0;
 	}

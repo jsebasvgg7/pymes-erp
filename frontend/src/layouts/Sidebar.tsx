@@ -16,11 +16,14 @@ import {
 	LogOut,
 	ChevronDown,
 	Menu,
-	X
+	X,
+	Search
 } from "lucide-react";
 import Avatar from "../components/Avatar";
+import CommandPalette from "../components/CommandPalette";
 import { authService } from "../services/authService";
 import { empresaService } from "../services/empresaService";
+import { ATAJO_BUSQUEDA } from "../utils/commandCatalog";
 import logo from "../assets/logo-black.png";
 import "./Sidebar.css";
 
@@ -77,6 +80,7 @@ export default function Sidebar() {
 	const [sidebarOpen, setSidebarOpen] = useState(false);
 	const [nombreEmpresa, setNombreEmpresa] = useState<string | null>(null);
 	const [accountMenuOpen, setAccountMenuOpen] = useState(false);
+	const [paletteOpen, setPaletteOpen] = useState(false);
 	const accountMenuRef = useRef<HTMLDivElement>(null);
 	const location = useLocation();
 	const navigate = useNavigate();
@@ -129,6 +133,28 @@ export default function Sidebar() {
 		}
 		return { groupTitle: "General", pageTitle: "Dashboard" };
 	}, [location.pathname]);
+
+	useEffect(() => {
+		function handleShortcut(event: KeyboardEvent) {
+			const key = event.key.toLowerCase();
+			if ((event.ctrlKey || event.metaKey) && key === "k") {
+				event.preventDefault();
+				setPaletteOpen((open) => !open);
+				return;
+			}
+			if (key !== "/" || event.ctrlKey || event.metaKey || event.altKey) return;
+			const target = event.target;
+			const editable =
+				target instanceof HTMLElement &&
+				(target.isContentEditable || ["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName));
+			if (editable) return;
+			event.preventDefault();
+			setPaletteOpen(true);
+		}
+
+		document.addEventListener("keydown", handleShortcut);
+		return () => document.removeEventListener("keydown", handleShortcut);
+	}, []);
 
 	function handleLogout() {
 		authService.logout();
@@ -250,6 +276,27 @@ export default function Sidebar() {
 					</div>
 
 					<div className="dash__headerRight">
+						<button
+							type="button"
+							className="ui-search dash__headerSearch"
+							aria-label="Buscar en la aplicación"
+							aria-haspopup="dialog"
+							onClick={() => setPaletteOpen(true)}
+						>
+							<Search size={16} className="ui-search__icon" aria-hidden="true" />
+							<span className="dash__headerSearchText">Buscar...</span>
+							<kbd className="dash__headerSearchKbd">{ATAJO_BUSQUEDA}</kbd>
+						</button>
+
+						<button
+							type="button"
+							className="dash__iconBtn dash__iconBtn--logout"
+							aria-label="Cerrar sesión"
+							onClick={handleLogout}
+						>
+							<LogOut size={17} strokeWidth={1.8} />
+						</button>
+
 						<div ref={accountMenuRef} className="dash__account">
 							<button
 								type="button"
@@ -291,6 +338,12 @@ export default function Sidebar() {
 					<Outlet />
 				</main>
 			</div>
+
+			<CommandPalette
+				open={paletteOpen}
+				onClose={() => setPaletteOpen(false)}
+				onLogout={handleLogout}
+			/>
 		</div>
 	);
 }

@@ -11,6 +11,7 @@ import SecondaryButton from "../components/SecondaryButton";
 import StatusBadge from "../components/StatusBadge";
 import { authService } from "../services/authService";
 import { categoriaProductoService, type CategoriaProducto } from "../services/CategoriaProductoService";
+import { useAccionRapida } from "../hooks/useAccionRapida";
 import "./CategoriasPage.css";
 
 type CategoryFormState = {
@@ -80,6 +81,8 @@ export default function CategoriasPage() {
 		setFormError(null);
 		setModalOpen(true);
 	}, []);
+
+	useAccionRapida("nuevo", openCreateModal);
 
 	const openEditModal = useCallback((category: CategoriaProducto) => {
 		setEditingCategoryId(category.id);

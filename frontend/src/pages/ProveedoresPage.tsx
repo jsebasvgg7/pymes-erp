@@ -11,6 +11,7 @@ import SecondaryButton from "../components/SecondaryButton";
 import StatusBadge from "../components/StatusBadge";
 import { authService } from "../services/authService";
 import { proveedorService, type Proveedor } from "../services/proveedorService";
+import { useAccionRapida } from "../hooks/useAccionRapida";
 import "./ProveedoresPage.css";
 
 type ProveedorFormState = {
@@ -83,6 +84,8 @@ export default function ProveedoresPage() {
 		setFormError(null);
 		setModalOpen(true);
 	}, []);
+
+	useAccionRapida("nuevo", openCreateModal);
 
 	const openEditModal = useCallback((proveedor: Proveedor) => {
 		setEditingProveedorId(proveedor.id);

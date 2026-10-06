@@ -11,6 +11,7 @@ import { compraService, type CompraResponse } from "../services/compraService";
 import { formaPagoService, type FormaPago } from "../services/formaPagoService";
 import { productoService, type Producto } from "../services/ProductoService";
 import { proveedorService, type Proveedor } from "../services/proveedorService";
+import { useAccionRapida } from "../hooks/useAccionRapida";
 import "./ComprasPage.css";
 
 type PurchaseLine = {
@@ -141,6 +142,8 @@ export default function ComprasPage() {
 		setFormError(null);
 		setModalOpen(true);
 	}, []);
+
+	useAccionRapida("nuevo", openModal);
 
 	const closeModal = useCallback(() => {
 		setModalOpen(false);

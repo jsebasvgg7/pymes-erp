@@ -13,6 +13,7 @@ import StatusBadge from "../components/StatusBadge";
 import { authService } from "../services/authService";
 import { categoriaProductoService, type CategoriaProducto } from "../services/CategoriaProductoService";
 import { productoService, type Producto, type ProductoCreateRequest, type ProductoUpdateRequest } from "../services/ProductoService";
+import { useAccionRapida } from "../hooks/useAccionRapida";
 import "./ProductosPage.css";
 
 const UNIDADES_MEDIDA = ["UNIDAD", "KILOGRAMO", "GRAMO", "LITRO", "MILILITRO", "CAJA", "PAQUETE"] as const;
@@ -115,6 +116,8 @@ export default function ProductosPage() {
 		setFormError(null);
 		setModalOpen(true);
 	}, []);
+
+	useAccionRapida("nuevo", openCreateModal);
 
 	const openEditModal = useCallback((product: Producto) => {
 		setEditingProduct(product);
