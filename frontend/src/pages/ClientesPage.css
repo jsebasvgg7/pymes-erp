@@ -269,6 +269,23 @@
 	padding: 10px 12px;
 }
 
+.cli__layout {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr) 340px;
+	gap: 24px;
+	align-items: start;
+}
+
+.cli__main {
+	min-width: 0;
+}
+
+@media (max-width: 1200px) {
+	.cli__layout {
+		grid-template-columns: minmax(0, 1fr);
+	}
+}
+
 @media (max-width: 860px) {
 	.cli__search {
 		width: 100%;

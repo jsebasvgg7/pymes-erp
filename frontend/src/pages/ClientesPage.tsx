@@ -4,6 +4,7 @@ import ConfirmDialog from "../components/ConfirmDialog";
 import LoadingState from "../components/LoadingState";
 import Modal from "../components/Modal";
 import PageHeader from "../components/PageHeader";
+import SummaryPanel from "../components/SummaryPanel";
 import PrimaryButton from "../components/PrimaryButton";
 import SearchBar from "../components/SearchBar";
 import SecondaryButton from "../components/SecondaryButton";
@@ -174,6 +175,16 @@ export default function ClientesPage() {
 		[]
 	);
 
+	const resumen = useMemo(() => {
+		const activos = clientes.filter((c) => c.active).length;
+		const limite = Date.now() - 30 * 24 * 60 * 60 * 1000;
+		const nuevos = clientes.filter((c) => new Date(c.createdAt).getTime() >= limite).length;
+		const recientes = [...clientes]
+			.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime() || b.id - a.id)
+			.slice(0, 6);
+		return { activos, inactivos: clientes.length - activos, nuevos, recientes };
+	}, [clientes]);
+
 	const emptyState = useMemo(() => {
 		if (clientes.length === 0) {
 			return (
@@ -225,57 +236,87 @@ export default function ClientesPage() {
 				<SearchBar placeholder="Buscar por nombre..." value={searchQuery} onChange={setSearchQuery} />
 			</div>
 
-			{filteredClientes.length === 0 ? (
-				emptyState
-			) : (
-				<div className="cli__grid-cards">
-					{filteredClientes.map((c) => (
-						<article key={c.id} className="cli__card">
-							<div className="cli__cardTop">
-								<span className="cli__avatar" aria-hidden="true">
-									<User size={22} strokeWidth={1.8} />
-								</span>
-								<StatusBadge status={c.active ? "Activo" : "Inactivo"} />
-							</div>
-							<div className="cli__identity">
-								<div className="cli__name" title={c.nombre}>
-									{c.nombre}
-								</div>
-								<div className="cli__role">Cliente</div>
-							</div>
-							<div className="cli__meta">
-								<div className="cli__metaItem">
-									<span className="cli__metaLabel">Documento</span>
-									<span className="cli__metaValue">{c.documento || "—"}</span>
-								</div>
-								<div className="cli__metaItem">
-									<span className="cli__metaLabel">Creado</span>
-									<span className="cli__metaValue">{formatFecha(c.createdAt)}</span>
-								</div>
-							</div>
-							<div className="cli__cardBottom">
-								<div className="cli__contact">
-									<span title={c.email}>{c.email || "—"}</span>
-									<span>{c.telefono || "—"}</span>
-								</div>
-								<div className="cli__actions">
-									<button type="button" className="cli__iconBtn" aria-label="Editar cliente" onClick={() => openEditModal(c)}>
-										<Pencil size={15} strokeWidth={2} />
-									</button>
-									<button
-										type="button"
-										className="cli__iconBtn cli__iconBtn--danger"
-										aria-label="Eliminar cliente"
-										onClick={() => openConfirmDelete(c)}
-									>
-										<Trash2 size={15} strokeWidth={2} />
-									</button>
-								</div>
-							</div>
-						</article>
-					))}
+			<div className="cli__layout">
+				<div className="cli__main">
+					{filteredClientes.length === 0 ? (
+						emptyState
+					) : (
+						<div className="cli__grid-cards">
+							{filteredClientes.map((c) => (
+								<article key={c.id} className="cli__card">
+									<div className="cli__cardTop">
+										<span className="cli__avatar" aria-hidden="true">
+											<User size={22} strokeWidth={1.8} />
+										</span>
+										<StatusBadge status={c.active ? "Activo" : "Inactivo"} />
+									</div>
+									<div className="cli__identity">
+										<div className="cli__name" title={c.nombre}>
+											{c.nombre}
+										</div>
+										<div className="cli__role">Cliente</div>
+									</div>
+									<div className="cli__meta">
+										<div className="cli__metaItem">
+											<span className="cli__metaLabel">Documento</span>
+											<span className="cli__metaValue">{c.documento || "—"}</span>
+										</div>
+										<div className="cli__metaItem">
+											<span className="cli__metaLabel">Creado</span>
+											<span className="cli__metaValue">{formatFecha(c.createdAt)}</span>
+										</div>
+									</div>
+									<div className="cli__cardBottom">
+										<div className="cli__contact">
+											<span title={c.email}>{c.email || "—"}</span>
+											<span>{c.telefono || "—"}</span>
+										</div>
+										<div className="cli__actions">
+											<button type="button" className="cli__iconBtn" aria-label="Editar cliente" onClick={() => openEditModal(c)}>
+												<Pencil size={15} strokeWidth={2} />
+											</button>
+											<button
+												type="button"
+												className="cli__iconBtn cli__iconBtn--danger"
+												aria-label="Eliminar cliente"
+												onClick={() => openConfirmDelete(c)}
+											>
+												<Trash2 size={15} strokeWidth={2} />
+											</button>
+										</div>
+									</div>
+								</article>
+							))}
+						</div>
+					)}
 				</div>
-			)}
+
+				{clientes.length > 0 ? (
+					<SummaryPanel
+						title="Resumen de clientes"
+						subtitle="Un vistazo rápido a tu directorio."
+						stats={[
+							{ label: "Total", value: clientes.length },
+							{ label: "Activos", value: resumen.activos },
+							{ label: "Inactivos", value: resumen.inactivos },
+							{ label: "Nuevos en 30 días", value: resumen.nuevos }
+						]}
+						sections={[
+							{
+								title: "Agregados recientemente",
+								emptyText: "Aún no hay clientes registrados.",
+								items: resumen.recientes.map((c) => ({
+									key: c.id,
+									primary: c.nombre,
+									secondary: c.documento || "Sin documento",
+									value: formatFecha(c.createdAt),
+									onClick: () => openEditModal(c)
+								}))
+							}
+						]}
+					/>
+				) : null}
+			</div>
 
 			<Modal
 				open={modalOpen}

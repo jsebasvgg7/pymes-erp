@@ -293,6 +293,23 @@
 	accent-color: var(--ink);
 }
 
+.usr__layout {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr) 340px;
+	gap: 24px;
+	align-items: start;
+}
+
+.usr__main {
+	min-width: 0;
+}
+
+@media (max-width: 1200px) {
+	.usr__layout {
+		grid-template-columns: minmax(0, 1fr);
+	}
+}
+
 @media (max-width: 860px) {
 	.usr__search {
 		width: 100%;

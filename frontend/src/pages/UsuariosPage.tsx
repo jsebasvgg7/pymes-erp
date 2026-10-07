@@ -5,6 +5,7 @@ import ConfirmDialog from "../components/ConfirmDialog";
 import LoadingState from "../components/LoadingState";
 import Modal from "../components/Modal";
 import PageHeader from "../components/PageHeader";
+import SummaryPanel from "../components/SummaryPanel";
 import PrimaryButton from "../components/PrimaryButton";
 import SearchBar from "../components/SearchBar";
 import SecondaryButton from "../components/SecondaryButton";
@@ -204,6 +205,20 @@ export default function UsuariosPage() {
 		return users.filter((u) => `${u.username} ${u.email}`.toLowerCase().includes(q));
 	}, [searchText, users]);
 
+	const resumen = useMemo(() => {
+		const activos = users.filter((u) => u.active).length;
+		const porRol = roles.map((r) => ({
+			id: r.id,
+			nombre: r.nombre,
+			total: users.filter((u) => u.roles.some((ur) => ur.id === r.id)).length
+		}));
+		const sinRol = users.filter((u) => u.roles.length === 0).length;
+		const recientes = [...users]
+			.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime() || b.id - a.id)
+			.slice(0, 5);
+		return { activos, inactivos: users.length - activos, porRol, sinRol, recientes };
+	}, [users, roles]);
+
 	if (loading) {
 		return (
 			<div className="usr">
@@ -244,82 +259,126 @@ export default function UsuariosPage() {
 				</div>
 			) : null}
 
-			{filteredUsers.length === 0 ? (
-				users.length === 0 ? (
-					<div className="usr__empty">
-						<div className="usr__emptyTitle">No hay usuarios registrados.</div>
-						<div className="usr__emptySubtitle">Crea el primer usuario del sistema.</div>
-					</div>
-				) : (
-					<div className="usr__empty">
-						<div className="usr__emptyTitle">No se encontraron usuarios.</div>
-						<div className="usr__emptySubtitle">Prueba modificando la búsqueda.</div>
-					</div>
-				)
-			) : (
-				<div className="usr__cards">
-					{filteredUsers.map((u) => (
-						<article key={u.id} className="usr__card">
-							<div className="usr__cardTop">
-								<Avatar
-									name={u.username}
-									size={84}
-									className="usr__avatarImg"
-									fallbackClassName="usr__avatarFallback"
-								/>
-								<StatusBadge status={u.active ? "Activo" : "Inactivo"} />
+			<div className="usr__layout">
+				<div className="usr__main">
+					{filteredUsers.length === 0 ? (
+						users.length === 0 ? (
+							<div className="usr__empty">
+								<div className="usr__emptyTitle">No hay usuarios registrados.</div>
+								<div className="usr__emptySubtitle">Crea el primer usuario del sistema.</div>
 							</div>
-							<div className="usr__identity">
-								<div className="usr__name" title={u.username}>
-									{u.username}
-								</div>
-								<div className="usr__role">
-									{u.roles.length > 0 ? u.roles.map((rol) => rol.nombre).join(", ") : "Sin rol asignado"}
-								</div>
+						) : (
+							<div className="usr__empty">
+								<div className="usr__emptyTitle">No se encontraron usuarios.</div>
+								<div className="usr__emptySubtitle">Prueba modificando la búsqueda.</div>
 							</div>
-							<div className="usr__meta">
-								<div className="usr__metaItem">
-									<span className="usr__metaLabel">Negocio</span>
-									<span className="usr__metaValue">{empresaNombre || "—"}</span>
-								</div>
-								<div className="usr__metaItem">
-									<span className="usr__metaLabel">Actualizado</span>
-									<span className="usr__metaValue">{formatFecha(u.updatedAt)}</span>
-								</div>
-							</div>
-							<div className="usr__cardBottom">
-								<div className="usr__contact" title={u.email}>
-									{u.email}
-								</div>
-								<div className="usr__actions">
-									<button type="button" className="usr__iconBtn" aria-label="Editar usuario" onClick={() => openEditModal(u)}>
-										<Pencil size={15} strokeWidth={2} />
-									</button>
-									{u.id === currentUserId ? null : u.active ? (
-										<button
-											type="button"
-											className="usr__iconBtn usr__iconBtn--danger"
-											aria-label="Desactivar usuario"
-											onClick={() => openConfirmStatusChange(u)}
-										>
-											<UserX size={15} strokeWidth={2} />
-										</button>
-									) : (
-										<button
-											type="button"
-											className="usr__iconBtn"
-											aria-label="Activar usuario"
-											onClick={() => openConfirmStatusChange(u)}
-										>
-											<UserCheck size={15} strokeWidth={2} />
-										</button>
-									)}
-								</div>
-							</div>
-						</article>
-					))}
+						)
+					) : (
+						<div className="usr__cards">
+							{filteredUsers.map((u) => (
+								<article key={u.id} className="usr__card">
+									<div className="usr__cardTop">
+										<Avatar
+											name={u.username}
+											size={84}
+											className="usr__avatarImg"
+											fallbackClassName="usr__avatarFallback"
+										/>
+										<StatusBadge status={u.active ? "Activo" : "Inactivo"} />
+									</div>
+									<div className="usr__identity">
+										<div className="usr__name" title={u.username}>
+											{u.username}
+										</div>
+										<div className="usr__role">
+											{u.roles.length > 0 ? u.roles.map((rol) => rol.nombre).join(", ") : "Sin rol asignado"}
+										</div>
+									</div>
+									<div className="usr__meta">
+										<div className="usr__metaItem">
+											<span className="usr__metaLabel">Negocio</span>
+											<span className="usr__metaValue">{empresaNombre || "—"}</span>
+										</div>
+										<div className="usr__metaItem">
+											<span className="usr__metaLabel">Actualizado</span>
+											<span className="usr__metaValue">{formatFecha(u.updatedAt)}</span>
+										</div>
+									</div>
+									<div className="usr__cardBottom">
+										<div className="usr__contact" title={u.email}>
+											{u.email}
+										</div>
+										<div className="usr__actions">
+											<button type="button" className="usr__iconBtn" aria-label="Editar usuario" onClick={() => openEditModal(u)}>
+												<Pencil size={15} strokeWidth={2} />
+											</button>
+											{u.id === currentUserId ? null : u.active ? (
+												<button
+													type="button"
+													className="usr__iconBtn usr__iconBtn--danger"
+													aria-label="Desactivar usuario"
+													onClick={() => openConfirmStatusChange(u)}
+												>
+													<UserX size={15} strokeWidth={2} />
+												</button>
+											) : (
+												<button
+													type="button"
+													className="usr__iconBtn"
+													aria-label="Activar usuario"
+													onClick={() => openConfirmStatusChange(u)}
+												>
+													<UserCheck size={15} strokeWidth={2} />
+												</button>
+											)}
+										</div>
+									</div>
+								</article>
+							))}
+						</div>
+					)}
 				</div>
-			)}
+
+				{users.length > 0 ? (
+					<SummaryPanel
+						title="Resumen de accesos"
+						subtitle="Quién tiene acceso y con qué rol."
+						stats={[
+							{ label: "Usuarios", value: users.length },
+							{ label: "Activos", value: resumen.activos },
+							{ label: "Inactivos", value: resumen.inactivos },
+							{ label: "Roles", value: roles.length }
+						]}
+						sections={[
+							{
+								title: "Usuarios por rol",
+								emptyText: "Aún no hay roles creados.",
+								items: [
+									...resumen.porRol.map((r) => ({
+										key: `rol-${r.id}`,
+										primary: r.nombre,
+										value: `${r.total} ${r.total === 1 ? "usuario" : "usuarios"}`
+									})),
+									...(resumen.sinRol > 0
+										? [{ key: "sin-rol", primary: "Sin rol", value: `${resumen.sinRol} ${resumen.sinRol === 1 ? "usuario" : "usuarios"}` }]
+										: [])
+								]
+							},
+							{
+								title: "Actualizados recientemente",
+								emptyText: "Aún no hay usuarios registrados.",
+								items: resumen.recientes.map((u) => ({
+									key: u.id,
+									primary: u.username,
+									secondary: u.roles.length > 0 ? u.roles.map((r) => r.nombre).join(", ") : "Sin rol asignado",
+									value: formatFecha(u.updatedAt),
+									onClick: () => openEditModal(u)
+								}))
+							}
+						]}
+					/>
+				) : null}
+			</div>
 
 			<Modal
 				open={modalOpen}
