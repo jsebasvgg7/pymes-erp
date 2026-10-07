@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Plus, Pencil, Trash2 } from "lucide-react";
+import { Plus, Pencil, Trash2, Truck } from "lucide-react";
 import ConfirmDialog from "../components/ConfirmDialog";
 import DataTable, { DataTableLayout } from "../components/DataTable";
 import LoadingState from "../components/LoadingState";
@@ -233,12 +233,12 @@ export default function ProveedoresPage() {
 	return (
 		<div className="prov">
 			<PageHeader
-				title="Proveedores"
-				subtitle="Administración de proveedores registrados."
+				title="Red de proveedores"
+				subtitle="Gestiona los proveedores con los que abasteces tu negocio."
 				actions={
 					<PrimaryButton type="button" onClick={openCreateModal}>
-						<Plus size={16} strokeWidth={2.2} />
-						<span>Nuevo Proveedor</span>
+						<Plus size={14} strokeWidth={2.2} />
+						<span>Nuevo proveedor</span>
 					</PrimaryButton>
 				}
 			/>
@@ -259,7 +259,9 @@ export default function ProveedoresPage() {
 
 			<Modal
 				open={modalOpen}
-				title={editingProveedorId ? "Editar Proveedor" : "Nuevo Proveedor"}
+				title={editingProveedorId ? "Editar proveedor" : "Nuevo proveedor"}
+				subtitle={editingProveedorId ? "Modifica los datos del proveedor." : "Ingresa los datos del proveedor para registrarlo."}
+				icon={<Truck size={20} strokeWidth={2} />}
 				onClose={closeModal}
 				footer={
 					<div className="prov__modalActions">

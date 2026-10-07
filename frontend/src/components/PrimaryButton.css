@@ -1,13 +1,25 @@
 .ui-btnPrimary {
-	height: 46px;
-	border-radius: 12px;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 6px;
+	height: 32px;
+	padding: 0 14px;
+	border-radius: 999px;
 	border: 1px solid var(--ink);
 	cursor: pointer;
-	font-weight: 600;
-	letter-spacing: 0.01em;
+	font-family: inherit;
+	font-size: 13px;
+	font-weight: 500;
+	line-height: 1;
+	white-space: nowrap;
 	color: var(--paper);
 	background: var(--ink);
 	transition: transform 160ms ease, opacity 160ms ease;
+}
+
+.ui-btnPrimary svg {
+	flex-shrink: 0;
 }
 
 .ui-btnPrimary:hover {

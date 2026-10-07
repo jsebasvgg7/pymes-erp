@@ -37,13 +37,6 @@
 	color: var(--ink);
 }
 
-.cat__newBtn {
-	display: inline-flex;
-	align-items: center;
-	gap: 8px;
-	padding: 0 20px;
-}
-
 .cat__modalActions {
 	display: flex;
 	gap: 10px;
@@ -148,16 +141,6 @@
 	border: 1px solid rgba(220,38,38,0.22);
 	border-radius: 10px;
 	padding: 10px 12px;
-}
-
-.cat .ui-btnPrimary,
-.cat .ui-btnSecondary {
-	height: 44px;
-	padding: 0 20px;
-	display: inline-flex;
-	align-items: center;
-	justify-content: center;
-	gap: 8px;
 }
 
 @media (max-width: 860px) {

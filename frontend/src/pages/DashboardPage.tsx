@@ -1,6 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { RefreshCw, Users, Package, AlertTriangle, Wallet, ShoppingCart } from "lucide-react";
 import DataTable, { DataTableLayout } from "../components/DataTable";
+import PageHeader from "../components/PageHeader";
+import PrimaryButton from "../components/PrimaryButton";
+import SecondaryButton from "../components/SecondaryButton";
 import StatusBadge from "../components/StatusBadge";
 import { formatDateShort } from "../utils/formatDate";
 import LoadingState from "../components/LoadingState";
@@ -262,23 +265,21 @@ export default function DashboardPage() {
 
 	return (
 		<div className="db">
-			<div className="db__header">
-				<h1 className="db__greetingTitle">Bienvenido, {nombreUsuario}</h1>
-				<div className="db__headerActions">
-					<button type="button" className="db__todaySelect" disabled>
-						Hoy
-					</button>
-					<button
-						type="button"
-						className="db__reloadBtn"
-						onClick={handleRecargar}
-						disabled={reloading}
-					>
-						<RefreshCw size={14} strokeWidth={2} className={reloading ? "db__reloadIcon--spin" : ""} />
-						Recargar
-					</button>
-				</div>
-			</div>
+			<PageHeader
+				title={`Bienvenido, ${nombreUsuario}`}
+				subtitle="Resumen en tiempo real de la operación de tu negocio."
+				actions={
+					<>
+						<SecondaryButton type="button" disabled>
+							Hoy
+						</SecondaryButton>
+						<PrimaryButton type="button" onClick={handleRecargar} disabled={reloading}>
+							<RefreshCw size={14} strokeWidth={2} className={reloading ? "db__reloadIcon--spin" : ""} />
+							<span>Recargar</span>
+						</PrimaryButton>
+					</>
+				}
+			/>
 
 			<section className="db__metrics" aria-label="Indicadores">
 				<StatCard

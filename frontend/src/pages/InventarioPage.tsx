@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { SlidersHorizontal, History } from "lucide-react";
+import { SlidersHorizontal, History, Boxes } from "lucide-react";
 import DataTable, { DataTableLayout } from "../components/DataTable";
 import LoadingState from "../components/LoadingState";
 import Modal from "../components/Modal";
@@ -287,7 +287,7 @@ export default function InventarioPage() {
 
   return (
     <div className="inv">
-      <PageHeader title="Inventario" subtitle="Consulta y ajusta el inventario disponible." />
+      <PageHeader title="Control de existencias" subtitle="Consulta el stock de cada producto y registra ajustes con auditoría." />
 
       <div className="inv__controls">
         <div className="inv__search">
@@ -336,7 +336,10 @@ export default function InventarioPage() {
       {/* ============ MODAL AJUSTE ============ */}
       <Modal
         open={ajusteOpen}
-        title={`Ajustar stock — ${ajusteTarget?.productoNombre ?? ""}`}
+        title="Ajustar stock"
+        subtitle={ajusteTarget?.productoNombre ?? ""}
+        icon={<Boxes size={20} strokeWidth={2} />}
+        size="md"
         onClose={closeAjuste}
         footer={
           <div className="inv__modalActions">
@@ -417,7 +420,10 @@ export default function InventarioPage() {
       {/* ============ MODAL HISTORIAL ============ */}
       <Modal
         open={historyOpen}
-        title={`Historial — ${historyTarget?.productoNombre ?? ""}`}
+        title="Historial de movimientos"
+        subtitle={historyTarget?.productoNombre ?? ""}
+        icon={<History size={20} strokeWidth={2} />}
+        size="lg"
         onClose={closeHistory}
         footer={
           <div className="inv__modalActions">

@@ -31,30 +31,6 @@
 	box-shadow: 0 0 0 3px color-mix(in srgb, var(--ink) 8%, transparent);
 }
 
-.pos__header {
-	display: flex;
-	align-items: flex-end;
-	justify-content: space-between;
-	gap: 16px;
-	padding-bottom: 20px;
-	border-bottom: 1px solid var(--line);
-}
-
-.pos__title {
-	margin: 0;
-	font-size: 36px;
-	font-weight: 500;
-	line-height: 1.1;
-	letter-spacing: -0.02em;
-	color: var(--ink);
-}
-
-.pos__subtitle {
-	margin: 6px 0 0;
-	font-size: 12px;
-	color: var(--muted);
-}
-
 .pos__alert {
 	display: flex;
 	align-items: flex-start;
@@ -702,40 +678,11 @@
 	color: color-mix(in srgb, var(--muted) 75%, transparent);
 }
 
-.pos .ui-modal__panel {
-	width: min(400px, 92vw);
-	padding: 22px 24px 20px;
-	border-radius: 16px;
-	box-shadow: 0 18px 44px rgba(0, 0, 0, 0.12);
-}
-
-.pos .ui-modal__title {
-	margin-bottom: 16px;
-	padding-bottom: 12px;
-	border-bottom: 1px solid var(--line);
-	font-weight: 400;
-}
-
-.pos .ui-modal__footer {
-	margin-top: 16px;
-}
-
 .pos__modalActions {
 	display: flex;
 	gap: 10px;
 	justify-content: flex-end;
 	width: 100%;
-}
-
-.pos .pos__modalActions .ui-btnPrimary,
-.pos .pos__modalActions .ui-btnSecondary {
-	height: 34px;
-	padding: 0 16px;
-	display: inline-flex;
-	align-items: center;
-	gap: 6px;
-	border-radius: 9px;
-	font-size: 12px;
 }
 
 .pos__confirmHead {
@@ -958,10 +905,6 @@
 }
 
 @media (max-width: 520px) {
-	.pos__title {
-		font-size: 28px;
-	}
-
 	.pos__row {
 		grid-template-columns: auto minmax(0, 1fr);
 	}

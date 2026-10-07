@@ -171,21 +171,7 @@
 	border-color: rgba(220,38,38,0.18);
 }
 
-.inv .ui-btnSecondary {
-	height: 44px;
-	padding: 0 20px;
-	display: inline-flex;
-	align-items: center;
-	justify-content: center;
-	gap: 8px;
-}
-
 /* Botones de acción en la tabla */
-
-.inv .ui-modal__body .inv__select {
-	height: 40px;
-	font-size: 13px;
-}
 
 @media (max-width: 860px) {
 	.inv__controls {

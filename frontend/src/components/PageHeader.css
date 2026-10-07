@@ -1,8 +1,9 @@
 .ui-pageHeader {
 	display: flex;
-	align-items: flex-start;
+	align-items: center;
 	justify-content: space-between;
-	gap: 12px;
+	flex-wrap: wrap;
+	gap: 12px 16px;
 }
 
 .ui-pageHeader__text {
@@ -11,20 +12,23 @@
 
 .ui-pageHeader__title {
 	margin: 0;
-	font-size: 15px;
-	letter-spacing: -0.01em;
+	font-size: 22px;
+	font-weight: 600;
+	line-height: 1.2;
+	letter-spacing: -0.02em;
 	color: var(--ink);
 }
 
 .ui-pageHeader__subtitle {
-	margin: 6px 0 0 0;
-	font-size: 12px;
+	margin: 4px 0 0 0;
+	font-size: 13px;
+	line-height: 1.4;
 	color: var(--muted);
 }
 
 .ui-pageHeader__actions {
 	display: flex;
 	align-items: center;
-	gap: 10px;
-	flex-shrink: 0;
+	flex-wrap: wrap;
+	gap: 8px;
 }

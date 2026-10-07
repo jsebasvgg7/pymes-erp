@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Plus, Pencil, Trash2, RotateCcw } from "lucide-react";
+import { Plus, Pencil, Trash2, RotateCcw, Tag } from "lucide-react";
 import ConfirmDialog from "../components/ConfirmDialog";
 import DataTable, { DataTableLayout } from "../components/DataTable";
 import LoadingState from "../components/LoadingState";
@@ -238,12 +238,12 @@ export default function CategoriasPage() {
 	return (
 		<div className="cat">
 			<PageHeader
-				title="Categorías"
-				subtitle="Administración de categorías de productos."
+				title="Organización del catálogo"
+				subtitle="Agrupa tus productos en categorías para encontrarlos y venderlos más rápido."
 				actions={
-					<PrimaryButton type="button" className="cat__newBtn" onClick={openCreateModal}>
-						<Plus size={16} strokeWidth={2.2} />
-						<span>Nueva Categoría</span>
+					<PrimaryButton type="button" onClick={openCreateModal}>
+						<Plus size={14} strokeWidth={2.2} />
+						<span>Nueva categoría</span>
 					</PrimaryButton>
 				}
 			/>
@@ -264,7 +264,9 @@ export default function CategoriasPage() {
 
 			<Modal
 				open={modalOpen}
-				title={editingCategoryId ? "Editar Categoría" : "Nueva Categoría"}
+				title={editingCategoryId ? "Editar categoría" : "Nueva categoría"}
+				subtitle={editingCategoryId ? "Modifica el nombre de la categoría." : "Crea una categoría para organizar tus productos."}
+				icon={<Tag size={20} strokeWidth={2} />}
 				onClose={closeModal}
 				footer={
 					<div className="cat__modalActions">

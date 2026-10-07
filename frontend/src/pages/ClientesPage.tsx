@@ -3,6 +3,7 @@ import { Pencil, Trash2, User, UserPlus } from "lucide-react";
 import ConfirmDialog from "../components/ConfirmDialog";
 import LoadingState from "../components/LoadingState";
 import Modal from "../components/Modal";
+import PageHeader from "../components/PageHeader";
 import PrimaryButton from "../components/PrimaryButton";
 import SearchBar from "../components/SearchBar";
 import SecondaryButton from "../components/SecondaryButton";
@@ -209,21 +210,20 @@ export default function ClientesPage() {
 
 	return (
 		<div className="cli">
-			<header className="cli__header">
-				<div className="cli__heading">
-					<h1 className="cli__title">Directorio de Clientes</h1>
-					<p className="cli__subtitle">Gestión de contactos</p>
-				</div>
-				<div className="cli__tools">
-					<div className="cli__search">
-						<SearchBar placeholder="Buscar por nombre..." value={searchQuery} onChange={setSearchQuery} />
-					</div>
+			<PageHeader
+				title="Directorio de clientes"
+				subtitle="Consulta y administra los contactos de tus clientes."
+				actions={
 					<PrimaryButton type="button" onClick={openCreateModal}>
-						<UserPlus size={16} strokeWidth={2.2} />
-						<span>Añadir Nuevo</span>
+						<UserPlus size={14} strokeWidth={2.2} />
+						<span>Nuevo cliente</span>
 					</PrimaryButton>
-				</div>
-			</header>
+				}
+			/>
+
+			<div className="cli__search">
+				<SearchBar placeholder="Buscar por nombre..." value={searchQuery} onChange={setSearchQuery} />
+			</div>
 
 			{filteredClientes.length === 0 ? (
 				emptyState
@@ -279,19 +279,13 @@ export default function ClientesPage() {
 
 			<Modal
 				open={modalOpen}
-				title={
-					<div className="cli__modalHead">
-						<div className="cli__modalTitle">
-							<User size={20} strokeWidth={2} />
-							<span>{editingClienteId ? "Editar cliente" : "Crear nuevo cliente"}</span>
-						</div>
-						<p className="cli__modalSubtitle">
-							{editingClienteId
-								? "Modifica los datos del cliente."
-								: "Ingresa los datos del cliente para agregarlo al directorio."}
-						</p>
-					</div>
+				title={editingClienteId ? "Editar cliente" : "Crear nuevo cliente"}
+				subtitle={
+					editingClienteId
+						? "Modifica los datos del cliente."
+						: "Ingresa los datos del cliente para agregarlo al directorio."
 				}
+				icon={<User size={20} strokeWidth={2} />}
 				onClose={closeModal}
 				footer={
 					<div className="cli__modalActions">

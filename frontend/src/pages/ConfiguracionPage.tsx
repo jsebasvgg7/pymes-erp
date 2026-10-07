@@ -128,8 +128,8 @@ export default function ConfiguracionPage() {
 	return (
 		<div className="set">
 			<PageHeader
-				title="Configuración"
-				subtitle="Administra la información general de tu empresa y las preferencias del sistema."
+				title="Ajustes del negocio"
+				subtitle="Administra los datos de tu empresa y las preferencias del sistema."
 			/>
 
 			<div className="set__card">

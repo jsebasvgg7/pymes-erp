@@ -318,7 +318,7 @@ export default function ReportesPage() {
 
 	return (
 		<div className="rep">
-			<PageHeader title="Reportes" subtitle="Consulta la información general del negocio." />
+			<PageHeader title="Centro de reportes" subtitle="Analiza las ventas, compras y existencias del período que elijas." />
 
 			<section className="rep__period" aria-label="Filtro de período">
 				<div className="rep__periodFields">

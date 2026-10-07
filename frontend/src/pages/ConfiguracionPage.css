@@ -221,16 +221,6 @@
 	justify-content: flex-end;
 }
 
-.set .ui-btnPrimary,
-.set .ui-btnSecondary {
-	height: 44px;
-	padding: 0 20px;
-	display: inline-flex;
-	align-items: center;
-	justify-content: center;
-	gap: 8px;
-}
-
 @media (max-width: 860px) {
 	.set__grid {
 		grid-template-columns: 1fr;

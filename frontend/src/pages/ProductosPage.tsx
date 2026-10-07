@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Plus, Pencil, Trash2 } from "lucide-react";
+import { Plus, Pencil, Trash2, Package } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import ConfirmDialog from "../components/ConfirmDialog";
 import DataTable, { DataTableLayout } from "../components/DataTable";
@@ -300,12 +300,12 @@ export default function ProductosPage() {
 	return (
 		<div className="prod">
 			<PageHeader
-				title="Productos"
-				subtitle="Administración de productos del negocio."
+				title="Catálogo de productos"
+				subtitle="Administra los productos, precios y existencias de tu negocio."
 				actions={
 					<PrimaryButton type="button" onClick={openCreateModal}>
-						<Plus size={16} strokeWidth={2.2} />
-						<span>Nuevo Producto</span>
+						<Plus size={14} strokeWidth={2.2} />
+						<span>Nuevo producto</span>
 					</PrimaryButton>
 				}
 			/>
@@ -346,7 +346,10 @@ export default function ProductosPage() {
 
 			<Modal
 				open={modalOpen}
-				title={editingProduct ? "Editar Producto" : "Nuevo Producto"}
+				title={editingProduct ? "Editar producto" : "Nuevo producto"}
+				subtitle={editingProduct ? "Modifica los datos del producto." : "Ingresa los datos del producto para agregarlo al catálogo."}
+				icon={<Package size={20} strokeWidth={2} />}
+				size="md"
 				onClose={closeModal}
 				footer={
 					<div className="prod__modalActions">

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Receipt, TrendingDown, TrendingUp, Wallet } from "lucide-react";
+import { Receipt, TrendingDown, TrendingUp, Wallet, Plus, ArrowLeftRight } from "lucide-react";
 import DataTable, { DataTableLayout } from "../components/DataTable";
 import { formatDateShort } from "../utils/formatDate";
 import LoadingState from "../components/LoadingState";
@@ -225,11 +225,12 @@ export default function CajaPage() {
 		return (
 			<div className="cash">
 				<PageHeader
-					title="Caja"
-					subtitle="Control de ingresos y egresos del negocio."
+					title="Control de efectivo"
+					subtitle="Registra ingresos y egresos y consulta el saldo de tus cajas."
 					actions={
 						<PrimaryButton type="button" onClick={openNewCajaModal}>
-							Crear Caja
+							<Plus size={14} strokeWidth={2.2} />
+							<span>Nueva caja</span>
 						</PrimaryButton>
 					}
 				/>
@@ -243,7 +244,9 @@ export default function CajaPage() {
 
 				<Modal
 					open={newCajaModalOpen}
-					title="Crear Caja"
+					title="Nueva caja"
+					subtitle="Crea una caja para registrar los movimientos de dinero."
+					icon={<Wallet size={20} strokeWidth={2} />}
 					onClose={closeNewCajaModal}
 					footer={
 						<div className="cash__modalActions">
@@ -292,17 +295,19 @@ export default function CajaPage() {
 	return (
 		<div className="cash">
 			<PageHeader
-				title="Caja"
-				subtitle="Control de ingresos y egresos del negocio."
+				title="Control de efectivo"
+				subtitle="Registra ingresos y egresos y consulta el saldo de tus cajas."
 				actions={
-					<div className="cash__headerActions">
+					<>
 						<SecondaryButton type="button" onClick={openNewCajaModal}>
-							Nueva Caja
+							<Wallet size={14} strokeWidth={2} />
+							<span>Nueva caja</span>
 						</SecondaryButton>
 						<PrimaryButton type="button" onClick={openModal}>
-							Nuevo Movimiento
+							<Plus size={14} strokeWidth={2.2} />
+							<span>Nuevo movimiento</span>
 						</PrimaryButton>
-					</div>
+					</>
 				}
 			/>
 
@@ -373,7 +378,9 @@ export default function CajaPage() {
 
 			<Modal
 				open={modalOpen}
-				title="Nuevo Movimiento"
+				title="Nuevo movimiento"
+				subtitle="Registra un ingreso o egreso en la caja."
+				icon={<ArrowLeftRight size={20} strokeWidth={2} />}
 				onClose={closeModal}
 				footer={
 					<div className="cash__modalActions">
@@ -430,7 +437,9 @@ export default function CajaPage() {
 
 			<Modal
 				open={newCajaModalOpen}
-				title="Crear Caja"
+				title="Nueva caja"
+				subtitle="Crea una caja para registrar los movimientos de dinero."
+				icon={<Wallet size={20} strokeWidth={2} />}
 				onClose={closeNewCajaModal}
 				footer={
 					<div className="cash__modalActions">

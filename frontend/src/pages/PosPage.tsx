@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 import { AlertTriangle, Check, ChevronDown, Minus, Package, Plus, Printer, Receipt, Trash2 } from "lucide-react";
 import LoadingState from "../components/LoadingState";
 import Modal from "../components/Modal";
+import PageHeader from "../components/PageHeader";
 import PrimaryButton from "../components/PrimaryButton";
 import SearchBar from "../components/SearchBar";
 import SecondaryButton from "../components/SecondaryButton";
@@ -329,12 +330,10 @@ export default function PosPage() {
 
 	return (
 		<div className="pos">
-			<header className="pos__header">
-				<div className="pos__heading">
-					<h1 className="pos__title">Punto de venta (POS)</h1>
-					<p className="pos__subtitle">Registro de ventas rápidas y emisión de recibos</p>
-				</div>
-			</header>
+			<PageHeader
+				title="Registro de ventas"
+				subtitle="Selecciona los productos, elige el cliente y emite el recibo."
+			/>
 
 			{hasCaja === false ? (
 				<div className="pos__alert" role="alert">

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { Plus, ShoppingCart } from "lucide-react";
 import ConfirmDialog from "../components/ConfirmDialog";
 import DataTable, { DataTableLayout } from "../components/DataTable";
 import LoadingState from "../components/LoadingState";
@@ -295,11 +296,12 @@ export default function ComprasPage() {
 	return (
 		<div className="pur">
 			<PageHeader
-				title="Compras"
-				subtitle="Registro de compras a proveedores."
+				title="Registro de compras"
+				subtitle="Registra lo que compras a tus proveedores y mantén el inventario al día."
 				actions={
 					<PrimaryButton type="button" onClick={openModal}>
-						Nueva Compra
+						<Plus size={14} strokeWidth={2.2} />
+						<span>Nueva compra</span>
 					</PrimaryButton>
 				}
 			/>
@@ -321,7 +323,10 @@ export default function ComprasPage() {
 
 			<Modal
 				open={modalOpen}
-				title="Nueva Compra"
+				title="Nueva compra"
+				subtitle="Selecciona el proveedor y agrega los productos comprados."
+				icon={<ShoppingCart size={20} strokeWidth={2} />}
+				size="lg"
 				onClose={closeModal}
 				footer={
 					<div className="pur__modalActions">
@@ -440,7 +445,8 @@ export default function ComprasPage() {
 
 					<div className="pur__addLine">
 						<SecondaryButton type="button" onClick={addLine}>
-							+ Agregar Producto
+							<Plus size={14} strokeWidth={2.2} />
+							<span>Agregar producto</span>
 						</SecondaryButton>
 					</div>
 

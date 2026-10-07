@@ -1,13 +1,26 @@
 .ui-btnSecondary {
-	height: 42px;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 6px;
+	height: 32px;
 	padding: 0 14px;
-	border-radius: 14px;
+	border-radius: 999px;
 	border: 1px solid var(--line);
 	background: var(--paper);
 	cursor: pointer;
 	color: var(--ink);
-	font-weight: 600;
+	font-family: inherit;
+	font-size: 13px;
+	font-weight: 500;
+	line-height: 1;
+	white-space: nowrap;
+	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
 	transition: transform 160ms ease, background 160ms ease, border-color 160ms ease;
+}
+
+.ui-btnSecondary svg {
+	flex-shrink: 0;
 }
 
 .ui-btnSecondary:hover {

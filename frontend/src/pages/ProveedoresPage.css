@@ -116,16 +116,6 @@
 	padding: 10px 12px;
 }
 
-.prov .ui-btnPrimary,
-.prov .ui-btnSecondary {
-	height: 44px;
-	padding: 0 20px;
-	display: inline-flex;
-	align-items: center;
-	justify-content: center;
-	gap: 8px;
-}
-
 @media (max-width: 860px) {
 	.prov__controls {
 		grid-template-columns: 1fr;

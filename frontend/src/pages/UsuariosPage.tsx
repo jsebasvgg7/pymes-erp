@@ -4,6 +4,7 @@ import Avatar from "../components/Avatar";
 import ConfirmDialog from "../components/ConfirmDialog";
 import LoadingState from "../components/LoadingState";
 import Modal from "../components/Modal";
+import PageHeader from "../components/PageHeader";
 import PrimaryButton from "../components/PrimaryButton";
 import SearchBar from "../components/SearchBar";
 import SecondaryButton from "../components/SecondaryButton";
@@ -221,21 +222,20 @@ export default function UsuariosPage() {
 
 	return (
 		<div className="usr">
-			<header className="usr__header">
-				<div className="usr__heading">
-					<h1 className="usr__title">Usuarios y Roles</h1>
-					<p className="usr__subtitle">Administra las credenciales y niveles de acceso del sistema.</p>
-				</div>
-				<div className="usr__tools">
-					<div className="usr__search">
-						<SearchBar placeholder="Buscar usuario..." value={searchText} onChange={setSearchText} />
-					</div>
+			<PageHeader
+				title="Accesos y permisos"
+				subtitle="Administra las credenciales y los niveles de acceso del sistema."
+				actions={
 					<PrimaryButton type="button" onClick={openCreateModal}>
-						<UserPlus size={16} strokeWidth={2.2} />
-						<span>Añadir Nuevo</span>
+						<UserPlus size={14} strokeWidth={2.2} />
+						<span>Nuevo usuario</span>
 					</PrimaryButton>
-				</div>
-			</header>
+				}
+			/>
+
+			<div className="usr__search">
+				<SearchBar placeholder="Buscar usuario..." value={searchText} onChange={setSearchText} />
+			</div>
 
 			{roles.length === 0 ? (
 				<div className="usr__state">
@@ -323,19 +323,13 @@ export default function UsuariosPage() {
 
 			<Modal
 				open={modalOpen}
-				title={
-					<div className="usr__modalHead">
-						<div className="usr__modalTitle">
-							<User size={20} strokeWidth={2} />
-							<span>{editingUserId ? "Editar usuario" : "Crear nuevo usuario"}</span>
-						</div>
-						<p className="usr__modalSubtitle">
-							{editingUserId
-								? "Modifica los datos y los roles del usuario."
-								: "Ingresa los datos del usuario para darle acceso al sistema."}
-						</p>
-					</div>
+				title={editingUserId ? "Editar usuario" : "Crear nuevo usuario"}
+				subtitle={
+					editingUserId
+						? "Modifica los datos y los roles del usuario."
+						: "Ingresa los datos del usuario para darle acceso al sistema."
 				}
+				icon={<User size={20} strokeWidth={2} />}
 				onClose={closeModal}
 				footer={
 					<div className="usr__modalActions">
