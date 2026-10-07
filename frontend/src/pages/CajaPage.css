@@ -24,25 +24,6 @@
 	min-width: 0;
 }
 
-.cash__typeBadge .ui-badge {
-	font-size: 0;
-	display: inline-flex;
-	align-items: center;
-	justify-content: center;
-}
-
-.cash__typeBadge .ui-badge::after {
-	font-size: 12px;
-}
-
-.cash__typeBadge--in .ui-badge::after {
-	content: "Ingreso";
-}
-
-.cash__typeBadge--out .ui-badge::after {
-	content: "Egreso";
-}
-
 .cash__empty {
 	display: grid;
 	gap: 6px;
@@ -152,26 +133,6 @@
 	border: 1px solid rgba(220,38,38,0.22);
 	border-radius: 10px;
 	padding: 10px 12px;
-}
-
-.cash .ui-table__row {
-	padding: 16px 18px;
-	align-items: center;
-}
-
-.cash .ui-table__row--head {
-	padding: 12px 18px;
-	align-items: center;
-}
-
-.cash .ui-table__cell {
-	display: flex;
-	align-items: center;
-}
-
-.cash .ui-table__cell--head {
-	display: flex;
-	align-items: center;
 }
 
 .cash .ui-btnPrimary,

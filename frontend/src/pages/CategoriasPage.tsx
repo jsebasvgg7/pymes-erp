@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Plus, Pencil, Trash2, RotateCcw } from "lucide-react";
 import ConfirmDialog from "../components/ConfirmDialog";
-import DataTable, { DataTableColumn } from "../components/DataTable";
+import DataTable, { DataTableLayout } from "../components/DataTable";
 import LoadingState from "../components/LoadingState";
 import Modal from "../components/Modal";
 import PageHeader from "../components/PageHeader";
@@ -169,45 +169,33 @@ export default function CategoriasPage() {
 		return categories.filter((c) => c.nombre.toLowerCase().includes(q));
 	}, [categories, searchQuery]);
 
-	const columns: Array<DataTableColumn<CategoriaProducto>> = useMemo(
-		() => [
-			{ key: "nombre", header: "Nombre", render: (r) => r.nombre },
-			{ key: "estado", header: "Estado", render: (r) => <StatusBadge status={r.active ? "Activo" : "Inactivo"} /> },
-			{
-				key: "acciones",
-				header: "Acciones",
-				align: "right",
-				render: (r) =>
-					r.active ? (
-						<div className="cat__actions">
-							<SecondaryButton type="button" className="cat__actionBtn" onClick={() => openEditModal(r)}>
-								<Pencil size={14} strokeWidth={2} />
-								<span>Editar</span>
-							</SecondaryButton>
-							<SecondaryButton
-								type="button"
-								className="cat__actionBtn cat__actionBtn--danger"
-								onClick={() => openConfirmDelete(r)}
-							>
-								<Trash2 size={14} strokeWidth={2} />
-								<span>Eliminar</span>
-							</SecondaryButton>
-						</div>
-					) : (
-						<div className="cat__actions">
-							<SecondaryButton
-								type="button"
-								className="cat__actionBtn"
-								onClick={() => handleReactivate(r)}
-								disabled={reactivatingId === r.id}
-							>
-								<RotateCcw size={14} strokeWidth={2} />
-								<span>{reactivatingId === r.id ? "Reactivando..." : "Reactivar"}</span>
-							</SecondaryButton>
-						</div>
-					)
-			}
-		],
+	const layout: DataTableLayout<CategoriaProducto> = useMemo(
+		() => ({
+			principal: (r) => r.nombre,
+			estado: (r) => <StatusBadge status={r.active ? "Activo" : "Inactivo"} />,
+			acciones: (r) =>
+				r.active ? (
+					<>
+						<button type="button" className="ui-list__iconBtn" aria-label={`Editar ${r.nombre}`} title="Editar" onClick={() => openEditModal(r)}>
+						<Pencil size={16} strokeWidth={1.8} />
+					</button>
+						<button type="button" className="ui-list__iconBtn ui-list__iconBtn--danger" aria-label={`Eliminar ${r.nombre}`} title="Eliminar" onClick={() => openConfirmDelete(r)}>
+						<Trash2 size={16} strokeWidth={1.8} />
+					</button>
+					</>
+				) : (
+					<button
+						type="button"
+						className="ui-list__iconBtn"
+						aria-label={`Reactivar ${r.nombre}`}
+						title={reactivatingId === r.id ? "Reactivando..." : "Reactivar"}
+						onClick={() => handleReactivate(r)}
+						disabled={reactivatingId === r.id}
+					>
+						<RotateCcw size={16} strokeWidth={1.8} />
+					</button>
+				)
+		}),
 		[handleReactivate, openConfirmDelete, openEditModal, reactivatingId]
 	);
 
@@ -271,7 +259,7 @@ export default function CategoriasPage() {
 			</div>
 
 			<div className="cat__table">
-				<DataTable columns={columns} data={filteredCategories} emptyState={emptyState} pageSize={10} />
+				<DataTable title="Categorías" layout={layout} data={filteredCategories} emptyState={emptyState} pageSize={10} />
 			</div>
 
 			<Modal

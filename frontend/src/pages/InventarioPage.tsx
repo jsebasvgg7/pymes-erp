@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { SlidersHorizontal, History } from "lucide-react";
-import DataTable, { DataTableColumn } from "../components/DataTable";
+import DataTable, { DataTableLayout } from "../components/DataTable";
 import LoadingState from "../components/LoadingState";
 import Modal from "../components/Modal";
 import PageHeader from "../components/PageHeader";
@@ -56,6 +56,20 @@ const defaultAjusteForm: AjusteFormState = {
   motivo: "",
   notas: ""
 };
+
+const unidadesCortas: Record<string, string> = {
+  UNIDAD: "und",
+  KILOGRAMO: "kg",
+  GRAMO: "g",
+  LITRO: "L",
+  MILILITRO: "ml",
+  CAJA: "cajas",
+  PAQUETE: "paq"
+};
+
+function unidadCorta(unidad: string) {
+  return unidadesCortas[unidad] ?? unidad.toLowerCase();
+}
 
 export default function InventarioPage() {
   const empresaId = authService.getUsuario()?.empresaId;
@@ -209,49 +223,31 @@ export default function InventarioPage() {
 
   // ========== COLUMNAS ==========
 
-  const columns: Array<DataTableColumn<Row>> = useMemo(
-    () => [
-      { key: "producto", header: "Producto", render: (r) => r.productoNombre },
-      { key: "categoria", header: "Categoría", render: (r) => r.categoriaNombre || "—" },
-      { key: "stock", header: "Stock", align: "right", render: (r) => r.cantidadActual.toLocaleString("es-CO") },
-      {
-        key: "stockMinimo",
-        header: "Stock mínimo",
-        align: "right",
-        render: (r) => r.stockMinimo.toLocaleString("es-CO")
-      },
-      { key: "unidad", header: "Unidad", render: (r) => r.unidadMedida },
-      {
-        key: "estado",
-        header: "Estado",
-        render: (r) => {
-          if (r.estadoInventario === "Agotado") {
-            return <span className="inv__stockBadge inv__stockBadge--out">Agotado</span>;
-          }
-          if (r.estadoInventario === "Stock Bajo") {
-            return <span className="inv__stockBadge inv__stockBadge--low">Stock Bajo</span>;
-          }
-          return <span className="inv__stockBadge inv__stockBadge--ok">Disponible</span>;
+  const layout: DataTableLayout<Row> = useMemo(
+    () => ({
+      principal: (r) => r.productoNombre,
+      secundario: (r) => r.categoriaNombre || "Sin categoría",
+      estado: (r) => {
+        if (r.estadoInventario === "Agotado") {
+          return <span className="inv__stockBadge inv__stockBadge--out">Agotado</span>;
         }
+        if (r.estadoInventario === "Stock Bajo") {
+          return <span className="inv__stockBadge inv__stockBadge--low">Stock Bajo</span>;
+        }
+        return <span className="inv__stockBadge inv__stockBadge--ok">Disponible</span>;
       },
-      {
-        key: "acciones",
-        header: "Acciones",
-        align: "right",
-        render: (r) => (
-          <div className="inv__actions">
-            <SecondaryButton type="button" className="inv__actionBtn" onClick={() => openAjuste(r)}>
-              <SlidersHorizontal size={14} strokeWidth={2} />
-              <span>Ajustar</span>
-            </SecondaryButton>
-            <SecondaryButton type="button" className="inv__actionBtn" onClick={() => openHistory(r)}>
-              <History size={14} strokeWidth={2} />
-              <span>Historial</span>
-            </SecondaryButton>
-          </div>
-        )
-      }
-    ],
+      valor: (r) => `${r.cantidadActual.toLocaleString("es-CO")} ${unidadCorta(r.unidadMedida)}`,
+      acciones: (r) => (
+        <>
+          <button type="button" className="ui-list__iconBtn" aria-label={`Ajustar ${r.productoNombre}`} title="Ajustar" onClick={() => openAjuste(r)}>
+            <SlidersHorizontal size={16} strokeWidth={1.8} />
+          </button>
+          <button type="button" className="ui-list__iconBtn" aria-label={`Historial de ${r.productoNombre}`} title="Historial" onClick={() => openHistory(r)}>
+            <History size={16} strokeWidth={1.8} />
+          </button>
+        </>
+      )
+    }),
     [openAjuste, openHistory]
   );
 
@@ -334,7 +330,7 @@ export default function InventarioPage() {
       </div>
 
       <div className="inv__table">
-        <DataTable columns={columns} data={filteredRows} emptyState={emptyState} pageSize={10} />
+        <DataTable title="Inventario" layout={layout} data={filteredRows} emptyState={emptyState} pageSize={10} />
       </div>
 
       {/* ============ MODAL AJUSTE ============ */}

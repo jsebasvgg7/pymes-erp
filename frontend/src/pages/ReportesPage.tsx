@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { CreditCard, Download, Package, Receipt, Wallet } from "lucide-react";
-import DataTable, { DataTableColumn } from "../components/DataTable";
+import DataTable, { DataTableLayout } from "../components/DataTable";
 import LoadingState from "../components/LoadingState";
 import PageHeader from "../components/PageHeader";
 import StatCard from "../components/StatCard";
+import { formatDateShort } from "../utils/formatDate";
 import StatusBadge from "../components/StatusBadge";
 import { authService } from "../services/authService";
 import { cajaService, type MovimientoCajaResponse } from "../services/cajaService";
@@ -40,12 +41,6 @@ function periodoMesActual() {
 
 function formatCurrency(value: number) {
 	return value.toLocaleString("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 });
-}
-
-function formatDateTime(value: string) {
-	if (!value) return "";
-	const d = new Date(value);
-	return Number.isNaN(d.getTime()) ? value : d.toLocaleString("es-CO");
 }
 
 function formatDate(value: string) {
@@ -277,81 +272,33 @@ export default function ReportesPage() {
 		);
 	}, [filePeriod, recentCash]);
 
-	const salesColumns: Array<DataTableColumn<FacturaVentaResponse>> = useMemo(
-		() => [
-			{ key: "numero", header: "Número", render: (r) => r.numero },
-			{ key: "fechaEmision", header: "Fecha", render: (r) => formatDateTime(r.fechaEmision) },
-			{
-				key: "items",
-				header: "Cantidad de productos",
-				align: "right",
-				render: (r) => sumCantidad(r.detalles).toLocaleString("es-CO")
-			},
-			{ key: "formaPagoNombre", header: "Método de pago", render: (r) => r.formaPagoNombre },
-			{
-				key: "descuento",
-				header: "Descuento",
-				align: "right",
-				render: (r) => (r.descuento > 0 ? formatCurrency(r.descuento) : "—")
-			},
-			{ key: "total", header: "Total", align: "right", render: (r) => formatCurrency(r.total) }
-		],
-		[]
-	);
+	const salesLayout: DataTableLayout<FacturaVentaResponse> = {
+		principal: (r) => r.numero,
+		secundario: (r) => `${formatDateShort(r.fechaEmision)}${r.descuento > 0 ? ` · Desc. ${formatCurrency(r.descuento)}` : ""}`,
+		etiquetas: (r) => (r.formaPagoNombre ? <span className="ui-list__chip">{r.formaPagoNombre}</span> : null),
+		valor: (r) => formatCurrency(r.total)
+	};
 
-	const purchasesColumns: Array<DataTableColumn<CompraResponse>> = useMemo(
-		() => [
-			{ key: "numeroDocumento", header: "Número", render: (r) => r.numeroDocumento },
-			{ key: "proveedorNombre", header: "Proveedor", render: (r) => r.proveedorNombre },
-			{ key: "fechaCompra", header: "Fecha", render: (r) => formatDate(r.fechaCompra) },
-			{
-				key: "items",
-				header: "Cantidad de productos",
-				align: "right",
-				render: (r) => sumCantidad(r.detalles).toLocaleString("es-CO")
-			},
-			{ key: "total", header: "Total", align: "right", render: (r) => formatCurrency(r.total) }
-		],
-		[]
-	);
+	const purchasesLayout: DataTableLayout<CompraResponse> = {
+		principal: (r) => r.proveedorNombre,
+		secundario: (r) => `${r.numeroDocumento} · ${formatDate(r.fechaCompra)}`,
+		valor: (r) => formatCurrency(r.total)
+	};
 
-	const lowStockColumns: Array<DataTableColumn<Producto>> = useMemo(
-		() => [
-			{ key: "nombre", header: "Producto", render: (r) => r.nombre },
-			{ key: "stockActual", header: "Stock", align: "right", render: (r) => r.stockActual.toLocaleString("es-CO") },
-			{
-				key: "stockMinimo",
-				header: "Stock mínimo",
-				align: "right",
-				render: (r) => r.stockMinimo.toLocaleString("es-CO")
-			},
-			{
-				key: "estado",
-				header: "Estado",
-				render: (r) => <StatusBadge status={r.active ? "Activo" : "Inactivo"} />
-			}
-		],
-		[]
-	);
+	const lowStockLayout: DataTableLayout<Producto> = {
+		principal: (r) => r.nombre,
+		secundario: (r) => `Mínimo ${r.stockMinimo.toLocaleString("es-CO")}`,
+		etiquetas: (r) => <span className="ui-list__chip">Stock {r.stockActual.toLocaleString("es-CO")}</span>,
+		estado: (r) => <StatusBadge status={r.active ? "Activo" : "Inactivo"} />
+	};
 
-	const cashColumns: Array<DataTableColumn<MovimientoCajaResponse>> = useMemo(
-		() => [
-			{ key: "fecha", header: "Fecha", render: (r) => formatDateTime(r.fecha) },
-			{
-				key: "tipo",
-				header: "Tipo",
-				render: (r) => (
-					<span className={["rep__typeBadge", r.tipo === "INGRESO" ? "rep__typeBadge--in" : "rep__typeBadge--out"].join(" ")}>
-						<StatusBadge status={r.tipo === "INGRESO" ? "Pagado" : "Anulado"} />
-					</span>
-				)
-			},
-			{ key: "descripcion", header: "Concepto", render: (r) => r.descripcion ?? "" },
-			{ key: "cajaNombre", header: "Caja", render: (r) => r.cajaNombre },
-			{ key: "monto", header: "Valor", align: "right", render: (r) => formatCurrency(r.monto) }
-		],
-		[]
-	);
+	const cashLayout: DataTableLayout<MovimientoCajaResponse> = {
+		principal: (r) => r.descripcion || "Sin concepto",
+		secundario: (r) => formatDateShort(r.fecha),
+		etiquetas: (r) => (r.cajaNombre ? <span className="ui-list__chip">{r.cajaNombre}</span> : null),
+		estado: (r) => <StatusBadge status={r.tipo === "INGRESO" ? "Ingreso" : "Egreso"} />,
+		valor: (r) => `${r.tipo === "INGRESO" ? "+" : "−"} ${formatCurrency(r.monto)}`
+	};
 
 	if (loading) {
 		return (
@@ -406,89 +353,81 @@ export default function ReportesPage() {
 			</section>
 
 			<section className="rep__panels" aria-label="Secciones">
-				<article className="rep__panel">
-					<div className="rep__panelHead">
-						<PageHeader title="Ventas del período" />
+				<DataTable
+					title="Ventas del período"
+					layout={salesLayout}
+					data={recentSales}
+					pageSize={10}
+					headerActions={
 						<button type="button" className="rep__exportButton" onClick={exportSales} disabled={loadingPeriodo || recentSales.length === 0}>
 							<Download size={15} />
 							<span>Exportar CSV</span>
 						</button>
-					</div>
-					<DataTable
-						columns={salesColumns}
-						data={recentSales}
-						pageSize={10}
-						emptyState={
-							<div className="rep__empty">
-								<div className="rep__emptyTitle">{loadingPeriodo ? "Cargando ventas..." : "No existen ventas en este período."}</div>
-								<div className="rep__emptySubtitle">{loadingPeriodo ? "Espera mientras se actualiza el informe." : "Ajusta las fechas o finaliza una venta en POS."}</div>
-							</div>
-						}
-					/>
-				</article>
+					}
+					emptyState={
+						<div className="rep__empty">
+							<div className="rep__emptyTitle">{loadingPeriodo ? "Cargando ventas..." : "No existen ventas en este período."}</div>
+							<div className="rep__emptySubtitle">{loadingPeriodo ? "Espera mientras se actualiza el informe." : "Ajusta las fechas o finaliza una venta en POS."}</div>
+						</div>
+					}
+				/>
 
-				<article className="rep__panel">
-					<div className="rep__panelHead">
-						<PageHeader title="Compras del período" />
+				<DataTable
+					title="Compras del período"
+					layout={purchasesLayout}
+					data={recentPurchases}
+					pageSize={10}
+					headerActions={
 						<button type="button" className="rep__exportButton" onClick={exportPurchases} disabled={loadingPeriodo || recentPurchases.length === 0}>
 							<Download size={15} />
 							<span>Exportar CSV</span>
 						</button>
-					</div>
-					<DataTable
-						columns={purchasesColumns}
-						data={recentPurchases}
-						pageSize={10}
-						emptyState={
-							<div className="rep__empty">
-								<div className="rep__emptyTitle">{loadingPeriodo ? "Cargando compras..." : "No existen compras en este período."}</div>
-								<div className="rep__emptySubtitle">{loadingPeriodo ? "Espera mientras se actualiza el informe." : "Ajusta las fechas o registra una compra."}</div>
-							</div>
-						}
-					/>
-				</article>
+					}
+					emptyState={
+						<div className="rep__empty">
+							<div className="rep__emptyTitle">{loadingPeriodo ? "Cargando compras..." : "No existen compras en este período."}</div>
+							<div className="rep__emptySubtitle">{loadingPeriodo ? "Espera mientras se actualiza el informe." : "Ajusta las fechas o registra una compra."}</div>
+						</div>
+					}
+				/>
 
-				<article className="rep__panel">
-					<div className="rep__panelHead">
-						<PageHeader title="Productos con poco inventario" />
+				<DataTable
+					title="Productos con poco inventario"
+					layout={lowStockLayout}
+					data={lowStockProducts}
+					pageSize={10}
+					headerActions={
 						<button type="button" className="rep__exportButton" onClick={exportLowStock} disabled={lowStockProducts.length === 0}>
 							<Download size={15} />
 							<span>Exportar CSV</span>
 						</button>
-					</div>
-					<DataTable
-						columns={lowStockColumns}
-						data={lowStockProducts}
-						pageSize={10}
-						emptyState={
-							<div className="rep__empty">
-								<div className="rep__emptyTitle">No hay productos con poco inventario.</div>
-								<div className="rep__emptySubtitle">Los productos con stock bajo aparecen automáticamente aquí.</div>
-							</div>
-						}
-					/>
-				</article>
+					}
+					emptyState={
+						<div className="rep__empty">
+							<div className="rep__emptyTitle">No hay productos con poco inventario.</div>
+							<div className="rep__emptySubtitle">Los productos con stock bajo aparecen automáticamente aquí.</div>
+						</div>
+					}
+				/>
 
-				<article className="rep__panel">
-					<div className="rep__panelHead">
-						<PageHeader title="Movimientos recientes de Caja" />
+				<DataTable
+					title="Movimientos recientes de Caja"
+					layout={cashLayout}
+					data={recentCash}
+					pageSize={10}
+					headerActions={
 						<button type="button" className="rep__exportButton" onClick={exportCash} disabled={recentCash.length === 0}>
 							<Download size={15} />
 							<span>Exportar CSV</span>
 						</button>
-					</div>
-					<DataTable
-						columns={cashColumns}
-						data={recentCash}
-						pageSize={10}
-						emptyState={
-							<div className="rep__empty">
-								<div className="rep__emptyTitle">No existen movimientos de Caja en este período.</div>
-								<div className="rep__emptySubtitle">Ajusta las fechas para consultar otros movimientos.</div>
-							</div>
-						}
-					/>
-				</article>
+					}
+					emptyState={
+						<div className="rep__empty">
+							<div className="rep__emptyTitle">No existen movimientos de Caja en este período.</div>
+							<div className="rep__emptySubtitle">Ajusta las fechas para consultar otros movimientos.</div>
+						</div>
+					}
+				/>
 			</section>
 		</div>
 	);

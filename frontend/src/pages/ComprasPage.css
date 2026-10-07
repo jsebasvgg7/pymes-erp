@@ -182,26 +182,6 @@
 	text-align: right;
 }
 
-.pur .ui-table__row {
-	padding: 16px 18px;
-	align-items: center;
-}
-
-.pur .ui-table__row--head {
-	padding: 12px 18px;
-	align-items: center;
-}
-
-.pur .ui-table__cell {
-	display: flex;
-	align-items: center;
-}
-
-.pur .ui-table__cell--head {
-	display: flex;
-	align-items: center;
-}
-
 .pur .ui-btnPrimary,
 .pur .ui-btnSecondary {
 	height: 44px;

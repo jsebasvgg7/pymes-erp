@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Plus, Pencil, Trash2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import ConfirmDialog from "../components/ConfirmDialog";
-import DataTable, { DataTableColumn } from "../components/DataTable";
+import DataTable, { DataTableLayout } from "../components/DataTable";
 import LoadingState from "../components/LoadingState";
 import Modal from "../components/Modal";
 import PageHeader from "../components/PageHeader";
@@ -234,36 +234,30 @@ export default function ProductosPage() {
 		});
 	}, [products, searchQuery, selectedCategory]);
 
-	const columns: Array<DataTableColumn<Producto>> = useMemo(
-		() => [
-			{ key: "nombre", header: "Nombre", render: (r) => r.nombre },
-			{ key: "categoria", header: "Categoría", render: (r) => r.categoriaNombre || "—" },
-			{ key: "costo", header: "Costo", align: "right", render: (r) => formatCurrency(r.costo) },
-			{ key: "precioVenta", header: "Precio venta", align: "right", render: (r) => formatCurrency(r.precioVenta) },
-			{ key: "stockActual", header: "Stock", align: "right", render: (r) => (r.stockActual ?? 0).toLocaleString("es-CO") },
-			{ key: "estado", header: "Estado", render: (r) => <StatusBadge status={r.active ? "Activo" : "Inactivo"} /> },
-			{
-				key: "acciones",
-				header: "Acciones",
-				align: "right",
-				render: (r) => (
-					<div className="prod__actions">
-						<SecondaryButton type="button" className="prod__actionBtn" onClick={() => openEditModal(r)}>
-							<Pencil size={14} strokeWidth={2} />
-							<span>Editar</span>
-						</SecondaryButton>
-						<SecondaryButton
-							type="button"
-							className="prod__actionBtn prod__actionBtn--danger"
-							onClick={() => openConfirmDelete(r)}
-						>
-							<Trash2 size={14} strokeWidth={2} />
-							<span>Eliminar</span>
-						</SecondaryButton>
-					</div>
-				)
-			}
-		],
+	const layout: DataTableLayout<Producto> = useMemo(
+		() => ({
+			principal: (r) => r.nombre,
+			secundario: (r) => r.categoriaNombre || "Sin categoría",
+			etiquetas: (r) => <span className="ui-list__chip">Stock {(r.stockActual ?? 0).toLocaleString("es-CO")}</span>,
+			estado: (r) => <StatusBadge status={r.active ? "Activo" : "Inactivo"} />,
+			valor: (r) => formatCurrency(r.precioVenta),
+			acciones: (r) => (
+				<>
+					<button type="button" className="ui-list__iconBtn" aria-label={`Editar ${r.nombre}`} title="Editar" onClick={() => openEditModal(r)}>
+						<Pencil size={16} strokeWidth={1.8} />
+					</button>
+					<button
+						type="button"
+						className="ui-list__iconBtn ui-list__iconBtn--danger"
+						aria-label={`Eliminar ${r.nombre}`}
+						title="Eliminar"
+						onClick={() => openConfirmDelete(r)}
+					>
+						<Trash2 size={16} strokeWidth={1.8} />
+					</button>
+				</>
+			)
+		}),
 		[openConfirmDelete, openEditModal]
 	);
 
@@ -347,7 +341,7 @@ export default function ProductosPage() {
 			</div>
 
 			<div className="prod__table">
-				<DataTable columns={columns} data={filteredProducts} emptyState={emptyState} pageSize={10} />
+				<DataTable title="Productos" layout={layout} data={filteredProducts} emptyState={emptyState} pageSize={10} />
 			</div>
 
 			<Modal

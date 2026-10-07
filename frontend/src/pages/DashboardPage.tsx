@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { RefreshCw, Users, Package, AlertTriangle, Wallet, Info, Check, ShoppingCart } from "lucide-react";
-import DataTable, { DataTableColumn } from "../components/DataTable";
+import { RefreshCw, Users, Package, AlertTriangle, Wallet, ShoppingCart } from "lucide-react";
+import DataTable, { DataTableLayout } from "../components/DataTable";
+import StatusBadge from "../components/StatusBadge";
+import { formatDateShort } from "../utils/formatDate";
 import LoadingState from "../components/LoadingState";
 import StatCard from "../components/StatCard";
 import CashFlowChart from "../components/dashboard/CashFlowChart";
@@ -25,12 +27,6 @@ import "./DashboardPage.css";
 
 function formatCurrency(value: number) {
 	return value.toLocaleString("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 });
-}
-
-function formatDateTime(value: string) {
-	if (!value) return "";
-	const d = new Date(value);
-	return Number.isNaN(d.getTime()) ? value : d.toLocaleString("es-CO");
 }
 
 function formatDateInput(value: Date) {
@@ -237,30 +233,13 @@ export default function DashboardPage() {
 		[movimientosCaja]
 	);
 
-	const movimientosColumns: Array<DataTableColumn<MovimientoUnificado>> = [
-		{
-			key: "check",
-			header: "",
-			width: "32px",
-			render: () => <input type="checkbox" aria-label="Seleccionar fila" />
-		},
-		{ key: "fecha", header: "Fecha", width: "minmax(140px, 1.1fr)", render: (r) => formatDateTime(r.fecha) },
-		{
-			key: "tipo",
-			header: "Tipo",
-			width: "minmax(90px, 0.6fr)",
-			render: (r) => (
-				<span className={`db__movBadge ${r.tipo === "INGRESO" ? "db__movBadge--ingreso" : "db__movBadge--egreso"}`}>
-					{r.tipo === "INGRESO" ? "Ingreso" : "Egreso"}
-				</span>
-			)
-		},
-		{ key: "concepto", header: "Concepto", width: "minmax(160px, 1.6fr)", render: (r) => r.concepto },
-		{ key: "caja", header: "Caja", width: "minmax(100px, 0.9fr)", render: (r) => r.caja },
-		{ key: "formaPago", header: "Forma de pago", width: "minmax(100px, 0.9fr)", render: (r) => r.formaPago },
-		{ key: "referencia", header: "Referencia", width: "minmax(90px, 0.7fr)", render: (r) => r.referencia },
-		{ key: "valor", header: "Valor", align: "right", width: "minmax(90px, 0.8fr)", render: (r) => formatCurrency(r.valor) }
-	];
+	const movimientosLayout: DataTableLayout<MovimientoUnificado> = {
+		principal: (r) => r.concepto,
+		secundario: (r) => formatDateShort(r.fecha),
+		etiquetas: (r) => (r.formaPago ? <span className="ui-list__chip">{r.formaPago}</span> : null),
+		estado: (r) => <StatusBadge status={r.tipo === "INGRESO" ? "Ingreso" : "Egreso"} />,
+		valor: (r) => `${r.tipo === "INGRESO" ? "+" : "−"} ${formatCurrency(r.valor)}`
+	};
 
 	if (loading) {
 		return (
@@ -352,27 +331,13 @@ export default function DashboardPage() {
 			</section>
 
 			<section className="db__panels" aria-label="Movimientos">
-				<article className="db__panel db__panel--full">
-					<div className="db__panelHead">
-						<div className="db__panelHeadLeft">
-							<span className="db__panelTitle">Movimientos recientes</span>
-							<Info size={13} strokeWidth={2} className="dbChart__infoIcon" />
-						</div>
-						<span className="dbChart__verifiedBadge">
-							<Check size={12} strokeWidth={3} />
-						</span>
-					</div>
-
-					<DataTable
-						columns={movimientosColumns}
-						data={movimientosUnificados}
-						emptyState={
-							<div>
-								<div>No existen movimientos registrados.</div>
-							</div>
-						}
-					/>
-				</article>
+				<DataTable
+					title="Movimientos recientes"
+					layout={movimientosLayout}
+					data={movimientosUnificados}
+					pageSize={10}
+					emptyState={<span>No existen movimientos registrados.</span>}
+				/>
 			</section>
 		</div>
 	);

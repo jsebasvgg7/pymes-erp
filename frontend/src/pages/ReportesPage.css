@@ -60,33 +60,9 @@
 
 .rep__panels {
 	display: grid;
-	grid-template-columns: 1fr 1fr;
+	grid-template-columns: 1fr;
 	gap: 14px;
 	min-width: 0;
-}
-
-.rep__panel {
-	background: var(--paper);
-	border-radius: 18px;
-	border: 1px solid var(--line);
-	box-shadow: none;
-	padding: 14px;
-	min-height: 320px;
-	transition: transform 180ms ease, box-shadow 180ms ease;
-	min-width: 0;
-}
-
-.rep__panel:hover {
-	transform: translateY(-1px);
-	box-shadow: 0 18px 45px rgba(0,0,0,0.16);
-}
-
-.rep__panelHead {
-	display: flex;
-	align-items: center;
-	justify-content: space-between;
-	gap: 10px;
-	margin-bottom: 12px;
 }
 
 .rep__exportButton {
@@ -149,52 +125,9 @@
 	border-color: rgba(220,38,38,0.18);
 }
 
-.rep__typeBadge .ui-badge {
-	font-size: 0;
-	display: inline-flex;
-	align-items: center;
-	justify-content: center;
-}
-
-.rep__typeBadge .ui-badge::after {
-	font-size: 12px;
-}
-
-.rep__typeBadge--in .ui-badge::after {
-	content: "Ingreso";
-}
-
-.rep__typeBadge--out .ui-badge::after {
-	content: "Egreso";
-}
-
-.rep .ui-table__row {
-	padding: 16px 18px;
-	align-items: center;
-}
-
-.rep .ui-table__row--head {
-	padding: 12px 18px;
-	align-items: center;
-}
-
-.rep .ui-table__cell {
-	display: flex;
-	align-items: center;
-}
-
-.rep .ui-table__cell--head {
-	display: flex;
-	align-items: center;
-}
-
 @media (max-width: 1100px) {
 	.rep__metrics {
 		grid-template-columns: repeat(2, minmax(0, 1fr));
-	}
-
-	.rep__panels {
-		grid-template-columns: 1fr;
 	}
 }
 
@@ -206,14 +139,6 @@
 	.rep__periodFields,
 	.rep__dateField {
 		width: 100%;
-	}
-
-	.rep__panelHead {
-		align-items: flex-start;
-	}
-
-	.rep__panelHead .ui-pageHeader {
-		min-width: 0;
 	}
 
 	.rep__exportButton {

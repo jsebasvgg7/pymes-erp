@@ -67,23 +67,6 @@
 	min-width: 0;
 }
 
-.inv__actions {
-	display: flex;
-	gap: 10px;
-	justify-content: flex-end;
-}
-
-.inv .inv__actions .inv__actionBtn {
-	height: 38px;
-	padding: 0 16px;
-	border-radius: 10px;
-	display: inline-flex;
-	align-items: center;
-	gap: 7px;
-	font-size: 13px;
-	white-space: nowrap;
-}
-
 .inv__stockBadge {
 	display: inline-flex;
 	align-items: center;
@@ -188,26 +171,6 @@
 	border-color: rgba(220,38,38,0.18);
 }
 
-.inv .ui-table__row {
-	padding: 16px 18px;
-	align-items: center;
-}
-
-.inv .ui-table__row--head {
-	padding: 12px 18px;
-	align-items: center;
-}
-
-.inv .ui-table__cell {
-	display: flex;
-	align-items: center;
-}
-
-.inv .ui-table__cell--head {
-	display: flex;
-	align-items: center;
-}
-
 .inv .ui-btnSecondary {
 	height: 44px;
 	padding: 0 20px;
@@ -218,16 +181,6 @@
 }
 
 /* Botones de acción en la tabla */
-.inv .inv__actions .inv__actionBtn {
-  height: 38px;
-  padding: 0 14px;
-  border-radius: 10px;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 13px;
-  white-space: nowrap;
-}
 
 .inv .ui-modal__body .inv__select {
 	height: 40px;
@@ -250,7 +203,4 @@
 		grid-template-columns: 1fr;
 	}
 
-	.inv__actions {
-		flex-wrap: wrap;
-	}
 }

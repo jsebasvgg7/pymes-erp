@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Plus, Pencil, Trash2 } from "lucide-react";
 import ConfirmDialog from "../components/ConfirmDialog";
-import DataTable, { DataTableColumn } from "../components/DataTable";
+import DataTable, { DataTableLayout } from "../components/DataTable";
 import LoadingState from "../components/LoadingState";
 import Modal from "../components/Modal";
 import PageHeader from "../components/PageHeader";
@@ -176,35 +176,23 @@ export default function ProveedoresPage() {
 		);
 	}, [proveedores, searchQuery]);
 
-	const columns: Array<DataTableColumn<Proveedor>> = useMemo(
-		() => [
-			{ key: "nombre", header: "Empresa", render: (r) => r.nombre },
-			{ key: "documento", header: "NIT", render: (r) => r.documento || "—" },
-			{ key: "telefono", header: "Teléfono", render: (r) => r.telefono || "—" },
-			{ key: "email", header: "Correo", render: (r) => r.email || "—" },
-			{ key: "estado", header: "Estado", render: (r) => <StatusBadge status={r.active ? "Activo" : "Inactivo"} /> },
-			{
-				key: "acciones",
-				header: "Acciones",
-				align: "right",
-				render: (r) => (
-					<div className="prov__actions">
-						<SecondaryButton type="button" className="prov__actionBtn" onClick={() => openEditModal(r)}>
-							<Pencil size={14} strokeWidth={2} />
-							<span>Editar</span>
-						</SecondaryButton>
-						<SecondaryButton
-							type="button"
-							className="prov__actionBtn prov__actionBtn--danger"
-							onClick={() => openConfirmDelete(r)}
-						>
-							<Trash2 size={14} strokeWidth={2} />
-							<span>Eliminar</span>
-						</SecondaryButton>
-					</div>
-				)
-			}
-		],
+	const layout: DataTableLayout<Proveedor> = useMemo(
+		() => ({
+			principal: (r) => r.nombre,
+			secundario: (r) => r.telefono || "Sin teléfono",
+			etiquetas: (r) => (r.documento ? <span className="ui-list__chip">NIT {r.documento}</span> : null),
+			estado: (r) => <StatusBadge status={r.active ? "Activo" : "Inactivo"} />,
+			acciones: (r) => (
+				<>
+					<button type="button" className="ui-list__iconBtn" aria-label={`Editar ${r.nombre}`} title="Editar" onClick={() => openEditModal(r)}>
+						<Pencil size={16} strokeWidth={1.8} />
+					</button>
+					<button type="button" className="ui-list__iconBtn ui-list__iconBtn--danger" aria-label={`Eliminar ${r.nombre}`} title="Eliminar" onClick={() => openConfirmDelete(r)}>
+						<Trash2 size={16} strokeWidth={1.8} />
+					</button>
+				</>
+			)
+		}),
 		[openConfirmDelete, openEditModal]
 	);
 
@@ -266,7 +254,7 @@ export default function ProveedoresPage() {
 			</div>
 
 			<div className="prov__table">
-				<DataTable columns={columns} data={filteredProveedores} emptyState={emptyState} pageSize={10} />
+				<DataTable title="Proveedores" layout={layout} data={filteredProveedores} emptyState={emptyState} pageSize={10} />
 			</div>
 
 			<Modal

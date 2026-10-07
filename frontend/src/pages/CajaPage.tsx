@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Receipt, TrendingDown, TrendingUp, Wallet } from "lucide-react";
-import DataTable, { DataTableColumn } from "../components/DataTable";
+import DataTable, { DataTableLayout } from "../components/DataTable";
+import { formatDateShort } from "../utils/formatDate";
 import LoadingState from "../components/LoadingState";
 import Modal from "../components/Modal";
 import PageHeader from "../components/PageHeader";
@@ -37,12 +38,6 @@ const defaultNewCajaForm: NewCajaFormState = {
 
 function formatCurrency(value: number) {
 	return value.toLocaleString("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 });
-}
-
-function formatDateLabel(value: string) {
-	if (!value) return "";
-	const d = new Date(value);
-	return Number.isNaN(d.getTime()) ? value : d.toLocaleString("es-CO");
 }
 
 function parseDecimalInput(value: string) {
@@ -202,24 +197,13 @@ export default function CajaPage() {
 		}
 	}, [closeNewCajaModal, empresaId, isNewCajaValid, loadCajas, newCajaForm.nombre, newCajaForm.saldoInicial]);
 
-	const columns: Array<DataTableColumn<MovimientoCajaResponse>> = useMemo(
-		() => [
-			{ key: "fecha", header: "Fecha", render: (r) => formatDateLabel(r.fecha) },
-			{
-				key: "tipo",
-				header: "Tipo",
-				render: (r) => (
-					<span className={["cash__typeBadge", r.tipo === "INGRESO" ? "cash__typeBadge--in" : "cash__typeBadge--out"].join(" ")}>
-						<StatusBadge status={r.tipo === "INGRESO" ? "Pagado" : "Anulado"} />
-					</span>
-				)
-			},
-			{ key: "descripcion", header: "Concepto", render: (r) => r.descripcion || "—" },
-			{ key: "formaPago", header: "Forma de pago", render: (r) => r.formaPagoNombre || "—" },
-			{ key: "monto", header: "Valor", align: "right", render: (r) => formatCurrency(r.monto) }
-		],
-		[]
-	);
+	const movimientosLayout: DataTableLayout<MovimientoCajaResponse> = {
+		principal: (r) => r.descripcion || "Sin concepto",
+		secundario: (r) => formatDateShort(r.fecha),
+		etiquetas: (r) => (r.formaPagoNombre ? <span className="ui-list__chip">{r.formaPagoNombre}</span> : null),
+		estado: (r) => <StatusBadge status={r.tipo === "INGRESO" ? "Ingreso" : "Egreso"} />,
+		valor: (r) => `${r.tipo === "INGRESO" ? "+" : "−"} ${formatCurrency(r.monto)}`
+	};
 
 	if (loading) {
 		return (
@@ -374,8 +358,10 @@ export default function CajaPage() {
 
 			<div className="cash__table">
 				<DataTable
-					columns={columns}
+					title="Movimientos"
+					layout={movimientosLayout}
 					data={movimientos}
+					pageSize={10}
 					emptyState={
 						<div className="cash__empty">
 							<div className="cash__emptyTitle">No existen movimientos registrados.</div>

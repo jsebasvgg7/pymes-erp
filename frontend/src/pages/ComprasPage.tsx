@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import ConfirmDialog from "../components/ConfirmDialog";
-import DataTable, { DataTableColumn } from "../components/DataTable";
+import DataTable, { DataTableLayout } from "../components/DataTable";
 import LoadingState from "../components/LoadingState";
 import Modal from "../components/Modal";
 import PageHeader from "../components/PageHeader";
@@ -269,22 +269,12 @@ export default function ComprasPage() {
 		}
 	}, [closeModal, empresaId, formaPagoById, formaPagoId, lines, productoById, proveedorById, proveedorId, purchaseDate, validation.ok]);
 
-	const listColumns: Array<DataTableColumn<CompraResponse>> = useMemo(
-		() => [
-			{ key: "numero", header: "Número", render: (r) => r.numeroDocumento },
-			{ key: "proveedor", header: "Proveedor", render: (r) => r.proveedorNombre },
-			{ key: "formaPago", header: "Forma de pago", render: (r) => r.formaPagoNombre },
-			{ key: "fecha", header: "Fecha", render: (r) => formatDateLabel(r.fechaCompra) },
-			{
-				key: "items",
-				header: "Cantidad de productos",
-				align: "right",
-				render: (r) => r.detalles.reduce((acc, d) => acc + d.cantidad, 0).toLocaleString("es-CO")
-			},
-			{ key: "total", header: "Total", align: "right", render: (r) => formatCurrency(r.total) }
-		],
-		[]
-	);
+	const listLayout: DataTableLayout<CompraResponse> = {
+		principal: (r) => r.proveedorNombre,
+		secundario: (r) => `${r.numeroDocumento} · ${formatDateLabel(r.fechaCompra)}`,
+		etiquetas: (r) => (r.formaPagoNombre ? <span className="ui-list__chip">{r.formaPagoNombre}</span> : null),
+		valor: (r) => formatCurrency(r.total)
+	};
 
 	if (loading) {
 		return (
@@ -316,8 +306,10 @@ export default function ComprasPage() {
 
 			<div className="pur__list">
 				<DataTable
-					columns={listColumns}
+					title="Compras"
+					layout={listLayout}
 					data={compras}
+					pageSize={10}
 					emptyState={
 						<div className="pur__empty">
 							<div className="pur__emptyTitle">No hay compras registradas.</div>

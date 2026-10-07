@@ -14,36 +14,6 @@
 	min-width: 0;
 }
 
-.cat__actions {
-	display: flex;
-	gap: 10px;
-	justify-content: flex-end;
-}
-
-.cat .cat__actions .cat__actionBtn {
-	height: 38px;
-	padding: 0 16px;
-	border-radius: 10px;
-	display: inline-flex;
-	align-items: center;
-	gap: 7px;
-	font-size: 13px;
-	white-space: nowrap;
-}
-
-.cat__actionBtn--danger {
-	border-color: rgba(220,38,38,0.22);
-	background: rgba(220,38,38,0.1);
-	color: #b91c1c;
-	box-shadow: none;
-}
-
-.cat__actionBtn--danger:hover {
-	background: rgba(220,38,38,0.16);
-	transform: none;
-	box-shadow: none;
-}
-
 .cat__empty {
 	display: grid;
 	gap: 6px;
@@ -180,26 +150,6 @@
 	padding: 10px 12px;
 }
 
-.cat .ui-table__row {
-	padding: 16px 18px;
-	align-items: center;
-}
-
-.cat .ui-table__row--head {
-	padding: 12px 18px;
-	align-items: center;
-}
-
-.cat .ui-table__cell {
-	display: flex;
-	align-items: center;
-}
-
-.cat .ui-table__cell--head {
-	display: flex;
-	align-items: center;
-}
-
 .cat .ui-btnPrimary,
 .cat .ui-btnSecondary {
 	height: 44px;
@@ -219,9 +169,5 @@
 @media (max-width: 520px) {
 	.cat__grid {
 		grid-template-columns: 1fr;
-	}
-
-	.cat__actions {
-		flex-wrap: wrap;
 	}
 }
