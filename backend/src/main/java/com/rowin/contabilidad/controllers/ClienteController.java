@@ -71,4 +71,15 @@ public class ClienteController {
     public ResponseEntity<BigDecimal> obtenerSaldoPendiente(@PathVariable Long id) {
         return ResponseEntity.ok(clienteService.obtenerSaldoPendiente(id));
     }
+
+    @PostMapping("/{id}/abonar")
+        public ResponseEntity<Void> abonarDeuda(
+            @PathVariable Long id,
+            @RequestParam BigDecimal monto,
+            @RequestParam Long formaPagoId
+        ) {
+            clienteService.abonarDeuda(id, monto, formaPagoId);
+            return ResponseEntity.ok().build();
+        }
+
 }

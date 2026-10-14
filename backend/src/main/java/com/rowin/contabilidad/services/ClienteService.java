@@ -23,5 +23,7 @@ public interface ClienteService {
 
     void eliminarFisicamente(Long id);
 
+    void abonarDeuda(Long clienteId, java.math.BigDecimal monto, Long formaPagoId);
+
     BigDecimal obtenerSaldoPendiente(Long id);
 }
