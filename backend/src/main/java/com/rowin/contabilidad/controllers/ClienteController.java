@@ -11,6 +11,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import java.math.BigDecimal;
 
 @RestController
 @RequestMapping("/api/clientes")
@@ -64,5 +65,10 @@ public class ClienteController {
     public ResponseEntity<Void> eliminarFisicamente(@PathVariable Long id) {
         clienteService.eliminarFisicamente(id);
         return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/{id}/saldo-pendiente")
+    public ResponseEntity<BigDecimal> obtenerSaldoPendiente(@PathVariable Long id) {
+        return ResponseEntity.ok(clienteService.obtenerSaldoPendiente(id));
     }
 }

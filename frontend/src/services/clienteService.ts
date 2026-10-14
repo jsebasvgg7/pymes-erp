@@ -60,3 +60,8 @@ export const clienteService = {
     await http.delete(`/api/clientes/eliminar/${id}`);
   }
 };
+
+export const obtenerSaldoPendiente = async (id: number): Promise<number> => {
+  const response = await http.get(`/api/clientes/${id}/saldo-pendiente`);
+  return response.data;
+};

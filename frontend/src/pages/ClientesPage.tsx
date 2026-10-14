@@ -10,7 +10,7 @@ import SearchBar from "../components/SearchBar";
 import SecondaryButton from "../components/SecondaryButton";
 import StatusBadge from "../components/StatusBadge";
 import { authService } from "../services/authService";
-import { clienteService, type Cliente } from "../services/clienteService";
+import { clienteService, type Cliente, obtenerSaldoPendiente } from "../services/clienteService";
 import { useAccionRapida } from "../hooks/useAccionRapida";
 import "./ClientesPage.css";
 
@@ -29,6 +29,25 @@ const defaultFormState: ClienteFormState = {
 	email: "",
 	direccion: ""
 };
+
+// componente para cargar y mostrar la deuda de cada cliente
+function DeudaBadge({ clienteId }: { clienteId: number }) {
+    const [deuda, setDeuda] = useState<number | null>(null);
+
+    useEffect(() => {
+        obtenerSaldoPendiente(clienteId)
+            .then((saldo) => setDeuda(saldo))
+            .catch(() => setDeuda(0));
+    }, [clienteId]);
+
+    if (deuda === null || deuda <= 0) return null;
+
+    return (
+        <div style={{ marginTop: '8px', backgroundColor: '#fee2e2', color: '#991b1b', padding: '4px 8px', borderRadius: '4px', fontSize: '12px', fontWeight: 'bold', display: 'inline-block' }}>
+            Deuda: {deuda.toLocaleString("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 })}
+        </div>
+    );
+}
 
 export default function ClientesPage() {
 	const empresaId = authService.getUsuario()?.empresaId;
@@ -254,7 +273,8 @@ export default function ClientesPage() {
 										<div className="cli__name" title={c.nombre}>
 											{c.nombre}
 										</div>
-										<div className="cli__role">Cliente</div>
+                    <div className="cli__role">Cliente</div>
+										<DeudaBadge clienteId={c.id} />
 									</div>
 									<div className="cli__meta">
 										<div className="cli__metaItem">

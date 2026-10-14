@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.Optional;
 
 @Service
 @Transactional
@@ -36,6 +37,7 @@ public class FacturaVentaServiceImpl extends BaseCrudService implements FacturaV
     private final MovimientoCajaRepository movimientoCajaRepository;
     private final CajaRepository cajaRepository;
     private final FacturaVentaMapper facturaVentaMapper;
+    private final CuentaPorCobrarRepository cuentaPorCobrarRepository;
 
     public FacturaVentaServiceImpl(
         FacturaVentaRepository facturaVentaRepository,
@@ -48,7 +50,8 @@ public class FacturaVentaServiceImpl extends BaseCrudService implements FacturaV
         ImpuestoRepository impuestoRepository,
         MovimientoCajaRepository movimientoCajaRepository,
         CajaRepository cajaRepository,
-        FacturaVentaMapper facturaVentaMapper
+        FacturaVentaMapper facturaVentaMapper,
+        CuentaPorCobrarRepository cuentaPorCobrarRepository
     ) {
         this.facturaVentaRepository = facturaVentaRepository;
         this.detalleFacturaRepository = detalleFacturaRepository;
@@ -61,6 +64,7 @@ public class FacturaVentaServiceImpl extends BaseCrudService implements FacturaV
         this.movimientoCajaRepository = movimientoCajaRepository;
         this.cajaRepository = cajaRepository;
         this.facturaVentaMapper = facturaVentaMapper;
+        this.cuentaPorCobrarRepository = cuentaPorCobrarRepository;
     }
 
     @Override
@@ -267,8 +271,12 @@ public class FacturaVentaServiceImpl extends BaseCrudService implements FacturaV
         caja.setSaldoActual(caja.getSaldoActual().add(savedFactura.getTotal()));
         cajaRepository.save(caja);
 
-        // 13. Crear cuenta por cobrar (si tiene cliente)
-        if (cliente != null) {
+        // 13. Crear cuenta por cobrar (si es crédito)
+        if (formaPago.getTipo() == TipoFormaPago.CREDITO) {
+            if (cliente == null) {
+                throw new IllegalArgumentException("El cliente es obligatorio para ventas a crédito.");
+            }
+
             CuentaPorCobrar cuenta = new CuentaPorCobrar();
             cuenta.setEmpresa(empresa);
             cuenta.setCliente(cliente);
@@ -277,7 +285,8 @@ public class FacturaVentaServiceImpl extends BaseCrudService implements FacturaV
             cuenta.setSaldo(savedFactura.getTotal());
             cuenta.setFechaVencimiento(LocalDateTime.now().plusDays(30));
             cuenta.setEstado(EstadoCuenta.ABIERTA);
-            // Aquí se debería guardar con cuentaPorCobrarRepository
+
+            cuentaPorCobrarRepository.save(cuenta);
         }
 
         return facturaVentaMapper.toResponse(savedFactura);
@@ -287,6 +296,26 @@ public class FacturaVentaServiceImpl extends BaseCrudService implements FacturaV
     public FacturaVentaResponse actualizarEstado(Long id, FacturaVentaUpdateRequest request) {
         FacturaVenta entity = facturaVentaRepository.findByIdAndActiveTrue(id)
             .orElseThrow(() -> new ResourceNotFoundException("Factura no encontrada: " + id));
+
+            if (request.estado() == FacturaEstado.PAGADA && entity.getEstado() != FacturaEstado.PAGADA) {
+                Optional<CuentaPorCobrar> cuentaOpt = cuentaPorCobrarRepository.findByFacturaVentaIdAndActiveTrue(entity.getId());
+                if (cuentaOpt.isPresent()) {
+                    CuentaPorCobrar cuenta = cuentaOpt.get();
+                    cuenta.setSaldo(BigDecimal.ZERO);
+                    cuenta.setEstado(EstadoCuenta.PAGADA);
+                    cuentaPorCobrarRepository.save(cuenta);
+                }
+            }
+
+            if (request.estado() == FacturaEstado.ANULADA && entity.getEstado() != FacturaEstado.ANULADA) {
+                Optional<CuentaPorCobrar> cuentaOpt = cuentaPorCobrarRepository.findByFacturaVentaIdAndActiveTrue(entity.getId());
+                if (cuentaOpt.isPresent()) {
+                    CuentaPorCobrar cuenta = cuentaOpt.get();
+                    cuenta.setSaldo(BigDecimal.ZERO);
+                    cuenta.setEstado(EstadoCuenta.CERRADA);
+                    cuentaPorCobrarRepository.save(cuenta);
+                }
+            }
 
         entity.setEstado(request.estado());
         FacturaVenta saved = facturaVentaRepository.save(entity);

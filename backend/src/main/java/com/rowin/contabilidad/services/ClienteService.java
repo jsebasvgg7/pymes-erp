@@ -5,6 +5,7 @@ import com.rowin.contabilidad.dto.cliente.ClienteResponse;
 import com.rowin.contabilidad.dto.cliente.ClienteUpdateRequest;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import java.math.BigDecimal;
 
 public interface ClienteService {
 
@@ -21,4 +22,6 @@ public interface ClienteService {
     void eliminar(Long id);
 
     void eliminarFisicamente(Long id);
+
+    BigDecimal obtenerSaldoPendiente(Long id);
 }

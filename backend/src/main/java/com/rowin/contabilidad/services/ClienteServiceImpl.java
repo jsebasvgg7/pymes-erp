@@ -9,10 +9,12 @@ import com.rowin.contabilidad.exceptions.ResourceNotFoundException;
 import com.rowin.contabilidad.repositories.ClienteRepository;
 import com.rowin.contabilidad.repositories.EmpresaRepository;
 import com.rowin.contabilidad.utils.mappers.ClienteMapper;
+import com.rowin.contabilidad.repositories.CuentaPorCobrarRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import java.math.BigDecimal;
 
 @Service
 @Transactional
@@ -21,15 +23,18 @@ public class ClienteServiceImpl extends BaseCrudService implements ClienteServic
     private final ClienteRepository clienteRepository;
     private final EmpresaRepository empresaRepository;
     private final ClienteMapper clienteMapper;
+    private final CuentaPorCobrarRepository cuentaPorCobrarRepository;
 
     public ClienteServiceImpl(
         ClienteRepository clienteRepository,
         EmpresaRepository empresaRepository,
-        ClienteMapper clienteMapper
+        ClienteMapper clienteMapper,
+        CuentaPorCobrarRepository cuentaPorCobrarRepository
     ) {
         this.clienteRepository = clienteRepository;
         this.empresaRepository = empresaRepository;
         this.clienteMapper = clienteMapper;
+        this.cuentaPorCobrarRepository = cuentaPorCobrarRepository;
     }
 
     @Override
@@ -99,4 +104,15 @@ public class ClienteServiceImpl extends BaseCrudService implements ClienteServic
             .orElseThrow(() -> new ResourceNotFoundException("Cliente no encontrado: " + id));
         clienteRepository.delete(entity);
     }
+
+    @Override
+    @Transactional(readOnly = true)
+    public BigDecimal obtenerSaldoPendiente(Long id) {
+        // Validamos que el cliente exista
+        Cliente entity = clienteRepository.findByIdAndActiveTrue(id)
+            .orElseThrow(() -> new ResourceNotFoundException("Cliente no encontrado: " + id));
+
+        return cuentaPorCobrarRepository.calcularSaldoPendientePorCliente(id);
+    }
+
 }
