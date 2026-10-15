@@ -48,8 +48,8 @@ Al finalizar una venta, el backend, en una sola transacción:
 1. Valida stock contra Inventario y lo descuenta.
 2. Calcula subtotal, impuestos y total.
 3. Genera el número de factura (`FAC-YYYYMMDD-XXXXX`).
-4. Registra el movimiento de caja (ingreso) y actualiza el saldo de la caja.
-5. Crea cuenta por cobrar si hay cliente asociado.
+4. Registra el movimiento de caja (ingreso) y actualiza el saldo de la caja (salvo en ventas a crédito).
+5. Si la forma de pago es **Crédito** (cliente obligatorio), crea la cuenta por cobrar con vencimiento a 30 días; el ingreso a caja se registra después, con cada abono del cliente.
 
 Debe existir una **Caja activa** para la empresa, o la venta falla.
 
@@ -61,7 +61,7 @@ Debe existir una **Caja activa** para la empresa, o la venta falla.
 |---|---|
 | Backend | Java 21, Spring Boot 3.3.4, Maven, JPA/Hibernate, MapStruct + Lombok |
 | Seguridad | Spring Security con JWT y roles |
-| Base de datos | PostgreSQL (Neon), migraciones Flyway, borrado lógico con campo `active` |
+| Base de datos | PostgreSQL (Neon), migraciones Flyway (V1 a V9), borrado lógico con campo `active` |
 | API | REST, documentada con Swagger/OpenAPI (`/swagger-ui.html`) |
 | Frontend | React 18, TypeScript, Vite 5, React Router 6, axios, `lucide-react` |
 | Estilos | CSS plano por página + Tailwind CSS (acotado a los componentes de gráficas) |
@@ -79,19 +79,20 @@ Debe existir una **Caja activa** para la empresa, o la venta falla.
 |---|---|
 | Login / Autenticación | JWT, roles, interceptor de sesión |
 | Dashboard | Estadísticas en vivo, gráficas de flujo de caja y ventas por categoría |
-| Clientes | Gestión completa, cuentas por cobrar |
+| Búsqueda global | Paleta de comandos (`Ctrl+K` o `/`) para saltar a páginas y abrir acciones rápidas |
+| Clientes | Gestión completa, cuentas por cobrar, deuda por cliente y abonos |
 | Proveedores | Gestión completa, cuentas por pagar |
 | Categorías | Organización de productos |
 | Productos | Costo, stock mínimo por producto, unidad de medida |
 | Inventario | Ajustes de entrada, salida y conteo, con auditoría de movimientos |
 | Compras | Aumenta inventario automáticamente, forma de pago obligatoria |
-| Punto de Venta (POS) | Módulo principal del sistema, recibo en modal |
+| Punto de Venta (POS) | Módulo principal del sistema, descuento en factura, venta a crédito, recibo en modal |
 | Caja | Apertura, movimientos, resumen por caja |
-| Reportes | Sobre la operación real registrada |
+| Reportes | Sobre la operación real registrada, con filtro por período y exportación a CSV |
 | Configuración | Datos de la empresa |
 | Usuarios y Roles | Multi-rol por usuario |
 
-**Formas de pago:** Efectivo, Tarjeta, Transferencia como catálogo base, configurable por empresa.
+**Formas de pago:** Efectivo, Tarjeta, Transferencia y Crédito como catálogo base, configurable por empresa.
 
 ---
 
@@ -138,15 +139,15 @@ npm run dev
 
 El frontend queda disponible en `http://localhost:5173`.
 
-### Primer arranque
+### Primer arranque (base de datos vacía)
 
-Abre `http://localhost:5173/login`. Si todavía no hay usuarios activos, el sistema ofrece la configuración inicial para crear la empresa (si no existe una activa) y la cuenta administradora. Al finalizar, inicia sesión automáticamente. Esta configuración solo se permite una vez; si ya existe una cuenta activa, usa sus credenciales.
+Con la base vacía, abre `http://localhost:5173/setup`. Esa pantalla crea la empresa y el primer usuario administrador en una sola operación, y deja la sesión iniciada. Solo funciona mientras no exista ningún usuario activo.
 
-Después del primer acceso, configura las formas de pago y la caja inicial desde sus módulos antes de registrar ventas en el POS.
+`/setup` siembra la forma de pago Crédito. Después, desde sus módulos, crea las demás **formas de pago** (Efectivo, Tarjeta, Transferencia) y una **Caja** activa antes de vender en el POS.
 
-### Recuperación de acceso de administrador
+Si se pierde el acceso de administrador, existe `POST /api/auth/recover-admin`, protegido con la variable de entorno `ADMIN_RECOVERY_KEY` (mínimo 32 caracteres). Úsala solo durante la recuperación y quítala del entorno al terminar.
 
-Si ya hay usuarios activos y se perdió el acceso, conserva la base de datos y configura temporalmente una clave de recuperación de al menos 32 caracteres en el entorno del backend como `ADMIN_RECOVERY_KEY`. Inicia o reinicia el backend con esa variable y abre `http://localhost:5173/recover-admin` para crear otra cuenta administradora. Usa una clave aleatoria, no la guardes en el repositorio ni la compartas, y elimina la variable del entorno al terminar; la recuperación solo funciona si hay exactamente una empresa activa.
+Ver `ERP_PLAN.md` para el detalle.
 
 ---
 
@@ -172,7 +173,8 @@ La landing page (`/`) presenta el producto con secciones de hero, soluciones, m�
 
 ## Seguridad
 
-- JWT en todos los endpoints salvo autenticación, documentación de API y monitoreo de salud.
+- JWT en todos los endpoints salvo `login`, `bootstrap-status`, `bootstrap`, `recover-admin`, documentación de API y monitoreo de salud.
+- Antes de exponer la aplicación en internet, inicializa la instalación: `/setup` es público mientras no haya usuarios.
 - CORS configurado para los orígenes de desarrollo del frontend.
 - Credenciales de base de datos fuera del código, vía variables de entorno.
 - Aislamiento de datos por empresa en cada endpoint.

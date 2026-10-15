@@ -66,6 +66,11 @@ export const obtenerSaldoPendiente = async (id: number): Promise<number> => {
   return response.data;
 };
 
+export const obtenerSaldosPendientes = async (empresaId: number): Promise<Record<number, number>> => {
+  const response = await http.get(`/api/clientes/saldos-pendientes/empresa/${empresaId}`);
+  return response.data;
+};
+
 export const abonarDeuda = async (id: number, monto: number, formaPagoId: number): Promise<void> => {
   await http.post(`/api/clientes/${id}/abonar?monto=${monto}&formaPagoId=${formaPagoId}`);
 };

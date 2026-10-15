@@ -26,4 +26,6 @@ public interface ClienteService {
     void abonarDeuda(Long clienteId, java.math.BigDecimal monto, Long formaPagoId);
 
     BigDecimal obtenerSaldoPendiente(Long id);
+
+    java.util.Map<Long, BigDecimal> obtenerSaldosPendientesPorEmpresa(Long empresaId);
 }

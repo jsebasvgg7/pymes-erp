@@ -72,6 +72,11 @@ public class ClienteController {
         return ResponseEntity.ok(clienteService.obtenerSaldoPendiente(id));
     }
 
+    @GetMapping("/saldos-pendientes/empresa/{empresaId}")
+    public ResponseEntity<java.util.Map<Long, BigDecimal>> obtenerSaldosPendientes(@PathVariable Long empresaId) {
+        return ResponseEntity.ok(clienteService.obtenerSaldosPendientesPorEmpresa(empresaId));
+    }
+
     @PostMapping("/{id}/abonar")
         public ResponseEntity<Void> abonarDeuda(
             @PathVariable Long id,

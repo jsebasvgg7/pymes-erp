@@ -522,6 +522,15 @@
 	text-align: right;
 }
 
+.pos__hint--error {
+	color: var(--pos-danger);
+	font-weight: 500;
+}
+
+.pos__req {
+	color: var(--pos-danger);
+}
+
 .pos__cash {
 	display: grid;
 	gap: 8px;

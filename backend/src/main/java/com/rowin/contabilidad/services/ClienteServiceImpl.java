@@ -127,11 +127,25 @@ public class ClienteServiceImpl extends BaseCrudService implements ClienteServic
     @Override
     @Transactional(readOnly = true)
     public BigDecimal obtenerSaldoPendiente(Long id) {
-        // Validamos que el cliente exista
         Cliente entity = clienteRepository.findByIdAndActiveTrue(id)
             .orElseThrow(() -> new ResourceNotFoundException("Cliente no encontrado: " + id));
 
         return cuentaPorCobrarRepository.calcularSaldoPendientePorCliente(id);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public java.util.Map<Long, BigDecimal> obtenerSaldosPendientesPorEmpresa(Long empresaId) {
+        Empresa empresa = getByIdOrThrow(empresaRepository, empresaId, "Empresa");
+        if (!isActive(empresa)) {
+            throw new ResourceNotFoundException("Empresa no encontrada: " + empresaId);
+        }
+
+        java.util.Map<Long, BigDecimal> saldos = new java.util.HashMap<>();
+        for (Object[] row : cuentaPorCobrarRepository.calcularSaldosPendientesPorEmpresa(empresaId)) {
+            saldos.put((Long) row[0], new BigDecimal(row[1].toString()));
+        }
+        return saldos;
     }
 
     @Override
@@ -147,11 +161,27 @@ public class ClienteServiceImpl extends BaseCrudService implements ClienteServic
             FormaPago formaPago = formaPagoRepository.findByIdAndActiveTrue(formaPagoId)
                 .orElseThrow(() -> new ResourceNotFoundException("Forma de pago no encontrada"));
 
+            if (!formaPago.getEmpresa().getId().equals(cliente.getEmpresa().getId())) {
+                throw new IllegalArgumentException("La forma de pago no pertenece a la empresa del cliente.");
+            }
+            if (formaPago.getTipo() == TipoFormaPago.CREDITO) {
+                throw new IllegalArgumentException("Un abono no se puede pagar con crédito.");
+            }
+
             Caja caja = cajaRepository.findByEmpresaIdAndActiveTrue(cliente.getEmpresa().getId())
                 .stream().findFirst()
                 .orElseThrow(() -> new ResourceNotFoundException("No hay una caja activa para procesar el abono"));
 
             List<CuentaPorCobrar> pendientes = cuentaPorCobrarRepository.findPendientesByClienteId(clienteId);
+            BigDecimal deudaTotal = pendientes.stream()
+                .map(CuentaPorCobrar::getSaldo)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+            if (deudaTotal.signum() <= 0) {
+                throw new IllegalArgumentException("El cliente no tiene deuda pendiente.");
+            }
+            if (monto.compareTo(deudaTotal) > 0) {
+                throw new IllegalArgumentException("El abono no puede superar la deuda pendiente: " + deudaTotal);
+            }
             BigDecimal restante = monto;
 
             // Repartir el dinero entre las deudas pendientes

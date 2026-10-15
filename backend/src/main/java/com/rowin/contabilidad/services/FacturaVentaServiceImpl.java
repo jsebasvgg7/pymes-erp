@@ -134,6 +134,18 @@ public class FacturaVentaServiceImpl extends BaseCrudService implements FacturaV
             throw new ResourceNotFoundException("Forma de pago no encontrada: " + request.formaPagoId());
         }
 
+        if (cliente != null && !cliente.getEmpresa().getId().equals(empresa.getId())) {
+            throw new IllegalArgumentException("El cliente no pertenece a la empresa de la venta.");
+        }
+        if (!formaPago.getEmpresa().getId().equals(empresa.getId())) {
+            throw new IllegalArgumentException("La forma de pago no pertenece a la empresa de la venta.");
+        }
+
+        boolean esCredito = formaPago.getTipo() == TipoFormaPago.CREDITO;
+        if (esCredito && cliente == null) {
+            throw new IllegalArgumentException("El cliente es obligatorio para ventas a crédito.");
+        }
+
         // 4. Validar que haya detalles
         if (request.detalles() == null || request.detalles().isEmpty()) {
             throw new IllegalArgumentException("La factura debe tener al menos un detalle");
@@ -254,29 +266,26 @@ public class FacturaVentaServiceImpl extends BaseCrudService implements FacturaV
         }
         savedFactura.getDetalles().addAll(detalles);
 
-        // 11. Registrar movimiento de caja (ingreso)
-        MovimientoCaja movimiento = new MovimientoCaja();
-        movimiento.setEmpresa(empresa);
-        movimiento.setCaja(caja);
-        movimiento.setFormaPago(formaPago);
-        movimiento.setFecha(LocalDateTime.now());
-        movimiento.setTipo(TipoMovimientoCaja.INGRESO);
-        movimiento.setMonto(savedFactura.getTotal());
-        movimiento.setDescripcion("Venta factura #" + savedFactura.getNumero());
-        movimiento.setTipoReferencia(TipoReferenciaMovimientoCaja.FACTURA_VENTA);
-        movimiento.setReferenciaId(savedFactura.getId());
-        movimientoCajaRepository.save(movimiento);
+        // 11 y 12. Una venta a crédito no mueve la caja: el dinero entra con los abonos
+        if (!esCredito) {
+            MovimientoCaja movimiento = new MovimientoCaja();
+            movimiento.setEmpresa(empresa);
+            movimiento.setCaja(caja);
+            movimiento.setFormaPago(formaPago);
+            movimiento.setFecha(LocalDateTime.now());
+            movimiento.setTipo(TipoMovimientoCaja.INGRESO);
+            movimiento.setMonto(savedFactura.getTotal());
+            movimiento.setDescripcion("Venta factura #" + savedFactura.getNumero());
+            movimiento.setTipoReferencia(TipoReferenciaMovimientoCaja.FACTURA_VENTA);
+            movimiento.setReferenciaId(savedFactura.getId());
+            movimientoCajaRepository.save(movimiento);
 
-        // 12. Actualizar saldo de caja
-        caja.setSaldoActual(caja.getSaldoActual().add(savedFactura.getTotal()));
-        cajaRepository.save(caja);
+            caja.setSaldoActual(caja.getSaldoActual().add(savedFactura.getTotal()));
+            cajaRepository.save(caja);
+        }
 
         // 13. Crear cuenta por cobrar (si es crédito)
-        if (formaPago.getTipo() == TipoFormaPago.CREDITO) {
-            if (cliente == null) {
-                throw new IllegalArgumentException("El cliente es obligatorio para ventas a crédito.");
-            }
-
+        if (esCredito) {
             CuentaPorCobrar cuenta = new CuentaPorCobrar();
             cuenta.setEmpresa(empresa);
             cuenta.setCliente(cliente);
@@ -297,25 +306,22 @@ public class FacturaVentaServiceImpl extends BaseCrudService implements FacturaV
         FacturaVenta entity = facturaVentaRepository.findByIdAndActiveTrue(id)
             .orElseThrow(() -> new ResourceNotFoundException("Factura no encontrada: " + id));
 
-            if (request.estado() == FacturaEstado.PAGADA && entity.getEstado() != FacturaEstado.PAGADA) {
-                Optional<CuentaPorCobrar> cuentaOpt = cuentaPorCobrarRepository.findByFacturaVentaIdAndActiveTrue(entity.getId());
-                if (cuentaOpt.isPresent()) {
-                    CuentaPorCobrar cuenta = cuentaOpt.get();
-                    cuenta.setSaldo(BigDecimal.ZERO);
-                    cuenta.setEstado(EstadoCuenta.PAGADA);
-                    cuentaPorCobrarRepository.save(cuenta);
-                }
+        if (request.estado() == FacturaEstado.PAGADA && entity.getEstado() != FacturaEstado.PAGADA) {
+            Optional<CuentaPorCobrar> cuentaOpt = cuentaPorCobrarRepository.findByFacturaVentaIdAndActiveTrue(entity.getId());
+            if (cuentaOpt.isPresent() && cuentaOpt.get().getSaldo().signum() > 0) {
+                throw new IllegalArgumentException("La factura tiene saldo pendiente: registra el pago como abono del cliente.");
             }
+        }
 
-            if (request.estado() == FacturaEstado.ANULADA && entity.getEstado() != FacturaEstado.ANULADA) {
-                Optional<CuentaPorCobrar> cuentaOpt = cuentaPorCobrarRepository.findByFacturaVentaIdAndActiveTrue(entity.getId());
-                if (cuentaOpt.isPresent()) {
-                    CuentaPorCobrar cuenta = cuentaOpt.get();
-                    cuenta.setSaldo(BigDecimal.ZERO);
-                    cuenta.setEstado(EstadoCuenta.CERRADA);
-                    cuentaPorCobrarRepository.save(cuenta);
-                }
+        if (request.estado() == FacturaEstado.ANULADA && entity.getEstado() != FacturaEstado.ANULADA) {
+            Optional<CuentaPorCobrar> cuentaOpt = cuentaPorCobrarRepository.findByFacturaVentaIdAndActiveTrue(entity.getId());
+            if (cuentaOpt.isPresent()) {
+                CuentaPorCobrar cuenta = cuentaOpt.get();
+                cuenta.setSaldo(BigDecimal.ZERO);
+                cuenta.setEstado(EstadoCuenta.CERRADA);
+                cuentaPorCobrarRepository.save(cuenta);
             }
+        }
 
         entity.setEstado(request.estado());
         FacturaVenta saved = facturaVentaRepository.save(entity);

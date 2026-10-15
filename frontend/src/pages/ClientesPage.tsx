@@ -10,7 +10,7 @@ import SearchBar from "../components/SearchBar";
 import SecondaryButton from "../components/SecondaryButton";
 import StatusBadge from "../components/StatusBadge";
 import { authService } from "../services/authService";
-import { clienteService, type Cliente, obtenerSaldoPendiente, abonarDeuda } from "../services/clienteService";
+import { clienteService, type Cliente, obtenerSaldosPendientes, abonarDeuda } from "../services/clienteService";
 import { useAccionRapida } from "../hooks/useAccionRapida";
 import { formaPagoService, type FormaPago } from "../services/formaPagoService";
 import "./ClientesPage.css";
@@ -31,32 +31,19 @@ const defaultFormState: ClienteFormState = {
 	direccion: ""
 };
 
-// componente para cargar y mostrar la deuda de cada cliente
-function DeudaBadge({ cliente, onAbonar, refreshKey }: { cliente: Cliente; onAbonar: (c: Cliente) => void; refreshKey: number }) {
-    const [deuda, setDeuda] = useState<number | null>(null);
+function DeudaBadge({ deuda, onAbonar }: { deuda: number; onAbonar: () => void }) {
+	if (deuda <= 0) return null;
 
-    useEffect(() => {
-        obtenerSaldoPendiente(cliente.id)
-            .then((saldo) => setDeuda(saldo))
-            .catch(() => setDeuda(0));
-    }, [cliente.id, refreshKey]);
-
-    if (deuda === null || deuda <= 0) return null;
-
-    return (
-        <div style={{ marginTop: '10px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <div style={{ backgroundColor: '#fee2e2', color: '#991b1b', padding: '4px 8px', borderRadius: '4px', fontSize: '12px', fontWeight: 'bold' }}>
-                Deuda: {deuda.toLocaleString("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 })}
-            </div>
-            <button
-                type="button"
-                onClick={() => onAbonar(cliente)}
-                style={{ fontSize: '12px', padding: '4px 10px', backgroundColor: '#10b981', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}
-            >
-                Abonar
-            </button>
-        </div>
-    );
+	return (
+		<div className="cli__debt">
+			<span className="cli__debtTag">
+				Deuda: {deuda.toLocaleString("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 })}
+			</span>
+			<button type="button" className="cli__debtBtn" onClick={onAbonar}>
+				Abonar
+			</button>
+		</div>
+	);
 }
 
 export default function ClientesPage() {
@@ -83,7 +70,7 @@ export default function ClientesPage() {
   const [abonoCliente, setAbonoCliente] = useState<Cliente | null>(null);
   const [abonoMonto, setAbonoMonto] = useState("");
   const [abonoFormaPago, setAbonoFormaPago] = useState("");
-  const [refreshKey, setRefreshKey] = useState(0); // Para forzar recarga visual de la deuda
+  const [saldos, setSaldos] = useState<Record<number, number>>({});
 
 	const loadClientes = useCallback(async () => {
 		if (!empresaId) {
@@ -104,14 +91,25 @@ export default function ClientesPage() {
 		}
 	}, [empresaId]);
 
+	const loadSaldos = useCallback(async () => {
+		if (!empresaId) return;
+		try {
+			setSaldos(await obtenerSaldosPendientes(empresaId));
+		} catch {
+			setSaldos({});
+		}
+	}, [empresaId]);
+
 	useEffect(() => {
-        loadClientes();
-        if (empresaId) {
-            formaPagoService.listarPorEmpresa(empresaId, 0, 50)
-                .then(d => setFormasPago(d.content.filter(f => f.active)))
-                .catch(() => {});
-        }
-    }, [loadClientes, empresaId]);
+		loadClientes();
+		loadSaldos();
+		if (empresaId) {
+			formaPagoService
+				.listarPorEmpresa(empresaId, 0, 50)
+				.then((d) => setFormasPago(d.content.filter((f) => f.active && f.tipo !== "CREDITO")))
+				.catch(() => {});
+		}
+	}, [loadClientes, loadSaldos, empresaId]);
 
 	const closeModal = useCallback(() => {
 		setModalOpen(false);
@@ -178,21 +176,25 @@ export default function ClientesPage() {
 		}
   }, [closeModal, editingClienteId, empresaId, form]);
 
+	const abonoDeuda = abonoCliente ? saldos[abonoCliente.id] ?? 0 : 0;
+	const abonoExcede = Number(abonoMonto) > abonoDeuda;
+
 	const handleAbonar = async () => {
-        if (!abonoCliente || !abonoMonto || !abonoFormaPago) return;
-        setSaving(true);
-        try {
-            await abonarDeuda(abonoCliente.id, Number(abonoMonto), Number(abonoFormaPago));
-            setAbonoModalOpen(false);
-            setAbonoMonto("");
-            setAbonoFormaPago("");
-            setRefreshKey(prev => prev + 1); // Refresca las etiquetas de deuda
-        } catch (e) {
-            setError("Error al procesar el abono. Verifica la caja o tu conexión.");
-        } finally {
-            setSaving(false);
-        }
-    };
+		if (!abonoCliente || !abonoMonto || !abonoFormaPago || abonoExcede) return;
+		setSaving(true);
+		try {
+			await abonarDeuda(abonoCliente.id, Number(abonoMonto), Number(abonoFormaPago));
+			setAbonoModalOpen(false);
+			setAbonoMonto("");
+			setAbonoFormaPago("");
+			await loadSaldos();
+		} catch (err) {
+			const response = (err as { response?: { data?: { message?: string } } }).response;
+			setError(response?.data?.message ?? "Error al procesar el abono. Verifica la caja o tu conexión.");
+		} finally {
+			setSaving(false);
+		}
+	};
 
 	const openConfirmDelete = useCallback((cliente: Cliente) => {
 		setConfirmTarget(cliente);
@@ -312,7 +314,13 @@ export default function ClientesPage() {
 											{c.nombre}
 										</div>
                     <div className="cli__role">Cliente</div>
-										<DeudaBadge cliente={c} onAbonar={(cliente) => { setAbonoCliente(cliente); setAbonoModalOpen(true); }} refreshKey={refreshKey} />
+										<DeudaBadge
+											deuda={saldos[c.id] ?? 0}
+											onAbonar={() => {
+												setAbonoCliente(c);
+												setAbonoModalOpen(true);
+											}}
+										/>
 									</div>
 									<div className="cli__meta">
 										<div className="cli__metaItem">
@@ -471,45 +479,58 @@ export default function ClientesPage() {
 				onConfirm={confirmDelete}
 				onCancel={closeConfirm}
       />
-      <Modal
-        open={abonoModalOpen}
-        title="Abonar a Deuda"
-        subtitle={`Cliente: ${abonoCliente?.nombre}`}
-        onClose={() => setAbonoModalOpen(false)}
-        footer={
-            <div className="cli__modalActions">
-                <SecondaryButton type="button" onClick={() => setAbonoModalOpen(false)} disabled={saving}>
-                    Cancelar
-                </SecondaryButton>
-                <PrimaryButton type="button" onClick={handleAbonar} disabled={!abonoMonto || !abonoFormaPago || saving}>
-                    {saving ? "Procesando..." : "Registrar Abono"}
-                </PrimaryButton>
-            </div>
-        }
-    >
-        <div className="cli__form">
-            <div className="cli__grid">
-                <div className="cli__field">
-                    <label className="cli__label">Monto a abonar <span className="cli__req">*</span></label>
-                    <input
-                        className="cli__input"
-                        type="text"
-                        inputMode="numeric"
-                        placeholder="$ 0"
-                        value={abonoMonto ? Number(abonoMonto).toLocaleString("es-CO") : ""}
-                        onChange={(e) => setAbonoMonto(e.target.value.replace(/\D/g, ""))}
-                    />
-                </div>
-                <div className="cli__field">
-                    <label className="cli__label">Método de Pago <span className="cli__req">*</span></label>
-                    <select className="cli__input" value={abonoFormaPago} onChange={(e) => setAbonoFormaPago(e.target.value)}>
-                        <option value="">Seleccione...</option>
-                                      {formasPago.map(f => <option key={f.id} value={f.id}>{f.nombre}</option>)}
-                    </select>
-                </div>
-            </div>
-        </div>
-    </Modal>
+			<Modal
+				open={abonoModalOpen}
+				title="Abonar a Deuda"
+				subtitle={`Cliente: ${abonoCliente?.nombre}`}
+				onClose={() => setAbonoModalOpen(false)}
+				footer={
+					<div className="cli__modalActions">
+						<SecondaryButton type="button" onClick={() => setAbonoModalOpen(false)} disabled={saving}>
+							Cancelar
+						</SecondaryButton>
+						<PrimaryButton type="button" onClick={handleAbonar} disabled={!abonoMonto || !abonoFormaPago || abonoExcede || saving}>
+							{saving ? "Procesando..." : "Registrar Abono"}
+						</PrimaryButton>
+					</div>
+				}
+			>
+				<div className="cli__form">
+					<div className="cli__grid">
+						<div className="cli__field">
+							<label className="cli__label">
+								Monto a abonar <span className="cli__req">*</span>
+							</label>
+							<input
+								className="cli__input"
+								type="text"
+								inputMode="numeric"
+								placeholder="$ 0"
+								value={abonoMonto ? Number(abonoMonto).toLocaleString("es-CO") : ""}
+								onChange={(e) => setAbonoMonto(e.target.value.replace(/\D/g, ""))}
+							/>
+							{abonoExcede ? (
+								<span className="cli__fieldError">
+									El abono no puede superar la deuda ({abonoDeuda.toLocaleString("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 })}).
+								</span>
+							) : null}
+						</div>
+						<div className="cli__field">
+							<label className="cli__label">
+								Método de Pago <span className="cli__req">*</span>
+							</label>
+							<select className="cli__input" value={abonoFormaPago} onChange={(e) => setAbonoFormaPago(e.target.value)}>
+								<option value="">Seleccione...</option>
+								{formasPago.map((f) => (
+									<option key={f.id} value={f.id}>
+										{f.nombre}
+									</option>
+								))}
+							</select>
+						</div>
+					</div>
+				</div>
+			</Modal>
 		</div>
 	);
 }

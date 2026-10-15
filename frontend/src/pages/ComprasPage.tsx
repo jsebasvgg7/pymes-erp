@@ -115,7 +115,7 @@ export default function ComprasPage() {
 
 	const activeProductos = useMemo(() => productos.filter((p) => p.active), [productos]);
 	const activeProveedores = useMemo(() => proveedores.filter((p) => p.active), [proveedores]);
-	const activeFormasPago = useMemo(() => formasPago.filter((f) => f.active), [formasPago]);
+	const activeFormasPago = useMemo(() => formasPago.filter((f) => f.active && f.tipo !== "CREDITO"), [formasPago]);
 
 	const proveedorById = useMemo(() => {
 		const map = new Map<string, Proveedor>();

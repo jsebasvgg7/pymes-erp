@@ -12,4 +12,6 @@ public interface FormaPagoRepository extends JpaRepository<FormaPago, Long> {
 	Page<FormaPago> findByActiveTrueAndEmpresaId(Pageable pageable, Long empresaId);
 
 	Optional<FormaPago> findByIdAndActiveTrue(Long id);
+
+	boolean existsByEmpresaIdAndTipoAndActiveTrue(Long empresaId, com.rowin.contabilidad.entities.TipoFormaPago tipo);
 }

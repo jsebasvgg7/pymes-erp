@@ -43,6 +43,7 @@ public class AuthServiceImpl implements AuthService {
     private final PasswordEncoder passwordEncoder;
     private final UsuarioMapper usuarioMapper;
     private final com.rowin.contabilidad.config.JwtTokenProvider jwtTokenProvider;
+    private final FormaPagoCreditoSeeder formaPagoCreditoSeeder;
 
     @PersistenceContext
     private EntityManager entityManager;
@@ -57,7 +58,8 @@ public class AuthServiceImpl implements AuthService {
         RolRepository rolRepository,
         PasswordEncoder passwordEncoder,
         UsuarioMapper usuarioMapper,
-        com.rowin.contabilidad.config.JwtTokenProvider jwtTokenProvider
+        com.rowin.contabilidad.config.JwtTokenProvider jwtTokenProvider,
+        FormaPagoCreditoSeeder formaPagoCreditoSeeder
     ) {
         this.authenticationManager = authenticationManager;
         this.usuarioRepository = usuarioRepository;
@@ -66,6 +68,7 @@ public class AuthServiceImpl implements AuthService {
         this.passwordEncoder = passwordEncoder;
         this.usuarioMapper = usuarioMapper;
         this.jwtTokenProvider = jwtTokenProvider;
+        this.formaPagoCreditoSeeder = formaPagoCreditoSeeder;
     }
 
     @Override
@@ -146,6 +149,8 @@ public class AuthServiceImpl implements AuthService {
             empresa.setEmail(blankToNull(empresaData.email()));
             savedEmpresa = empresaRepository.save(empresa);
         }
+
+        formaPagoCreditoSeeder.sembrar(savedEmpresa);
 
         Rol savedRole = rolRepository.findByEmpresaIdAndNombreIgnoreCaseAndActiveTrue(savedEmpresa.getId(), "ADMIN")
             .orElseGet(() -> {

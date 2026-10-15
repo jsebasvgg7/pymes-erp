@@ -17,10 +17,16 @@ import org.springframework.transaction.annotation.Transactional;
 public class EmpresaServiceImpl extends BaseCrudService implements EmpresaService {
 	private final EmpresaRepository empresaRepository;
 	private final EmpresaMapper empresaMapper;
+	private final FormaPagoCreditoSeeder formaPagoCreditoSeeder;
 
-	public EmpresaServiceImpl(EmpresaRepository empresaRepository, EmpresaMapper empresaMapper) {
+	public EmpresaServiceImpl(
+		EmpresaRepository empresaRepository,
+		EmpresaMapper empresaMapper,
+		FormaPagoCreditoSeeder formaPagoCreditoSeeder
+	) {
 		this.empresaRepository = empresaRepository;
 		this.empresaMapper = empresaMapper;
+		this.formaPagoCreditoSeeder = formaPagoCreditoSeeder;
 	}
 
 	@Override
@@ -43,6 +49,7 @@ public class EmpresaServiceImpl extends BaseCrudService implements EmpresaServic
 	public EmpresaResponse crear(EmpresaCreateRequest request) {
 		Empresa entity = empresaMapper.toEntity(request);
 		Empresa saved = empresaRepository.save(entity);
+		formaPagoCreditoSeeder.sembrar(saved);
 		return empresaMapper.toResponse(saved);
 	}
 

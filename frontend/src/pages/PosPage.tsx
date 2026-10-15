@@ -87,8 +87,8 @@ function isCashMethod(f: FormaPago | undefined) {
 }
 
 function isCreditMethod(f: FormaPago | undefined) {
-    if (!f) return false;
-    return (f.tipo ?? "").toUpperCase() === "CREDITO" || f.nombre.toLowerCase().includes("crédito") || f.nombre.toLowerCase().includes("credito");
+	if (!f) return false;
+	return (f.tipo ?? "").toUpperCase() === "CREDITO" || f.nombre.toLowerCase().includes("crédito") || f.nombre.toLowerCase().includes("credito");
 }
 
 function extractErrorMessage(err: unknown, fallback: string): string {
@@ -199,12 +199,12 @@ export default function PosPage() {
 	const unitsCount = useMemo(() => cartItems.reduce((acc, i) => acc + i.quantity, 0), [cartItems]);
 
 	const selectedFormaPago = useMemo(() => formasPago.find((f) => String(f.id) === formaPagoId), [formaPagoId, formasPago]);
-  const cashPayment = isCashMethod(selectedFormaPago);
+	const cashPayment = isCashMethod(selectedFormaPago);
 	const creditPayment = isCreditMethod(selectedFormaPago);
 
 	const received = receivedDigits ? Number(receivedDigits) : 0;
 	const changeDue = received - total;
-  const insufficientCash = cashPayment && received > 0 && received < total;
+	const insufficientCash = cashPayment && received > 0 && received < total;
 	const missingClientForCredit = creditPayment && !clienteId;
 
 	const hasInvalidQuantity = cartItems.some((i) => i.quantity < 1);
@@ -214,8 +214,8 @@ export default function PosPage() {
 		!saving &&
 		hasCaja !== false &&
 		!hasInvalidQuantity &&
-    !insufficientCash &&
-    !missingClientForCredit;
+		!insufficientCash &&
+		!missingClientForCredit;
 
 	const addToCart = useCallback((p: Producto) => {
 		if (p.stockActual <= 0) return;
@@ -563,30 +563,26 @@ export default function PosPage() {
 							) : null}
 
 							<div className="pos__line">
-                <label htmlFor="pos-cliente">
-                  Cliente {creditPayment && <span style={{ color: '#ef4444' }}>*</span>}
-                </label>
-                <div className="pos__pill">
-                  <select id="pos-cliente" value={clienteId} onChange={(e) => setClienteId(e.target.value)}>
-                    <option value="">Sin cliente</option>
-                    {clientes.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.nombre}
-                    </option>
-                    ))}
-                  </select>
-                  <ChevronDown size={13} strokeWidth={2} aria-hidden="true" />
-                </div>
-              </div>
-
-              {/* Validaciones visuales del cliente */}
-              {creditPayment && !clienteId ? (
-                <p className="pos__hint" style={{ color: '#ef4444', fontWeight: 500 }}>
-                  Obligatorio para ventas a crédito.
-                </p>
-              ) : clienteId && creditPayment ? (
-              <p className="pos__hint">Se creará una cuenta por cobrar para este cliente.</p>
-              ) : null}
+								<label htmlFor="pos-cliente">
+									Cliente {creditPayment ? <span className="pos__req">*</span> : null}
+								</label>
+								<div className="pos__pill">
+									<select id="pos-cliente" value={clienteId} onChange={(e) => setClienteId(e.target.value)}>
+										<option value="">Sin cliente</option>
+										{clientes.map((c) => (
+											<option key={c.id} value={c.id}>
+												{c.nombre}
+											</option>
+										))}
+									</select>
+									<ChevronDown size={13} strokeWidth={2} aria-hidden="true" />
+								</div>
+							</div>
+							{creditPayment && !clienteId ? (
+								<p className="pos__hint pos__hint--error">Obligatorio para ventas a crédito.</p>
+							) : clienteId && creditPayment ? (
+								<p className="pos__hint">Se creará una cuenta por cobrar para este cliente.</p>
+							) : null}
 
 							<div className="pos__line">
 								<label htmlFor="pos-pago">Método de pago</label>

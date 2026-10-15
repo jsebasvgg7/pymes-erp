@@ -125,6 +125,9 @@ public class CompraServiceImpl extends BaseCrudService implements CompraService 
         if (!isActive(formaPago)) {
             throw new ResourceNotFoundException("Forma de pago no encontrada: " + request.formaPagoId());
         }
+        if (formaPago.getTipo() == TipoFormaPago.CREDITO) {
+            throw new IllegalArgumentException("Las compras a crédito aún no están soportadas: elige otra forma de pago.");
+        }
 
         // 4. Validar que haya detalles
         if (request.detalles() == null || request.detalles().isEmpty()) {

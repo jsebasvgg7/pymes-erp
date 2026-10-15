@@ -16,6 +16,9 @@ public interface CuentaPorCobrarRepository extends JpaRepository<CuentaPorCobrar
     @Query("SELECT COALESCE(SUM(c.saldo), 0) FROM CuentaPorCobrar c WHERE c.cliente.id = :clienteId AND c.active = true AND c.saldo > 0")
     BigDecimal calcularSaldoPendientePorCliente(@Param("clienteId") Long clienteId);
 
+    @Query("SELECT c.cliente.id, COALESCE(SUM(c.saldo), 0) FROM CuentaPorCobrar c WHERE c.empresa.id = :empresaId AND c.active = true AND c.saldo > 0 GROUP BY c.cliente.id")
+    List<Object[]> calcularSaldosPendientesPorEmpresa(@Param("empresaId") Long empresaId);
+
     @Query("SELECT c FROM CuentaPorCobrar c WHERE c.cliente.id = :clienteId AND c.active = true AND c.saldo > 0 ORDER BY c.createdAt ASC")
     List<CuentaPorCobrar> findPendientesByClienteId(@Param("clienteId") Long clienteId);
 }

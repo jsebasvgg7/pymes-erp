@@ -43,3 +43,6 @@ backend/.mvn/wrapper/dists/
 
 # TypeScript build cache
 frontend/tsconfig.tsbuildinfo
+
+# === Salidas generadas ===
+repomix-output.xml
