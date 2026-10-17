@@ -5,6 +5,6 @@ public enum TipoReferenciaMovimientoCaja {
 	COMPRA,
 	CUENTA_POR_COBRAR,
 	CUENTA_POR_PAGAR,
-	AJUSTE
+	AJUSTE,
+	GASTO
 }
-

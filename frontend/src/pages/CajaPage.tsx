@@ -15,472 +15,479 @@ import { useAccionRapida } from "../hooks/useAccionRapida";
 import "./CajaPage.css";
 
 type CashFormState = {
-	tipo: "INGRESO" | "EGRESO";
-	descripcion: string;
-	monto: string;
+    tipo: "INGRESO" | "EGRESO";
+    descripcion: string;
+    monto: string;
 };
 
 const defaultFormState: CashFormState = {
-	tipo: "INGRESO",
-	descripcion: "",
-	monto: ""
+    tipo: "INGRESO",
+    descripcion: "",
+    monto: ""
 };
 
 type NewCajaFormState = {
-	nombre: string;
-	saldoInicial: string;
+    nombre: string;
+    saldoInicial: string;
 };
 
 const defaultNewCajaForm: NewCajaFormState = {
-	nombre: "",
-	saldoInicial: ""
+    nombre: "",
+    saldoInicial: ""
 };
 
 function formatCurrency(value: number) {
-	return value.toLocaleString("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 });
+    return value.toLocaleString("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 });
 }
 
 function parseDecimalInput(value: string) {
-	const normalized = value.replace(/[^\d,.-]/g, "").replace(",", ".");
-	const n = Number(normalized);
-	return Number.isFinite(n) ? n : 0;
+    const normalized = value.replace(/[^\d,.-]/g, "").replace(",", ".");
+    const n = Number(normalized);
+    return Number.isFinite(n) ? n : 0;
 }
 
 function extractErrorMessage(err: unknown, fallback: string): string {
-	if (err && typeof err === "object" && "response" in err) {
-		const response = (err as { response?: { data?: { message?: string } } }).response;
-		if (response?.data?.message) return response.data.message;
-	}
-	return fallback;
+    if (err && typeof err === "object" && "response" in err) {
+        const response = (err as { response?: { data?: { message?: string } } }).response;
+        if (response?.data?.message) return response.data.message;
+    }
+    return fallback;
 }
 
 export default function CajaPage() {
-	const empresaId = authService.getUsuario()?.empresaId;
+    const empresaId = authService.getUsuario()?.empresaId;
 
-	const [cajas, setCajas] = useState<CajaResumen[]>([]);
-	const [cajaId, setCajaId] = useState<number | null>(null);
-	const [movimientos, setMovimientos] = useState<MovimientoCajaResponse[]>([]);
+    const [cajas, setCajas] = useState<CajaResumen[]>([]);
+    const [cajaId, setCajaId] = useState<number | null>(null);
+    const [movimientos, setMovimientos] = useState<MovimientoCajaResponse[]>([]);
 
-	const [loading, setLoading] = useState(true);
-	const [error, setError] = useState<string | null>(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
 
-	const [modalOpen, setModalOpen] = useState(false);
-	const [form, setForm] = useState<CashFormState>(defaultFormState);
-	const [saving, setSaving] = useState(false);
-	const [formError, setFormError] = useState<string | null>(null);
+    const [modalOpen, setModalOpen] = useState(false);
+    const [form, setForm] = useState<CashFormState>(defaultFormState);
+    const [saving, setSaving] = useState(false);
+    const [formError, setFormError] = useState<string | null>(null);
 
-	const [newCajaModalOpen, setNewCajaModalOpen] = useState(false);
-	const [newCajaForm, setNewCajaForm] = useState<NewCajaFormState>(defaultNewCajaForm);
-	const [creatingCaja, setCreatingCaja] = useState(false);
-	const [newCajaError, setNewCajaError] = useState<string | null>(null);
+    const [newCajaModalOpen, setNewCajaModalOpen] = useState(false);
+    const [newCajaForm, setNewCajaForm] = useState<NewCajaFormState>(defaultNewCajaForm);
+    const [creatingCaja, setCreatingCaja] = useState(false);
+    const [newCajaError, setNewCajaError] = useState<string | null>(null);
 
-	const loadCajas = useCallback(async () => {
-		if (!empresaId) {
-			setError("No se encontró la empresa del usuario. Inicia sesión nuevamente.");
-			setLoading(false);
-			return;
-		}
+    const loadCajas = useCallback(async (isSilent = false) => {
+        if (!empresaId) {
+            setError("No se encontró la empresa del usuario. Inicia sesión nuevamente.");
+            setLoading(false);
+            return;
+        }
 
-		setLoading(true);
-		setError(null);
-		try {
-			const data = await cajaService.obtenerResumenTodas(empresaId);
-			setCajas(data);
-			setCajaId((prev) => prev ?? data[0]?.cajaId ?? null);
-		} catch {
-			setError("No se pudo cargar la información de caja. Verifica tu conexión con el servidor.");
-		} finally {
-			setLoading(false);
-		}
-	}, [empresaId]);
+        if (!isSilent) setLoading(true);
+        setError(null);
+        try {
+            const data = await cajaService.obtenerResumenTodas(empresaId);
+            // Validación defensiva extrema: Evitará que la pantalla se congele si la data viene malformada
+            const safeData = Array.isArray(data) ? data : (Array.isArray((data as any)?.data) ? (data as any).data : []);
 
-	useEffect(() => {
-		loadCajas();
-	}, [loadCajas]);
+            setCajas(safeData);
+            setCajaId((prev) => prev ?? safeData[0]?.cajaId ?? null);
+        } catch (err) {
+            console.error("Error al cargar cajas:", err);
+            setError("No se pudo cargar la información de caja. Verifica tu conexión con el servidor.");
+        } finally {
+            setLoading(false);
+        }
+    }, [empresaId]);
 
-	const loadMovimientos = useCallback(async () => {
-		if (!cajaId) {
-			setMovimientos([]);
-			return;
-		}
+    const loadMovimientos = useCallback(async () => {
+        if (!cajaId) {
+            setMovimientos([]);
+            return;
+        }
 
-		try {
-			const data = await cajaService.listarMovimientosPorCaja(cajaId);
-			setMovimientos(data.content);
-		} catch {
-			setError("No se pudo cargar los movimientos de la caja seleccionada.");
-		}
-	}, [cajaId]);
+        try {
+            const data = await cajaService.listarMovimientosPorCaja(cajaId);
+            // Validación defensiva para la tabla de movimientos
+            const safeData = Array.isArray(data?.content) ? data.content : [];
+            setMovimientos(safeData);
+        } catch (err) {
+            console.error("Error al cargar movimientos:", err);
+            setError("No se pudo cargar los movimientos de la caja seleccionada.");
+        }
+    }, [cajaId]);
 
-	useEffect(() => {
-		loadMovimientos();
-	}, [loadMovimientos]);
+    useEffect(() => {
+        loadCajas();
+    }, [loadCajas]);
 
-	const cajaActual = useMemo(() => cajas.find((c) => c.cajaId === cajaId) ?? null, [cajas, cajaId]);
+    useEffect(() => {
+        loadMovimientos();
+    }, [loadMovimientos]);
 
-	const openModal = useCallback(() => {
-		setForm(defaultFormState);
-		setFormError(null);
-		setModalOpen(true);
-	}, []);
+    const cajaActual = useMemo(() => cajas.find((c) => c.cajaId === cajaId) ?? null, [cajas, cajaId]);
 
-	useAccionRapida("movimiento", openModal);
+    const openModal = useCallback(() => {
+        setForm(defaultFormState);
+        setFormError(null);
+        setModalOpen(true);
+    }, []);
 
-	const closeModal = useCallback(() => {
-		setModalOpen(false);
-		setFormError(null);
-	}, []);
+    useAccionRapida("movimiento", openModal);
 
-	const isValid = useMemo(() => {
-		const descripcionOk = form.descripcion.trim().length > 0;
-		const monto = parseDecimalInput(form.monto);
-		return descripcionOk && monto > 0;
-	}, [form.descripcion, form.monto]);
+    const closeModal = useCallback(() => {
+        setModalOpen(false);
+        setFormError(null);
+    }, []);
 
-	const handleSave = useCallback(async () => {
-		if (!isValid || !empresaId || !cajaId) return;
+    const isValid = useMemo(() => {
+        const descripcionOk = form.descripcion.trim().length > 0;
+        const monto = parseDecimalInput(form.monto);
+        return descripcionOk && monto > 0;
+    }, [form.descripcion, form.monto]);
 
-		setSaving(true);
-		setFormError(null);
-		try {
-			await cajaService.registrarMovimiento({
-				empresaId,
-				cajaId,
-				tipo: form.tipo,
-				monto: parseDecimalInput(form.monto),
-				descripcion: form.descripcion.trim()
-			});
+    const handleSave = useCallback(async () => {
+        if (!isValid || !empresaId || !cajaId) return;
 
-			await Promise.all([loadCajas(), loadMovimientos()]);
-			closeModal();
-		} catch (err) {
-			setFormError(extractErrorMessage(err, "No se pudo registrar el movimiento. Intenta nuevamente."));
-		} finally {
-			setSaving(false);
-		}
-	}, [cajaId, closeModal, empresaId, form.descripcion, form.monto, form.tipo, isValid, loadCajas, loadMovimientos]);
+        setSaving(true);
+        setFormError(null);
+        try {
+            await cajaService.registrarMovimiento({
+                empresaId,
+                cajaId,
+                tipo: form.tipo,
+                monto: parseDecimalInput(form.monto),
+                descripcion: form.descripcion.trim()
+            });
 
-	const openNewCajaModal = useCallback(() => {
-		setNewCajaForm(defaultNewCajaForm);
-		setNewCajaError(null);
-		setNewCajaModalOpen(true);
-	}, []);
+            await Promise.all([loadCajas(true), loadMovimientos()]);
+            closeModal();
+        } catch (err) {
+            setFormError(extractErrorMessage(err, "No se pudo registrar el movimiento. Intenta nuevamente."));
+        } finally {
+            setSaving(false);
+        }
+    }, [cajaId, closeModal, empresaId, form.descripcion, form.monto, form.tipo, isValid, loadCajas, loadMovimientos]);
 
-	useAccionRapida("nueva-caja", openNewCajaModal);
+    const openNewCajaModal = useCallback(() => {
+        setNewCajaForm(defaultNewCajaForm);
+        setNewCajaError(null);
+        setNewCajaModalOpen(true);
+    }, []);
 
-	const closeNewCajaModal = useCallback(() => {
-		setNewCajaModalOpen(false);
-		setNewCajaError(null);
-	}, []);
+    useAccionRapida("nueva-caja", openNewCajaModal);
 
-	const isNewCajaValid = useMemo(() => newCajaForm.nombre.trim().length > 0, [newCajaForm.nombre]);
+    const closeNewCajaModal = useCallback(() => {
+        setNewCajaModalOpen(false);
+        setNewCajaError(null);
+    }, []);
 
-	const handleCreateCaja = useCallback(async () => {
-		if (!isNewCajaValid || !empresaId) return;
+    const isNewCajaValid = useMemo(() => newCajaForm.nombre.trim().length > 0, [newCajaForm.nombre]);
 
-		setCreatingCaja(true);
-		setNewCajaError(null);
-		try {
-			const saldoInicial = newCajaForm.saldoInicial.trim() ? parseDecimalInput(newCajaForm.saldoInicial) : undefined;
-			await cajaService.crear({
-				empresaId,
-				nombre: newCajaForm.nombre.trim(),
-				saldoInicial
-			});
+    const handleCreateCaja = useCallback(async () => {
+        if (!isNewCajaValid || !empresaId) return;
 
-			await loadCajas();
-			closeNewCajaModal();
-		} catch (err) {
-			setNewCajaError(extractErrorMessage(err, "No se pudo crear la caja. Intenta nuevamente."));
-		} finally {
-			setCreatingCaja(false);
-		}
-	}, [closeNewCajaModal, empresaId, isNewCajaValid, loadCajas, newCajaForm.nombre, newCajaForm.saldoInicial]);
+        setCreatingCaja(true);
+        setNewCajaError(null);
+        try {
+            const saldoInicial = newCajaForm.saldoInicial.trim() ? parseDecimalInput(newCajaForm.saldoInicial) : undefined;
+            await cajaService.crear({
+                empresaId,
+                nombre: newCajaForm.nombre.trim(),
+                saldoInicial
+            });
 
-	const movimientosLayout: DataTableLayout<MovimientoCajaResponse> = {
-		principal: (r) => r.descripcion || "Sin concepto",
-		secundario: (r) => formatDateShort(r.fecha),
-		etiquetas: (r) => (r.formaPagoNombre ? <span className="ui-list__chip">{r.formaPagoNombre}</span> : null),
-		estado: (r) => <StatusBadge status={r.tipo === "INGRESO" ? "Ingreso" : "Egreso"} />,
-		valor: (r) => `${r.tipo === "INGRESO" ? "+" : "−"} ${formatCurrency(r.monto)}`
-	};
+            await loadCajas();
+            closeNewCajaModal();
+        } catch (err) {
+            setNewCajaError(extractErrorMessage(err, "No se pudo crear la caja. Intenta nuevamente."));
+        } finally {
+            setCreatingCaja(false);
+        }
+    }, [closeNewCajaModal, empresaId, isNewCajaValid, loadCajas, newCajaForm.nombre, newCajaForm.saldoInicial]);
 
-	if (loading) {
-		return (
-			<div className="cash">
-				<LoadingState label="Cargando caja..." />
-			</div>
-		);
-	}
+    const movimientosLayout: DataTableLayout<MovimientoCajaResponse> = {
+        principal: (r) => r.descripcion || "Sin concepto",
+        secundario: (r) => formatDateShort(r.fecha),
+        etiquetas: (r) => (r.formaPagoNombre ? <span className="ui-list__chip">{r.formaPagoNombre}</span> : null),
+        estado: (r) => <StatusBadge status={r.tipo === "INGRESO" ? "Ingreso" : "Egreso"} />,
+        valor: (r) => `${r.tipo === "INGRESO" ? "+" : "−"} ${formatCurrency(r.monto)}`
+    };
 
-	if (error) {
-		return (
-			<div className="cash">
-				<div className="cash__state cash__state--error">{error}</div>
-			</div>
-		);
-	}
+    if (loading) {
+        return (
+            <div className="cash">
+                <LoadingState label="Cargando caja..." />
+            </div>
+        );
+    }
 
-	if (cajas.length === 0) {
-		return (
-			<div className="cash">
-				<PageHeader
-					title="Control de efectivo"
-					subtitle="Registra ingresos y egresos y consulta el saldo de tus cajas."
-					actions={
-						<PrimaryButton type="button" onClick={openNewCajaModal}>
-							<Plus size={14} strokeWidth={2.2} />
-							<span>Nueva caja</span>
-						</PrimaryButton>
-					}
-				/>
-				<div className="cash__empty cash__empty--page">
-					<div className="cash__emptyTitle">No hay ninguna caja registrada para esta empresa.</div>
-					<div className="cash__emptySubtitle">
-						Se necesita al menos una caja activa antes de poder registrar movimientos, ventas o compras. Crea la primera
-						caja para empezar.
-					</div>
-				</div>
+    if (error) {
+        return (
+            <div className="cash">
+                <div className="cash__state cash__state--error">{error}</div>
+            </div>
+        );
+    }
 
-				<Modal
-					open={newCajaModalOpen}
-					title="Nueva caja"
-					subtitle="Crea una caja para registrar los movimientos de dinero."
-					icon={<Wallet size={20} strokeWidth={2} />}
-					onClose={closeNewCajaModal}
-					footer={
-						<div className="cash__modalActions">
-							<SecondaryButton type="button" onClick={closeNewCajaModal} disabled={creatingCaja}>
-								Cancelar
-							</SecondaryButton>
-							<PrimaryButton type="button" onClick={handleCreateCaja} disabled={!isNewCajaValid || creatingCaja}>
-								{creatingCaja ? "Creando..." : "Crear Caja"}
-							</PrimaryButton>
-						</div>
-					}
-				>
-					<form className="cash__form" onSubmit={(e) => e.preventDefault()}>
-						<div className="cash__grid">
-							<div className="cash__field cash__field--full">
-								<label className="cash__label">Nombre</label>
-								<input
-									className="cash__input"
-									type="text"
-									placeholder="Ej: Caja Principal"
-									value={newCajaForm.nombre}
-									onChange={(e) => setNewCajaForm((v) => ({ ...v, nombre: e.target.value }))}
-								/>
-							</div>
+    if (cajas.length === 0) {
+        return (
+            <div className="cash">
+                <PageHeader
+                    title="Control de efectivo"
+                    subtitle="Registra ingresos y egresos y consulta el saldo de tus cajas."
+                    actions={
+                        <PrimaryButton type="button" onClick={openNewCajaModal}>
+                            <Plus size={14} strokeWidth={2.2} />
+                            <span>Nueva caja</span>
+                        </PrimaryButton>
+                    }
+                />
+                <div className="cash__empty cash__empty--page">
+                    <div className="cash__emptyTitle">No hay ninguna caja registrada para esta empresa.</div>
+                    <div className="cash__emptySubtitle">
+                        Se necesita al menos una caja activa antes de poder registrar movimientos, ventas o compras. Crea la primera
+                        caja para empezar.
+                    </div>
+                </div>
 
-							<div className="cash__field cash__field--full">
-								<label className="cash__label">Saldo inicial (opcional)</label>
-								<input
-									className="cash__input"
-									type="text"
-									placeholder="$0"
-									inputMode="decimal"
-									value={newCajaForm.saldoInicial}
-									onChange={(e) => setNewCajaForm((v) => ({ ...v, saldoInicial: e.target.value }))}
-								/>
-							</div>
+                <Modal
+                    open={newCajaModalOpen}
+                    title="Nueva caja"
+                    subtitle="Crea una caja para registrar los movimientos de dinero."
+                    icon={<Wallet size={20} strokeWidth={2} />}
+                    onClose={closeNewCajaModal}
+                    footer={
+                        <div className="cash__modalActions">
+                            <SecondaryButton type="button" onClick={closeNewCajaModal} disabled={creatingCaja}>
+                                Cancelar
+                            </SecondaryButton>
+                            <PrimaryButton type="button" onClick={handleCreateCaja} disabled={!isNewCajaValid || creatingCaja}>
+                                {creatingCaja ? "Creando..." : "Crear Caja"}
+                            </PrimaryButton>
+                        </div>
+                    }
+                >
+                    <form className="cash__form" onSubmit={(e) => e.preventDefault()}>
+                        <div className="cash__grid">
+                            <div className="cash__field cash__field--full">
+                                <label className="cash__label">Nombre</label>
+                                <input
+                                    className="cash__input"
+                                    type="text"
+                                    placeholder="Ej: Caja Principal"
+                                    value={newCajaForm.nombre}
+                                    onChange={(e) => setNewCajaForm((v) => ({ ...v, nombre: e.target.value }))}
+                                />
+                            </div>
 
-							{newCajaError ? <div className="cash__field cash__field--full cash__formError">{newCajaError}</div> : null}
-						</div>
-					</form>
-				</Modal>
-			</div>
-		);
-	}
+                            <div className="cash__field cash__field--full">
+                                <label className="cash__label">Saldo inicial (opcional)</label>
+                                <input
+                                    className="cash__input"
+                                    type="text"
+                                    placeholder="$0"
+                                    inputMode="decimal"
+                                    value={newCajaForm.saldoInicial}
+                                    onChange={(e) => setNewCajaForm((v) => ({ ...v, saldoInicial: e.target.value }))}
+                                />
+                            </div>
 
-	return (
-		<div className="cash">
-			<PageHeader
-				title="Control de efectivo"
-				subtitle="Registra ingresos y egresos y consulta el saldo de tus cajas."
-				actions={
-					<>
-						<SecondaryButton type="button" onClick={openNewCajaModal}>
-							<Wallet size={14} strokeWidth={2} />
-							<span>Nueva caja</span>
-						</SecondaryButton>
-						<PrimaryButton type="button" onClick={openModal}>
-							<Plus size={14} strokeWidth={2.2} />
-							<span>Nuevo movimiento</span>
-						</PrimaryButton>
-					</>
-				}
-			/>
+                            {newCajaError ? <div className="cash__field cash__field--full cash__formError">{newCajaError}</div> : null}
+                        </div>
+                    </form>
+                </Modal>
+            </div>
+        );
+    }
 
-			{cajas.length > 1 ? (
-				<div className="cash__controls">
-					<div className="cash__field">
-						<label className="cash__label">Caja</label>
-						<select
-							className="cash__select"
-							value={cajaId ?? ""}
-							onChange={(e) => setCajaId(Number(e.target.value))}
-						>
-							{cajas.map((c) => (
-								<option key={c.cajaId} value={c.cajaId}>
-									{c.cajaNombre}
-								</option>
-							))}
-						</select>
-					</div>
-				</div>
-			) : null}
+    return (
+        <div className="cash">
+            <PageHeader
+                title="Control de efectivo"
+                subtitle="Registra ingresos y egresos y consulta el saldo de tus cajas."
+                actions={
+                    <>
+                        <SecondaryButton type="button" onClick={openNewCajaModal}>
+                            <Wallet size={14} strokeWidth={2} />
+                            <span>Nueva caja</span>
+                        </SecondaryButton>
+                        <PrimaryButton type="button" onClick={openModal}>
+                            <Plus size={14} strokeWidth={2.2} />
+                            <span>Nuevo movimiento</span>
+                        </PrimaryButton>
+                    </>
+                }
+            />
 
-			<section className="cash__metrics" aria-label="Resumen">
-				<StatCard
-					icon={<Wallet size={20} strokeWidth={1.8} />}
-					title="Saldo Actual"
-					value={formatCurrency(cajaActual?.saldoActual ?? 0)}
-					color="blue"
-					footnote={cajaActual?.cajaNombre}
-				/>
-				<StatCard
-					icon={<TrendingUp size={20} strokeWidth={1.8} />}
-					title="Total ingresos"
-					value={formatCurrency(cajaActual?.totalIngresos ?? 0)}
-					color="green"
-					footnote="Histórico de la caja"
-				/>
-				<StatCard
-					icon={<TrendingDown size={20} strokeWidth={1.8} />}
-					title="Total egresos"
-					value={formatCurrency(cajaActual?.totalEgresos ?? 0)}
-					color="red"
-					footnote="Histórico de la caja"
-				/>
-				<StatCard
-					icon={<Receipt size={20} strokeWidth={1.8} />}
-					title="Movimientos registrados"
-					value={(cajaActual?.totalMovimientos ?? 0).toLocaleString("es-CO")}
-					color="amber"
-					footnote="Total"
-				/>
-			</section>
+            {cajas.length > 1 ? (
+                <div className="cash__controls">
+                    <div className="cash__field">
+                        <label className="cash__label">Caja</label>
+                        <select
+                            className="cash__select"
+                            value={cajaId ?? ""}
+                            onChange={(e) => setCajaId(Number(e.target.value))}
+                        >
+                            {cajas.map((c) => (
+                                <option key={c.cajaId} value={c.cajaId}>
+                                    {c.cajaNombre}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+                </div>
+            ) : null}
 
-			<div className="cash__table">
-				<DataTable
-					title="Movimientos"
-					layout={movimientosLayout}
-					data={movimientos}
-					pageSize={10}
-					emptyState={
-						<div className="cash__empty">
-							<div className="cash__emptyTitle">No existen movimientos registrados.</div>
-							<div className="cash__emptySubtitle">Registra el primer movimiento para comenzar el control de caja.</div>
-						</div>
-					}
-				/>
-			</div>
+            <section className="cash__metrics" aria-label="Resumen">
+                <StatCard
+                    icon={<Wallet size={20} strokeWidth={1.8} />}
+                    title="Saldo Actual"
+                    value={formatCurrency(cajaActual?.saldoActual ?? 0)}
+                    color="blue"
+                    footnote={cajaActual?.cajaNombre}
+                />
+                <StatCard
+                    icon={<TrendingUp size={20} strokeWidth={1.8} />}
+                    title="Total ingresos"
+                    value={formatCurrency(cajaActual?.totalIngresos ?? 0)}
+                    color="green"
+                    footnote="Histórico de la caja"
+                />
+                <StatCard
+                    icon={<TrendingDown size={20} strokeWidth={1.8} />}
+                    title="Total egresos"
+                    value={formatCurrency(cajaActual?.totalEgresos ?? 0)}
+                    color="red"
+                    footnote="Histórico de la caja"
+                />
+                <StatCard
+                    icon={<Receipt size={20} strokeWidth={1.8} />}
+                    title="Movimientos registrados"
+                    value={(cajaActual?.totalMovimientos ?? 0).toLocaleString("es-CO")}
+                    color="amber"
+                    footnote="Total"
+                />
+            </section>
 
-			<Modal
-				open={modalOpen}
-				title="Nuevo movimiento"
-				subtitle="Registra un ingreso o egreso en la caja."
-				icon={<ArrowLeftRight size={20} strokeWidth={2} />}
-				onClose={closeModal}
-				footer={
-					<div className="cash__modalActions">
-						<SecondaryButton type="button" onClick={closeModal} disabled={saving}>
-							Cancelar
-						</SecondaryButton>
-						<PrimaryButton type="button" onClick={handleSave} disabled={!isValid || saving}>
-							{saving ? "Guardando..." : "Guardar"}
-						</PrimaryButton>
-					</div>
-				}
-			>
-				<form className="cash__form" onSubmit={(e) => e.preventDefault()}>
-					<div className="cash__grid">
-						<div className="cash__field">
-							<label className="cash__label">Tipo</label>
-							<select
-								className="cash__select"
-								value={form.tipo}
-								onChange={(e) => setForm((v) => ({ ...v, tipo: e.target.value as "INGRESO" | "EGRESO" }))}
-							>
-								<option value="INGRESO">Ingreso</option>
-								<option value="EGRESO">Egreso</option>
-							</select>
-						</div>
+            <div className="cash__table">
+                <DataTable
+                    title="Movimientos"
+                    layout={movimientosLayout}
+                    data={movimientos}
+                    pageSize={10}
+                    emptyState={
+                        <div className="cash__empty">
+                            <div className="cash__emptyTitle">No existen movimientos registrados.</div>
+                            <div className="cash__emptySubtitle">Registra el primer movimiento para comenzar el control de caja.</div>
+                        </div>
+                    }
+                />
+            </div>
 
-						<div className="cash__field">
-							<label className="cash__label">Valor</label>
-							<input
-								className="cash__input"
-								type="text"
-								placeholder="$0"
-								inputMode="decimal"
-								value={form.monto}
-								onChange={(e) => setForm((v) => ({ ...v, monto: e.target.value }))}
-							/>
-						</div>
+            <Modal
+                open={modalOpen}
+                title="Nuevo movimiento"
+                subtitle="Registra un ingreso o egreso en la caja."
+                icon={<ArrowLeftRight size={20} strokeWidth={2} />}
+                onClose={closeModal}
+                footer={
+                    <div className="cash__modalActions">
+                        <SecondaryButton type="button" onClick={closeModal} disabled={saving}>
+                            Cancelar
+                        </SecondaryButton>
+                        <PrimaryButton type="button" onClick={handleSave} disabled={!isValid || saving}>
+                            {saving ? "Guardando..." : "Guardar"}
+                        </PrimaryButton>
+                    </div>
+                }
+            >
+                <form className="cash__form" onSubmit={(e) => e.preventDefault()}>
+                    <div className="cash__grid">
+                        <div className="cash__field">
+                            <label className="cash__label">Tipo</label>
+                            <select
+                                className="cash__select"
+                                value={form.tipo}
+                                onChange={(e) => setForm((v) => ({ ...v, tipo: e.target.value as "INGRESO" | "EGRESO" }))}
+                            >
+                                <option value="INGRESO">Ingreso</option>
+                                <option value="EGRESO">Egreso</option>
+                            </select>
+                        </div>
 
-						<div className="cash__field cash__field--full">
-							<label className="cash__label">Concepto</label>
-							<input
-								className="cash__input"
-								type="text"
-								placeholder="Ej: Pago de servicios"
-								value={form.descripcion}
-								onChange={(e) => setForm((v) => ({ ...v, descripcion: e.target.value }))}
-							/>
-						</div>
+                        <div className="cash__field">
+                            <label className="cash__label">Valor</label>
+                            <input
+                                className="cash__input"
+                                type="text"
+                                placeholder="$0"
+                                inputMode="decimal"
+                                value={form.monto}
+                                onChange={(e) => setForm((v) => ({ ...v, monto: e.target.value }))}
+                            />
+                        </div>
 
-						{formError ? <div className="cash__field cash__field--full cash__formError">{formError}</div> : null}
-					</div>
-				</form>
-			</Modal>
+                        <div className="cash__field cash__field--full">
+                            <label className="cash__label">Concepto</label>
+                            <input
+                                className="cash__input"
+                                type="text"
+                                placeholder="Ej: Pago de servicios"
+                                value={form.descripcion}
+                                onChange={(e) => setForm((v) => ({ ...v, descripcion: e.target.value }))}
+                            />
+                        </div>
 
-			<Modal
-				open={newCajaModalOpen}
-				title="Nueva caja"
-				subtitle="Crea una caja para registrar los movimientos de dinero."
-				icon={<Wallet size={20} strokeWidth={2} />}
-				onClose={closeNewCajaModal}
-				footer={
-					<div className="cash__modalActions">
-						<SecondaryButton type="button" onClick={closeNewCajaModal} disabled={creatingCaja}>
-							Cancelar
-						</SecondaryButton>
-						<PrimaryButton type="button" onClick={handleCreateCaja} disabled={!isNewCajaValid || creatingCaja}>
-							{creatingCaja ? "Creando..." : "Crear Caja"}
-						</PrimaryButton>
-					</div>
-				}
-			>
-				<form className="cash__form" onSubmit={(e) => e.preventDefault()}>
-					<div className="cash__grid">
-						<div className="cash__field cash__field--full">
-							<label className="cash__label">Nombre</label>
-							<input
-								className="cash__input"
-								type="text"
-								placeholder="Ej: Caja Principal"
-								value={newCajaForm.nombre}
-								onChange={(e) => setNewCajaForm((v) => ({ ...v, nombre: e.target.value }))}
-							/>
-						</div>
+                        {formError ? <div className="cash__field cash__field--full cash__formError">{formError}</div> : null}
+                    </div>
+                </form>
+            </Modal>
 
-						<div className="cash__field cash__field--full">
-							<label className="cash__label">Saldo inicial (opcional)</label>
-							<input
-								className="cash__input"
-								type="text"
-								placeholder="$0"
-								inputMode="decimal"
-								value={newCajaForm.saldoInicial}
-								onChange={(e) => setNewCajaForm((v) => ({ ...v, saldoInicial: e.target.value }))}
-							/>
-						</div>
+            <Modal
+                open={newCajaModalOpen}
+                title="Nueva caja"
+                subtitle="Crea una caja para registrar los movimientos de dinero."
+                icon={<Wallet size={20} strokeWidth={2} />}
+                onClose={closeNewCajaModal}
+                footer={
+                    <div className="cash__modalActions">
+                        <SecondaryButton type="button" onClick={closeNewCajaModal} disabled={creatingCaja}>
+                            Cancelar
+                        </SecondaryButton>
+                        <PrimaryButton type="button" onClick={handleCreateCaja} disabled={!isNewCajaValid || creatingCaja}>
+                            {creatingCaja ? "Creando..." : "Crear Caja"}
+                        </PrimaryButton>
+                    </div>
+                }
+            >
+                <form className="cash__form" onSubmit={(e) => e.preventDefault()}>
+                    <div className="cash__grid">
+                        <div className="cash__field cash__field--full">
+                            <label className="cash__label">Nombre</label>
+                            <input
+                                className="cash__input"
+                                type="text"
+                                placeholder="Ej: Caja Principal"
+                                value={newCajaForm.nombre}
+                                onChange={(e) => setNewCajaForm((v) => ({ ...v, nombre: e.target.value }))}
+                            />
+                        </div>
 
-						{newCajaError ? <div className="cash__field cash__field--full cash__formError">{newCajaError}</div> : null}
-					</div>
-				</form>
-			</Modal>
-		</div>
-	);
+                        <div className="cash__field cash__field--full">
+                            <label className="cash__label">Saldo inicial (opcional)</label>
+                            <input
+                                className="cash__input"
+                                type="text"
+                                placeholder="$0"
+                                inputMode="decimal"
+                                value={newCajaForm.saldoInicial}
+                                onChange={(e) => setNewCajaForm((v) => ({ ...v, saldoInicial: e.target.value }))}
+                            />
+                        </div>
+
+                        {newCajaError ? <div className="cash__field cash__field--full cash__formError">{newCajaError}</div> : null}
+                    </div>
+                </form>
+            </Modal>
+        </div>
+    );
 }

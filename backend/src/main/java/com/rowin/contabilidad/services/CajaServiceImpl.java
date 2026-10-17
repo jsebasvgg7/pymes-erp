@@ -11,6 +11,7 @@ import com.rowin.contabilidad.entities.Empresa;
 import com.rowin.contabilidad.entities.FormaPago;
 import com.rowin.contabilidad.entities.MovimientoCaja;
 import com.rowin.contabilidad.entities.TipoMovimientoCaja;
+import com.rowin.contabilidad.entities.TipoReferenciaMovimientoCaja;
 import com.rowin.contabilidad.exceptions.ResourceNotFoundException;
 import com.rowin.contabilidad.repositories.CajaRepository;
 import com.rowin.contabilidad.repositories.EmpresaRepository;
@@ -137,19 +138,28 @@ public class CajaServiceImpl extends BaseCrudService implements CajaService {
 
         // Crear movimiento
         MovimientoCaja movimiento = cajaMapper.toEntity(request, empresa, caja, formaPago);
-        movimiento.setFecha(LocalDateTime.now());
 
-        // Actualizar saldo de caja
-        BigDecimal nuevoSaldo = caja.getSaldoActual();
-        if (request.tipo() == com.rowin.contabilidad.entities.TipoMovimientoCaja.INGRESO) {
-            nuevoSaldo = nuevoSaldo.add(request.monto());
-        } else {
-            nuevoSaldo = nuevoSaldo.subtract(request.monto());
+        // Asignar referencia por defecto si el frontend no la envía
+        if (movimiento.getTipoReferencia() == null) {
+            movimiento.setTipoReferencia(TipoReferenciaMovimientoCaja.AJUSTE);
         }
-        caja.setSaldoActual(nuevoSaldo);
+
+        movimiento.setFecha(LocalDateTime.now());
+        MovimientoCaja saved = movimientoCajaRepository.save(movimiento);
+
+        // Actualizar los saldos de la caja según el tipo de movimiento
+        if (saved.getTipo() == TipoMovimientoCaja.INGRESO) {
+            caja.setSaldoActual(caja.getSaldoActual().add(saved.getMonto()));
+            // Si en el futuro añades el campo a la base de datos, usa:
+            // caja.setTotalIngresos(caja.getTotalIngresos().add(saved.getMonto()));
+        } else if (saved.getTipo() == TipoMovimientoCaja.EGRESO) {
+            caja.setSaldoActual(caja.getSaldoActual().subtract(saved.getMonto()));
+            // Si en el futuro añades el campo a la base de datos, usa:
+            // caja.setTotalEgresos(caja.getTotalEgresos().add(saved.getMonto()));
+        }
+
         cajaRepository.save(caja);
 
-        MovimientoCaja saved = movimientoCajaRepository.save(movimiento);
         return cajaMapper.toResponse(saved);
     }
 
