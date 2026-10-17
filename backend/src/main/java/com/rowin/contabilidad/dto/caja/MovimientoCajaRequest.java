@@ -12,7 +12,7 @@ import java.math.BigDecimal;
 public record MovimientoCajaRequest(
     @NotNull Long empresaId,
     @NotNull Long cajaId,
-    Long formaPagoId,
+    @NotNull(message = "La forma de pago es obligatoria") Long formaPagoId,
     @NotNull TipoMovimientoCaja tipo,
     @NotNull @DecimalMin(value = "0.01") BigDecimal monto,
     @NotBlank(message = "El concepto del gasto es obligatorio") @Size(max = 255) String descripcion,

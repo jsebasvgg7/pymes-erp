@@ -100,18 +100,18 @@ export default function ClientesPage() {
 		}
 	}, [empresaId]);
 
-	// 1. Efecto exclusivo para cargar los clientes
 	useEffect(() => {
-    loadClientes();
-	}, [loadClientes]);
+		loadClientes();
+		loadSaldos();
+	}, [loadClientes, loadSaldos]);
 
-	// 2. Efecto exclusivo para cargar las formas de pago (sin interferir con la tabla)
 	useEffect(() => {
-    if (empresaId) {
-        formaPagoService.listarPorEmpresa(empresaId, 0, 50)
-            .then(d => setFormasPago(d.content.filter(f => f.active)))
-            .catch(() => {});
-    }
+		if (empresaId) {
+			formaPagoService
+				.listarPorEmpresa(empresaId, 0, 50)
+				.then((d) => setFormasPago(d.content.filter((f) => f.active && f.tipo !== "CREDITO")))
+				.catch(() => {});
+		}
 	}, [empresaId]);
 
 	const closeModal = useCallback(() => {

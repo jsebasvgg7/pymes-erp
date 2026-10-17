@@ -20,7 +20,7 @@ export type Caja = {
 export type MovimientoCajaRequest = {
   empresaId: number;
   cajaId: number;
-  formaPagoId?: number;
+  formaPagoId: number;
   tipo: "INGRESO" | "EGRESO";
   monto: number;
   descripcion?: string;

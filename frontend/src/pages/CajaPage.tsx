@@ -10,18 +10,21 @@ import SecondaryButton from "../components/SecondaryButton";
 import StatCard from "../components/StatCard";
 import StatusBadge from "../components/StatusBadge";
 import { authService } from "../services/authService";
+import { formaPagoService, type FormaPago } from "../services/formaPagoService";
 import { cajaService, type CajaResumen, type MovimientoCajaResponse } from "../services/cajaService";
 import { useAccionRapida } from "../hooks/useAccionRapida";
 import "./CajaPage.css";
 
 type CashFormState = {
     tipo: "INGRESO" | "EGRESO";
+    formaPagoId: string;
     descripcion: string;
     monto: string;
 };
 
 const defaultFormState: CashFormState = {
     tipo: "INGRESO",
+    formaPagoId: "",
     descripcion: "",
     monto: ""
 };
@@ -68,6 +71,7 @@ export default function CajaPage() {
     const [form, setForm] = useState<CashFormState>(defaultFormState);
     const [saving, setSaving] = useState(false);
     const [formError, setFormError] = useState<string | null>(null);
+    const [formasPago, setFormasPago] = useState<FormaPago[]>([]);
 
     const [newCajaModalOpen, setNewCajaModalOpen] = useState(false);
     const [newCajaForm, setNewCajaForm] = useState<NewCajaFormState>(defaultNewCajaForm);
@@ -85,9 +89,7 @@ export default function CajaPage() {
         setError(null);
         try {
             const data = await cajaService.obtenerResumenTodas(empresaId);
-            // Validación defensiva extrema: Evitará que la pantalla se congele si la data viene malformada
-            const safeData = Array.isArray(data) ? data : (Array.isArray((data as any)?.data) ? (data as any).data : []);
-
+            const safeData = Array.isArray(data) ? data : [];
             setCajas(safeData);
             setCajaId((prev) => prev ?? safeData[0]?.cajaId ?? null);
         } catch (err) {
@@ -106,7 +108,6 @@ export default function CajaPage() {
 
         try {
             const data = await cajaService.listarMovimientosPorCaja(cajaId);
-            // Validación defensiva para la tabla de movimientos
             const safeData = Array.isArray(data?.content) ? data.content : [];
             setMovimientos(safeData);
         } catch (err) {
@@ -122,6 +123,14 @@ export default function CajaPage() {
     useEffect(() => {
         loadMovimientos();
     }, [loadMovimientos]);
+
+    useEffect(() => {
+        if (!empresaId) return;
+        formaPagoService
+            .listarPorEmpresa(empresaId, 0, 50)
+            .then((d) => setFormasPago(d.content.filter((f) => f.active && f.tipo !== "CREDITO")))
+            .catch(() => setFormasPago([]));
+    }, [empresaId]);
 
     const cajaActual = useMemo(() => cajas.find((c) => c.cajaId === cajaId) ?? null, [cajas, cajaId]);
 
@@ -141,8 +150,8 @@ export default function CajaPage() {
     const isValid = useMemo(() => {
         const descripcionOk = form.descripcion.trim().length > 0;
         const monto = parseDecimalInput(form.monto);
-        return descripcionOk && monto > 0;
-    }, [form.descripcion, form.monto]);
+        return descripcionOk && monto > 0 && form.formaPagoId !== "";
+    }, [form.descripcion, form.monto, form.formaPagoId]);
 
     const handleSave = useCallback(async () => {
         if (!isValid || !empresaId || !cajaId) return;
@@ -153,6 +162,7 @@ export default function CajaPage() {
             await cajaService.registrarMovimiento({
                 empresaId,
                 cajaId,
+                formaPagoId: Number(form.formaPagoId),
                 tipo: form.tipo,
                 monto: parseDecimalInput(form.monto),
                 descripcion: form.descripcion.trim()
@@ -165,7 +175,7 @@ export default function CajaPage() {
         } finally {
             setSaving(false);
         }
-    }, [cajaId, closeModal, empresaId, form.descripcion, form.monto, form.tipo, isValid, loadCajas, loadMovimientos]);
+    }, [cajaId, closeModal, empresaId, form.descripcion, form.formaPagoId, form.monto, form.tipo, isValid, loadCajas, loadMovimientos]);
 
     const openNewCajaModal = useCallback(() => {
         setNewCajaForm(defaultNewCajaForm);
@@ -424,6 +434,22 @@ export default function CajaPage() {
                                 value={form.monto}
                                 onChange={(e) => setForm((v) => ({ ...v, monto: e.target.value }))}
                             />
+                        </div>
+
+                        <div className="cash__field cash__field--full">
+                            <label className="cash__label">Forma de pago</label>
+                            <select
+                                className="cash__select"
+                                value={form.formaPagoId}
+                                onChange={(e) => setForm((v) => ({ ...v, formaPagoId: e.target.value }))}
+                            >
+                                <option value="">Selecciona una forma de pago</option>
+                                {formasPago.map((f) => (
+                                    <option key={f.id} value={f.id}>
+                                        {f.nombre}
+                                    </option>
+                                ))}
+                            </select>
                         </div>
 
                         <div className="cash__field cash__field--full">

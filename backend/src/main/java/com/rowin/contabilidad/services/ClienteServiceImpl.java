@@ -214,7 +214,7 @@ public class ClienteServiceImpl extends BaseCrudService implements ClienteServic
             movimiento.setTipo(TipoMovimientoCaja.INGRESO);
             movimiento.setMonto(monto);
             movimiento.setDescripcion("Abono de deuda - Cliente: " + cliente.getNombre());
-            movimiento.setTipoReferencia(TipoReferenciaMovimientoCaja.AJUSTE);
+            movimiento.setTipoReferencia(TipoReferenciaMovimientoCaja.CUENTA_POR_COBRAR);
             movimientoCajaRepository.save(movimiento);
 
             caja.setSaldoActual(caja.getSaldoActual().add(monto));
