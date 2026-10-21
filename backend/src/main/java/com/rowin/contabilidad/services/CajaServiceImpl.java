@@ -10,7 +10,6 @@ import com.rowin.contabilidad.entities.Caja;
 import com.rowin.contabilidad.entities.Empresa;
 import com.rowin.contabilidad.entities.FormaPago;
 import com.rowin.contabilidad.entities.MovimientoCaja;
-import com.rowin.contabilidad.entities.TipoFormaPago;
 import com.rowin.contabilidad.entities.TipoMovimientoCaja;
 import com.rowin.contabilidad.entities.TipoReferenciaMovimientoCaja;
 import com.rowin.contabilidad.exceptions.ResourceNotFoundException;
@@ -116,31 +115,24 @@ public class CajaServiceImpl extends BaseCrudService implements CajaService {
 
     @Override
     public MovimientoCajaResponse registrarMovimiento(MovimientoCajaRequest request) {
-        // Validar empresa
         Empresa empresa = getByIdOrThrow(empresaRepository, request.empresaId(), "Empresa");
         if (!isActive(empresa)) {
             throw new ResourceNotFoundException("Empresa no encontrada: " + request.empresaId());
         }
 
-        // Validar caja
         Caja caja = getByIdOrThrow(cajaRepository, request.cajaId(), "Caja");
         if (!isActive(caja)) {
             throw new ResourceNotFoundException("Caja no encontrada: " + request.cajaId());
         }
 
-        // Validar forma de pago
-        FormaPago formaPago = getByIdOrThrow(formaPagoRepository, request.formaPagoId(), "FormaPago");
-        if (!isActive(formaPago)) {
-            throw new ResourceNotFoundException("Forma de pago no encontrada: " + request.formaPagoId());
-        }
-        if (!formaPago.getEmpresa().getId().equals(empresa.getId())) {
-            throw new IllegalArgumentException("La forma de pago no pertenece a la empresa.");
-        }
-        if (formaPago.getTipo() == TipoFormaPago.CREDITO) {
-            throw new IllegalArgumentException("Un movimiento de caja no se puede registrar con crédito.");
+        FormaPago formaPago = null;
+        if (request.formaPagoId() != null) {
+            formaPago = getByIdOrThrow(formaPagoRepository, request.formaPagoId(), "FormaPago");
+            if (!isActive(formaPago)) {
+                throw new ResourceNotFoundException("Forma de pago no encontrada: " + request.formaPagoId());
+            }
         }
 
-        // Crear movimiento
         MovimientoCaja movimiento = cajaMapper.toEntity(request, empresa, caja, formaPago);
 
         if (movimiento.getTipoReferencia() == null) {
@@ -150,7 +142,6 @@ public class CajaServiceImpl extends BaseCrudService implements CajaService {
         movimiento.setFecha(LocalDateTime.now());
         MovimientoCaja saved = movimientoCajaRepository.save(movimiento);
 
-        // Actualizar saldo de caja
         if (saved.getTipo() == TipoMovimientoCaja.INGRESO) {
             caja.setSaldoActual(caja.getSaldoActual().add(saved.getMonto()));
         } else if (saved.getTipo() == TipoMovimientoCaja.EGRESO) {
@@ -169,7 +160,6 @@ public class CajaServiceImpl extends BaseCrudService implements CajaService {
         if (!isActive(caja)) {
             throw new ResourceNotFoundException("Caja no encontrada: " + cajaId);
         }
-
         return construirResumen(caja);
     }
 

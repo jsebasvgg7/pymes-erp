@@ -15,6 +15,7 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [remember, setRemember] = useState(true);
   const [setupAvailable, setSetupAvailable] = useState(false);
+  const [email, setEmail] = useState("");
 
   useEffect(() => {
     authService.getBootstrapStatus()
@@ -38,7 +39,7 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      await authService.login({ username, password });
+      await authService.login({ email, password });
       navigate("/dashboard");
     } catch (err: any) {
       setError(err.response?.data?.message || "Usuario o contraseña incorrecta, intente de nuevo");
@@ -82,9 +83,12 @@ export default function LoginPage() {
                     className="login__input"
                     id={usernameId}
                     name="username"
-                    type="text"
-                    placeholder="usuario"
-                    autoComplete="username"
+                    type="email"
+                    required
+                    placeholder="Correo electronico"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    autoComplete="email"
                     disabled={loading}
                   />
                 </div>

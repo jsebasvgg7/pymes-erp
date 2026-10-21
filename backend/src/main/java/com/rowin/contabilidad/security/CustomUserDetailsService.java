@@ -13,6 +13,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Collection;
 import java.util.stream.Collectors;
+import java.util.List;
 
 @Service
 public class CustomUserDetailsService implements UserDetailsService {
@@ -24,24 +25,20 @@ public class CustomUserDetailsService implements UserDetailsService {
     }
 
     @Override
-    @Transactional(readOnly = true)
-    public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        Usuario usuario = usuarioRepository.findByUsernameAndActiveTrue(username)
-            .orElseThrow(() -> new UsernameNotFoundException("Usuario no encontrado: " + username));
+        public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
+            // 1. Buscamos al usuario por su email
+            Usuario usuario = usuarioRepository.findByEmailAndActiveTrue(email)
+                .orElseThrow(() -> new UsernameNotFoundException("Usuario no encontrado con correo: " + email));
 
-        Collection<? extends GrantedAuthority> authorities = usuario.getRoles()
-            .stream()
-            .map(rol -> new SimpleGrantedAuthority("ROLE_" + rol.getNombre().toUpperCase()))
-            .collect(Collectors.toSet());
+            List<GrantedAuthority> authorities = usuario.getRoles().stream()
+                .map(rol -> new SimpleGrantedAuthority("ROLE_" + rol.getNombre()))
+                .collect(Collectors.toList());
 
-        return new User(
-            usuario.getUsername(),
-            usuario.getPasswordHash(),
-            usuario.isActive(),
-            true,
-            true,
-            true,
-            authorities
-        );
-    }
+            // 2. User de Spring usando el EMAIL como identificador principal
+            return new org.springframework.security.core.userdetails.User(
+                usuario.getEmail(),
+                usuario.getPasswordHash(),
+                authorities
+            );
+        }
 }

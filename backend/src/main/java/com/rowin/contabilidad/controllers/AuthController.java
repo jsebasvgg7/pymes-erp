@@ -7,6 +7,7 @@ import com.rowin.contabilidad.dto.auth.BootstrapStatusResponse;
 import com.rowin.contabilidad.dto.auth.AdminRecoveryRequest;
 import com.rowin.contabilidad.dto.auth.RegisterRequest;
 import com.rowin.contabilidad.services.AuthService;
+import com.rowin.contabilidad.dto.auth.RegistroClienteRequest;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -55,4 +56,10 @@ public class AuthController {
         LoginResponse response = authService.register(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
+
+    @PostMapping("/registro-cliente")
+        public ResponseEntity<LoginResponse> registroClienteSaaS(@Valid @RequestBody RegistroClienteRequest request) {
+            LoginResponse response = authService.registrarClienteSaaS(request);
+            return ResponseEntity.ok(response);
+        }
 }

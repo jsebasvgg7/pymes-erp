@@ -127,32 +127,35 @@ export default function PosPage() {
 	const orderRef = useRef<HTMLElement | null>(null);
 
 	const loadData = useCallback(async () => {
-		if (!empresaId) {
-			setError("No se encontró la empresa del usuario. Inicia sesión nuevamente.");
-			setLoading(false);
-			return;
-		}
+        if (!empresaId) {
+            setError("No se encontró la empresa del usuario. Inicia sesión nuevamente.");
+            setLoading(false);
+            return;
+        }
 
-		setLoading(true);
-		setError(null);
-		try {
-			const [productosData, formasPagoData, clientesData, cajas] = await Promise.all([
-				productoService.listarPorEmpresa(empresaId, 0, 200),
-				formaPagoService.listarPorEmpresa(empresaId, 0, 50),
-				clienteService.listarPorEmpresa(empresaId, 0, 200),
-				cajaService.listarPorEmpresa(empresaId).catch(() => null)
-			]);
-			setProducts(productosData.content);
-			setFormasPago(formasPagoData.content.filter((f) => f.active));
-			setClientes(clientesData.content.filter((c) => c.active));
-			setHasCaja(cajas === null ? null : cajas.some((c) => c.active));
-			setFormaPagoId((prev) => prev || String(formasPagoData.content.find((f) => f.active)?.id ?? ""));
-		} catch {
-			setError("No se pudo cargar el punto de venta. Verifica tu conexión con el servidor.");
-		} finally {
-			setLoading(false);
-		}
-	}, [empresaId]);
+        setLoading(true);
+        setError(null);
+        try {
+            // reducimos la carga de clientes a 50
+            const [cajas, formasPagoData, clientesData, productosData] = await Promise.all([
+                cajaService.listarPorEmpresa(empresaId).catch(() => null),
+                formaPagoService.listarPorEmpresa(empresaId, 0, 50),
+                clienteService.listarPorEmpresa(empresaId, 0, 50),
+                productoService.listarPorEmpresa(empresaId, 0, 200)
+            ]);
+
+            setProducts(productosData.content);
+            setFormasPago(formasPagoData.content.filter((f) => f.active));
+            setClientes(clientesData.content.filter((c) => c.active));
+            setHasCaja(cajas === null ? null : cajas.some((c) => c.active));
+
+            setFormaPagoId((prev) => prev || String(formasPagoData.content.find((f) => f.active)?.id ?? ""));
+        } catch {
+            setError("No se pudo cargar el punto de venta. Verifica tu conexión con el servidor.");
+        } finally {
+            setLoading(false);
+        }
+    }, [empresaId]);
 
 	useEffect(() => {
 		loadData();

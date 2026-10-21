@@ -14,6 +14,14 @@ import com.rowin.contabilidad.repositories.EmpresaRepository;
 import com.rowin.contabilidad.repositories.RolRepository;
 import com.rowin.contabilidad.repositories.UsuarioRepository;
 import com.rowin.contabilidad.utils.mappers.UsuarioMapper;
+
+import com.rowin.contabilidad.repositories.CajaRepository;
+import com.rowin.contabilidad.repositories.FormaPagoRepository;
+import com.rowin.contabilidad.dto.auth.RegistroClienteRequest;
+import com.rowin.contabilidad.entities.Caja;
+import com.rowin.contabilidad.entities.FormaPago;
+import com.rowin.contabilidad.entities.TipoFormaPago;
+
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -26,6 +34,10 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException;
+
+import java.math.BigDecimal;
+import java.util.List;
+import java.util.Set;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -44,6 +56,8 @@ public class AuthServiceImpl implements AuthService {
     private final UsuarioMapper usuarioMapper;
     private final com.rowin.contabilidad.config.JwtTokenProvider jwtTokenProvider;
     private final FormaPagoCreditoSeeder formaPagoCreditoSeeder;
+    private final CajaRepository cajaRepository;
+    private final FormaPagoRepository formaPagoRepository;
 
     @PersistenceContext
     private EntityManager entityManager;
@@ -52,42 +66,45 @@ public class AuthServiceImpl implements AuthService {
     private String adminRecoveryKey;
 
     public AuthServiceImpl(
-        AuthenticationManager authenticationManager,
-        UsuarioRepository usuarioRepository,
-        EmpresaRepository empresaRepository,
-        RolRepository rolRepository,
-        PasswordEncoder passwordEncoder,
-        UsuarioMapper usuarioMapper,
-        com.rowin.contabilidad.config.JwtTokenProvider jwtTokenProvider,
-        FormaPagoCreditoSeeder formaPagoCreditoSeeder
-    ) {
-        this.authenticationManager = authenticationManager;
-        this.usuarioRepository = usuarioRepository;
-        this.empresaRepository = empresaRepository;
-        this.rolRepository = rolRepository;
-        this.passwordEncoder = passwordEncoder;
-        this.usuarioMapper = usuarioMapper;
-        this.jwtTokenProvider = jwtTokenProvider;
-        this.formaPagoCreditoSeeder = formaPagoCreditoSeeder;
-    }
+            AuthenticationManager authenticationManager,
+            UsuarioRepository usuarioRepository,
+            EmpresaRepository empresaRepository,
+            RolRepository rolRepository,
+            PasswordEncoder passwordEncoder,
+            UsuarioMapper usuarioMapper,
+            com.rowin.contabilidad.config.JwtTokenProvider jwtTokenProvider,
+            FormaPagoCreditoSeeder formaPagoCreditoSeeder,
+            CajaRepository cajaRepository,
+            FormaPagoRepository formaPagoRepository
+        ) {
+            this.authenticationManager = authenticationManager;
+            this.usuarioRepository = usuarioRepository;
+            this.empresaRepository = empresaRepository;
+            this.rolRepository = rolRepository;
+            this.passwordEncoder = passwordEncoder;
+            this.usuarioMapper = usuarioMapper;
+            this.jwtTokenProvider = jwtTokenProvider;
+            this.formaPagoCreditoSeeder = formaPagoCreditoSeeder;
+            this.cajaRepository = cajaRepository;
+            this.formaPagoRepository = formaPagoRepository;
+        }
 
-    @Override
-    public LoginResponse login(LoginRequest request) {
-        Authentication authentication = authenticationManager.authenticate(
-            new UsernamePasswordAuthenticationToken(request.username(), request.password())
-        );
+        @Override
+        public LoginResponse login(LoginRequest request) {
+            // Ahora usamos request.email() en lugar de request.username()
+            Authentication authentication = authenticationManager.authenticate(
+                new UsernamePasswordAuthenticationToken(request.email(), request.password())
+            );
 
-        SecurityContextHolder.getContext().setAuthentication(authentication);
+            SecurityContextHolder.getContext().setAuthentication(authentication);
+            String token = jwtTokenProvider.generateToken(authentication);
 
-        String token = jwtTokenProvider.generateToken(authentication);
+            Usuario usuario = usuarioRepository.findByEmailAndActiveTrue(request.email())
+                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
 
-        Usuario usuario = usuarioRepository.findByUsernameAndActiveTrue(request.username())
-            .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
-
-        UsuarioResponse usuarioResponse = usuarioMapper.toResponse(usuario);
-
-        return new LoginResponse(token, "Bearer", usuarioResponse);
-    }
+            UsuarioResponse usuarioResponse = usuarioMapper.toResponse(usuario);
+            return new LoginResponse(token, "Bearer", usuarioResponse);
+        }
 
     @Override
     @Transactional(readOnly = true)
@@ -276,6 +293,62 @@ public class AuthServiceImpl implements AuthService {
         UsuarioResponse usuarioResponse = usuarioMapper.toResponse(saved);
 
         return new LoginResponse(token, "Bearer", usuarioResponse);
+    }
+
+    @Override
+    @Transactional
+    public LoginResponse registrarClienteSaaS(RegistroClienteRequest request) {
+        if (usuarioRepository.existsByEmail(request.email())) {
+               throw new IllegalArgumentException("El correo electrónico ya está registrado.");
+        }
+
+        // 2. Crear nueva Empresa
+        Empresa nuevaEmpresa = new Empresa();
+        nuevaEmpresa.setNombre(request.empresaNombre());
+        nuevaEmpresa.setNit("PENDIENTE");
+        nuevaEmpresa = empresaRepository.save(nuevaEmpresa);
+
+        // 3. Crear Rol ADMIN para la empresa
+        Rol rolAdmin = new Rol();
+        rolAdmin.setNombre("ADMIN");
+        rolAdmin.setEmpresa(nuevaEmpresa);
+        rolAdmin = rolRepository.save(rolAdmin);
+
+        // 4. Crear Usuario administrador vinculado
+        Usuario nuevoAdmin = new Usuario();
+        nuevoAdmin.setUsername(request.username());
+        nuevoAdmin.setEmail(request.email());
+        nuevoAdmin.setPasswordHash(passwordEncoder.encode(request.password())); // OJO: en tu entidad es setPasswordHash
+        nuevoAdmin.setEmpresa(nuevaEmpresa);
+        nuevoAdmin.setRoles(Set.of(rolAdmin));
+        nuevoAdmin.setActive(true); // Importante activarlo
+        nuevoAdmin = usuarioRepository.save(nuevoAdmin);
+
+        // 5. Sembrar formas de pago básicas
+            List<String> formasBasicas = List.of("Efectivo", "Tarjeta", "Transferencia");
+            for (String nombreForma : formasBasicas) {
+                FormaPago fp = new FormaPago();
+                fp.setNombre(nombreForma);
+                fp.setTipo(TipoFormaPago.valueOf(nombreForma.toUpperCase())); // <-- CAMBIO AQUÍ
+                fp.setEmpresa(nuevaEmpresa);
+                formaPagoRepository.save(fp);
+            }
+
+        // 6. Crear Caja inicial
+        Caja cajaInicial = new Caja();
+        cajaInicial.setNombre("Caja Principal");
+        cajaInicial.setSaldoInicial(BigDecimal.ZERO);
+        cajaInicial.setSaldoActual(BigDecimal.ZERO);
+        cajaInicial.setEmpresa(nuevaEmpresa);
+        cajaRepository.save(cajaInicial);
+
+        // 7. Generar y devolver la sesión activa (LoginResponse)
+        Authentication authentication = authenticationManager.authenticate(
+            new UsernamePasswordAuthenticationToken(request.email(), request.password())
+        );
+        String token = jwtTokenProvider.generateToken(authentication);
+
+        return new LoginResponse(token, "Bearer", usuarioMapper.toResponse(nuevoAdmin));
     }
 
     private String blankToNull(String value) {

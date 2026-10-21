@@ -1,7 +1,7 @@
 import { http } from "./http";
 
 export type LoginRequest = {
-  username: string;
+  email: string;
   password: string;
 };
 
@@ -109,5 +109,10 @@ export const authService = {
 
   isAuthenticated(): boolean {
     return !!this.getToken();
+  },
+
+  async registrarNuevaEmpresa(data: { empresaNombre: string; username: string; email: string; password: string }) {
+      const response = await http.post('/api/auth/registro-cliente', data);
+      return response.data;
   }
 };

@@ -24,6 +24,10 @@ public interface ProductoService {
 
     void eliminar(Long id);
 
+    long contarProductosConStockBajo(Long empresaId);
+
+    long contarProductosSinStock(Long empresaId);
+
     List<ProductoResponse> obtenerProductosConStockBajo(Long empresaId);
 
     List<ProductoResponse> obtenerProductosSinStock(Long empresaId);

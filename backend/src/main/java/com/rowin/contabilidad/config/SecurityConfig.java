@@ -59,6 +59,7 @@ public class SecurityConfig {
                     "/api/auth/login",
                     "/api/auth/bootstrap-status",
                     "/api/auth/bootstrap",
+                    "/api/auth/registro-cliente",
                     "/api/auth/recover-admin"
                 ).permitAll()
                 .requestMatchers("/swagger-ui/**").permitAll()

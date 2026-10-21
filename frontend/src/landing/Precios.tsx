@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Check, ArrowRight } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import "./precios.css";
 
 type Plan = {
@@ -43,6 +44,7 @@ const PLANES: Plan[] = [
 ];
 
 export default function Pricing() {
+  const navigate = useNavigate();
   const introRef = useRef<HTMLDivElement>(null);
   const planesRef = useRef<HTMLDivElement>(null);
 
@@ -145,6 +147,7 @@ export default function Pricing() {
                 </span>
                 <button
                   type="button"
+                  onClick={() => navigate("/checkout")}
                   className={`lp-plan__cta${
                     plan.destacado ? " lp-plan__cta--lima" : " lp-plan__cta--oscuro"
                   }`}

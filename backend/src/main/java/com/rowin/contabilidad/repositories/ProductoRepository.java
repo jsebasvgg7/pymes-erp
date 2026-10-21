@@ -31,15 +31,24 @@ public interface ProductoRepository extends JpaRepository<Producto, Long> {
                                             @Param("search") String search,
                                             Pageable pageable);
 
-    @Query("SELECT p FROM Producto p JOIN FETCH p.inventario i " +
-           "WHERE p.empresa.id = :empresaId AND p.active = true " +
-           "AND i.cantidadActual <= p.stockMinimo")
-    List<Producto> findLowStockProducts(@Param("empresaId") Long empresaId);
+    // ===== MÉTODOS DE CONTEO (PARA EL DASHBOARD) =====
 
-    @Query("SELECT p FROM Producto p JOIN FETCH p.inventario i " +
-           "WHERE p.empresa.id = :empresaId AND p.active = true " +
-           "AND i.cantidadActual = 0")
-    List<Producto> findOutOfStockProducts(@Param("empresaId") Long empresaId);
+        @Query("SELECT COUNT(p) FROM Producto p JOIN p.inventario i WHERE p.empresa.id = :empresaId AND i.cantidadActual < p.stockMinimo AND i.cantidadActual > 0 AND p.active = true")
+        long countByEmpresaIdAndStockBajo(@Param("empresaId") Long empresaId);
+
+        @Query("SELECT COUNT(p) FROM Producto p JOIN p.inventario i WHERE p.empresa.id = :empresaId AND i.cantidadActual <= 0 AND p.active = true")
+        long countByEmpresaIdAndSinStock(@Param("empresaId") Long empresaId);
+
+
+        // ===== MÉTODOS DE LISTADO (PARA EL CONTROLADOR) =====
+
+        @EntityGraph(attributePaths = "inventario")
+        @Query("SELECT p FROM Producto p JOIN p.inventario i WHERE p.empresa.id = :empresaId AND i.cantidadActual < p.stockMinimo AND i.cantidadActual > 0 AND p.active = true")
+        List<Producto> findProductosConStockBajo(@Param("empresaId") Long empresaId);
+
+        @EntityGraph(attributePaths = "inventario")
+        @Query("SELECT p FROM Producto p JOIN p.inventario i WHERE p.empresa.id = :empresaId AND i.cantidadActual <= 0 AND p.active = true")
+        List<Producto> findProductosSinStock(@Param("empresaId") Long empresaId);
 
     @EntityGraph(attributePaths = "inventario")
     List<Producto> findByEmpresaIdAndActiveTrue(Long empresaId);

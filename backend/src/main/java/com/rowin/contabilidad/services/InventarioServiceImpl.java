@@ -170,24 +170,23 @@ public class InventarioServiceImpl extends BaseCrudService implements Inventario
     // ========== HELPERS ==========
 
     private InventarioResponse toInventarioResponse(Producto producto) {
-        Inventario inventario = inventarioRepository.findByProductoIdAndActiveTrue(producto.getId())
-            .orElse(null);
+            Inventario inventario = producto.getInventario();
 
-        if (inventario == null) {
-            // Producto sin inventario (no debería pasar, pero por si acaso)
-            return new InventarioResponse(
-                null, null, null, true,
-                producto.getEmpresa().getId(),
-                producto.getId(), producto.getNombre(), producto.getSku(),
-                producto.getCategoria() != null ? producto.getCategoria().getNombre() : null,
-                producto.getUnidadMedida().name(),
-                BigDecimal.ZERO, BigDecimal.ZERO, producto.getStockMinimo(), producto.getPrecioVenta(),
-                true
-            );
+            if (inventario == null) {
+                // Producto sin inventario (no debería pasar, pero por si acaso)
+                return new InventarioResponse(
+                    null, null, null, true,
+                    producto.getEmpresa().getId(),
+                    producto.getId(), producto.getNombre(), producto.getSku(),
+                    producto.getCategoria() != null ? producto.getCategoria().getNombre() : null,
+                    producto.getUnidadMedida().name(),
+                    BigDecimal.ZERO, BigDecimal.ZERO, producto.getStockMinimo(), producto.getPrecioVenta(),
+                    true
+                );
+            }
+
+            return toInventarioResponseFromInventario(inventario, producto);
         }
-
-        return toInventarioResponseFromInventario(inventario, producto);
-    }
 
     private InventarioResponse toInventarioResponseFromInventario(Inventario inventario, Producto producto) {
         boolean stockBajo = inventario.getCantidadActual().compareTo(producto.getStockMinimo()) <= 0;

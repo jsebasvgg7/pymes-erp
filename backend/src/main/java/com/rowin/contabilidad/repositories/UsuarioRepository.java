@@ -17,9 +17,15 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
 
     Optional<Usuario> findByIdAndActiveTrue(Long id);
 
-    Optional<Usuario> findByUsernameAndActiveTrue(String username);
+    // Agregamos LEFT JOIN FETCH u.roles para cargar los roles y evitar LazyInitializationException
+    @Query("SELECT u FROM Usuario u LEFT JOIN FETCH u.roles WHERE (u.username = :param OR u.email = :param) AND u.active = true")
+    Optional<Usuario> findByUsernameAndActiveTrue(@Param("param") String param);
 
-    Optional<Usuario> findByEmailAndActiveTrue(String email);
+    @Query("SELECT u FROM Usuario u LEFT JOIN FETCH u.roles WHERE u.username = :param OR u.email = :param")
+    Optional<Usuario> findByUsername(@Param("param") String param);
+
+    @Query("SELECT u FROM Usuario u LEFT JOIN FETCH u.roles WHERE u.email = :email AND u.active = true")
+    Optional<Usuario> findByEmailAndActiveTrue(@Param("email") String email);
 
     @Query("SELECT u FROM Usuario u WHERE u.empresa.id = :empresaId AND u.active = true " +
            "AND (LOWER(u.username) LIKE LOWER(CONCAT('%', :search, '%')) " +

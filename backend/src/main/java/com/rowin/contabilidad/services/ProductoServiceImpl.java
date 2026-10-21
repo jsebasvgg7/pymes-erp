@@ -17,6 +17,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import java.util.stream.Collectors;
+
 @Service
 @Transactional
 public class ProductoServiceImpl extends BaseCrudService implements ProductoService {
@@ -167,31 +169,13 @@ public class ProductoServiceImpl extends BaseCrudService implements ProductoServ
     }
 
     @Override
-    @Transactional(readOnly = true)
-    public List<ProductoResponse> obtenerProductosConStockBajo(Long empresaId) {
-        Empresa empresa = getByIdOrThrow(empresaRepository, empresaId, "Empresa");
-        if (!isActive(empresa)) {
-            throw new ResourceNotFoundException("Empresa no encontrada: " + empresaId);
-        }
-
-        return productoRepository.findLowStockProducts(empresaId)
-            .stream()
-            .map(productoMapper::toResponse)
-            .toList();
+    public long contarProductosConStockBajo(Long empresaId) {
+        return productoRepository.countByEmpresaIdAndStockBajo(empresaId);
     }
 
     @Override
-    @Transactional(readOnly = true)
-    public List<ProductoResponse> obtenerProductosSinStock(Long empresaId) {
-        Empresa empresa = getByIdOrThrow(empresaRepository, empresaId, "Empresa");
-        if (!isActive(empresa)) {
-            throw new ResourceNotFoundException("Empresa no encontrada: " + empresaId);
-        }
-
-        return productoRepository.findOutOfStockProducts(empresaId)
-            .stream()
-            .map(productoMapper::toResponse)
-            .toList();
+    public long contarProductosSinStock(Long empresaId) {
+        return productoRepository.countByEmpresaIdAndSinStock(empresaId);
     }
 
     @Override
@@ -228,5 +212,23 @@ public class ProductoServiceImpl extends BaseCrudService implements ProductoServ
         // 5. Guardar producto
         Producto saved = productoRepository.save(entity);
         return productoMapper.toResponse(saved);
+    }
+
+    @Override
+        @Transactional(readOnly = true)
+        public List<ProductoResponse> obtenerProductosConStockBajo(Long empresaId) {
+            return productoRepository.findProductosConStockBajo(empresaId)
+                .stream()
+                .map(productoMapper::toResponse)
+                .collect(Collectors.toList());
+        }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<ProductoResponse> obtenerProductosSinStock(Long empresaId) {
+        return productoRepository.findProductosSinStock(empresaId)
+            .stream()
+            .map(productoMapper::toResponse)
+            .collect(Collectors.toList());
     }
 }

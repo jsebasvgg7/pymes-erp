@@ -43,16 +43,15 @@ public class DashboardController {
     @GetMapping("/resumen/{empresaId}")
     public ResponseEntity<Map<String, Object>> obtenerResumen(@PathVariable Long empresaId) {
         Map<String, Object> dashboard = new HashMap<>();
-
-        // Totales
         Pageable firstPage = PageRequest.of(0, 1);
+
+        // Totales usando consultas a la bd
         dashboard.put("totalClientes", clienteService.listarPorEmpresa(empresaId, firstPage).getTotalElements());
         dashboard.put("totalProveedores", proveedorService.listarPorEmpresa(empresaId, firstPage).getTotalElements());
         dashboard.put("totalProductos", productoService.listarPorEmpresa(empresaId, firstPage).getTotalElements());
 
-        // Stock bajo
-        dashboard.put("productosStockBajo", productoService.obtenerProductosConStockBajo(empresaId).size());
-        dashboard.put("productosSinStock", productoService.obtenerProductosSinStock(empresaId).size());
+        dashboard.put("productosStockBajo", productoService.contarProductosConStockBajo(empresaId));
+        dashboard.put("productosSinStock", productoService.contarProductosSinStock(empresaId));
 
         // Caja
         List<CajaResumenResponse> cajas = cajaService.obtenerResumenTodasCajas(empresaId);
@@ -62,10 +61,8 @@ public class DashboardController {
             .map(CajaResumenResponse::saldoActual)
             .reduce(BigDecimal.ZERO, BigDecimal::add);
         dashboard.put("saldoTotalCajas", saldoTotalCajas);
-
         dashboard.put("cajas", cajas);
 
-        // Fecha de consulta
         dashboard.put("fechaConsulta", LocalDateTime.now());
 
         return ResponseEntity.ok(dashboard);
