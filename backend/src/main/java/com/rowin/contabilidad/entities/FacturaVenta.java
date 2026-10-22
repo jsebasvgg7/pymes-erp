@@ -16,9 +16,13 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import jakarta.persistence.Index;
+import jakarta.persistence.Entity;
 
 @Entity
-@Table(name = "factura_venta")
+@Table(name = "factura_venta", indexes = {
+    @Index(name = "idx_factura_empresa_fecha", columnList = "empresa_id, fecha_emision")
+})
 public class FacturaVenta extends BaseEntity {
 
     public FacturaVenta() {

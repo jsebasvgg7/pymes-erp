@@ -9,7 +9,6 @@ import StatusBadge from "../components/StatusBadge";
 import { authService } from "../services/authService";
 import { cajaService, type MovimientoCajaResponse } from "../services/cajaService";
 import { compraService, type CompraResponse } from "../services/compraService";
-import { fetchAllPages } from "../services/pagination";
 import { productoService, type Producto } from "../services/ProductoService";
 import { ventaService, type FacturaVentaResponse } from "../services/VentaService";
 import {
@@ -81,24 +80,24 @@ export default function ReportesPage() {
 		setLoading(true);
 		setError(null);
 		try {
-			const [ventasData, comprasData, productosData, productosTotal, movimientosData, resumenes, ventasDiaData] = await Promise.all([
+			// LÍMITE ESTRICTO: Se eliminó fetchAllPages. Se obtienen los últimos registros para evitar cuellos de botella en memoria RAM.
+			const [ventasData, comprasData, productosData, movimientosData, resumenes, ventasDiaData] = await Promise.all([
 				ventaService.listarPorEmpresa(empresaId, 0, 1),
 				compraService.listarPorEmpresa(empresaId, 0, 100),
-				productoService.listarTodosPorEmpresa(empresaId),
-				productoService.listarPorEmpresa(empresaId, 0, 1),
-				fetchAllPages((page, size) => cajaService.listarMovimientosPorEmpresa(empresaId, page, size)),
+				productoService.listarPorEmpresa(empresaId, 0, 500),
+				cajaService.listarMovimientosPorEmpresa(empresaId, 0, 300),
 				cajaService.obtenerResumenTodas(empresaId),
 				cargarVentasHoyAyer(empresaId).catch(() => null)
 			]);
 
-			setProducts(productosData);
-			setCashMovements(movimientosData);
+			setProducts(productosData.content);
+			setCashMovements(movimientosData.content);
 			setPurchasesForVariation(comprasData.content);
 			setSaldoCaja(resumenes.reduce((acc, r) => acc + r.saldoActual, 0));
 			setTotales({
 				ventas: ventasData.totalElements,
 				compras: comprasData.totalElements,
-				productos: productosTotal.totalElements
+				productos: productosData.totalElements
 			});
 			setVentasDia(ventasDiaData);
 		} catch {
@@ -130,8 +129,10 @@ export default function ReportesPage() {
 		setPurchases([]);
 		setLoadingPeriodo(true);
 		setErrorPeriodo(null);
+
 		const inicio = `${periodo.inicio}T00:00:00`;
 		const fin = `${periodo.fin}T23:59:59.999999999`;
+
 		void Promise.all([
 			ventaService.obtenerPorPeriodo(empresaId, inicio, fin),
 			compraService.obtenerPorPeriodo(empresaId, inicio, fin)

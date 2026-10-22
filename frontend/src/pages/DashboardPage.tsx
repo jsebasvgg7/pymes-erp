@@ -36,8 +36,6 @@ function formatDateInput(value: Date) {
 	return value.toISOString().slice(0, 10);
 }
 
-// El backend espera LocalDateTime ISO completo (@DateTimeFormat ISO.DATE_TIME),
-// no solo la fecha — de lo contrario Spring falla el bind y responde 500.
 function toInicioDeDia(fechaYMD: string) {
 	return `${fechaYMD}T00:00:00`;
 }
@@ -83,6 +81,7 @@ export default function DashboardPage() {
 
 	const cargarDashboard = useCallback(
 		async (empresaIdActual: number, signalCancelled: () => boolean) => {
+			// LÍMITE ESTRICTO: Se reduce la carga de productos y clientes a 50 (suficientes para la métrica "nuevos hoy")
 			const [resumenData, cajaData, flujoData, productosData, clientesData, ventasDiaData] = await Promise.all([
 				dashboardService.obtenerResumen(empresaIdActual),
 				cajaService.listarMovimientosPorEmpresa(empresaIdActual, 0, 50),
@@ -90,8 +89,8 @@ export default function DashboardPage() {
 					console.error("Flujo de caja no disponible:", e);
 					return [] as FlujoCajaDiario[];
 				}),
-				productoService.listarPorEmpresa(empresaIdActual, 0, 200),
-				clienteService.listarPorEmpresa(empresaIdActual, 0, 200),
+				productoService.listarPorEmpresa(empresaIdActual, 0, 50),
+				clienteService.listarPorEmpresa(empresaIdActual, 0, 50),
 				cargarVentasHoyAyer(empresaIdActual).catch((e) => {
 					console.error("Ventas de hoy no disponibles:", e);
 					return null;
@@ -158,7 +157,6 @@ export default function DashboardPage() {
 		return () => {
 			cancelled = true;
 		};
-		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [empresaId]);
 
 	const esPrimerRenderRango = useRef(true);
@@ -177,7 +175,6 @@ export default function DashboardPage() {
 		return () => {
 			cancelled = true;
 		};
-		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [fechaInicio, fechaFin]);
 
 	async function handleRecargar() {
@@ -201,9 +198,9 @@ export default function DashboardPage() {
 	const variacionCaja =
 		netoCajaHoy !== 0
 			? {
-					direction: (netoCajaHoy > 0 ? "up" : "down") as "up" | "down",
-					text: `${formatCurrency(Math.abs(netoCajaHoy))} hoy`
-			  }
+				direction: (netoCajaHoy > 0 ? "up" : "down") as "up" | "down",
+				text: `${formatCurrency(Math.abs(netoCajaHoy))} hoy`
+			}
 			: undefined;
 
 	const variacionClientes = useMemo(
