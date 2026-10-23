@@ -1,6 +1,7 @@
 package com.rowin.contabilidad.services;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import com.rowin.contabilidad.dto.detalle.DetalleFacturaRequest;
 import com.rowin.contabilidad.dto.factura.CategoriaVentaResponse;
 import com.rowin.contabilidad.dto.factura.FacturaVentaCreateRequest;
@@ -191,6 +192,7 @@ public class FacturaVentaServiceImpl extends BaseCrudService implements FacturaV
         for (DetalleFacturaRequest detalleReq : request.detalles()) {
             DetalleFactura detalle = new DetalleFactura();
             detalle.setFacturaVenta(factura);
+            validarDecimalesDeCantidad(detalleReq.cantidad());
             detalle.setDescripcion(detalleReq.descripcion());
             detalle.setCantidad(detalleReq.cantidad());
             detalle.setPrecioUnitario(detalleReq.precioUnitario());
@@ -201,6 +203,8 @@ public class FacturaVentaServiceImpl extends BaseCrudService implements FacturaV
                 if (!isActive(producto)) {
                     throw new ResourceNotFoundException("Producto no encontrado: " + detalleReq.productoId());
                 }
+
+                validarUnidadDeCantidad(producto, detalleReq.cantidad());
 
                 // Validar stock
                 Inventario inventario = inventarioRepository.findByProductoIdAndActiveTrue(producto.getId())
@@ -227,9 +231,9 @@ public class FacturaVentaServiceImpl extends BaseCrudService implements FacturaV
                         }
                         impuestos.add(impuesto);
                         // Calcular impuesto
-                        BigDecimal impuestoMonto = detalleReq.cantidad()
+                        BigDecimal impuestoMonto = redondearMoneda(detalleReq.cantidad()
                             .multiply(detalleReq.precioUnitario())
-                            .multiply(impuesto.getPorcentaje().divide(new BigDecimal(100)));
+                            .multiply(impuesto.getPorcentaje().divide(new BigDecimal(100))));
                         totalImpuestos = totalImpuestos.add(impuestoMonto);
                     }
                     detalle.setImpuestos(impuestos);
@@ -237,7 +241,7 @@ public class FacturaVentaServiceImpl extends BaseCrudService implements FacturaV
             }
 
             // Calcular total del detalle
-            BigDecimal totalLinea = detalleReq.cantidad().multiply(detalleReq.precioUnitario());
+            BigDecimal totalLinea = redondearMoneda(detalleReq.cantidad().multiply(detalleReq.precioUnitario()));
             detalle.setTotalLinea(totalLinea);
             subtotal = subtotal.add(totalLinea);
 
@@ -405,4 +409,23 @@ public class FacturaVentaServiceImpl extends BaseCrudService implements FacturaV
         return com.rowin.contabilidad.utils.HistorialSemanal.agrupar(lineas, semanaInicial, semanaActual, primeraVenta);
     }
 
+    private static final int MAX_DECIMALES_CANTIDAD = 3;
+
+    private void validarDecimalesDeCantidad(BigDecimal cantidad) {
+        if (cantidad.stripTrailingZeros().scale() > MAX_DECIMALES_CANTIDAD) {
+            throw new IllegalArgumentException("La cantidad admite máximo " + MAX_DECIMALES_CANTIDAD + " decimales.");
+        }
+    }
+
+    private void validarUnidadDeCantidad(Producto producto, BigDecimal cantidad) {
+        boolean esDecimal = cantidad.stripTrailingZeros().scale() > 0;
+        UnidadMedida unidad = producto.getUnidadMedida();
+        if (esDecimal && (unidad == null || !unidad.permiteDecimales())) {
+            throw new IllegalArgumentException("El producto " + producto.getNombre() + " no admite cantidades decimales.");
+        }
+    }
+
+    private static BigDecimal redondearMoneda(BigDecimal valor) {
+        return valor.scale() > 2 ? valor.setScale(2, RoundingMode.HALF_UP) : valor;
+    }
 }

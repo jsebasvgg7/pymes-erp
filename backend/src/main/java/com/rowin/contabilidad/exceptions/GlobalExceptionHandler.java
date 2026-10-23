@@ -25,6 +25,11 @@ public class GlobalExceptionHandler {
 		return build(HttpStatus.NOT_FOUND, ex.getMessage(), request.getRequestURI(), null);
 	}
 
+	@ExceptionHandler(IllegalArgumentException.class)
+	public ResponseEntity<ApiErrorResponse> handleBadRequest(IllegalArgumentException ex, HttpServletRequest request) {
+		return build(HttpStatus.BAD_REQUEST, ex.getMessage(), request.getRequestURI(), null);
+	}
+
 	@ExceptionHandler(MethodArgumentNotValidException.class)
 	public ResponseEntity<ValidationErrorResponse> handleValidation(MethodArgumentNotValidException ex, HttpServletRequest request) {
 		Map<String, String> errors = new LinkedHashMap<>();
