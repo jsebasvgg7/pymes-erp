@@ -16,6 +16,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -374,4 +376,33 @@ public class FacturaVentaServiceImpl extends BaseCrudService implements FacturaV
             .map(row -> new CategoriaVentaResponse((String) row[0], row[1] instanceof BigDecimal bd ? bd : new BigDecimal(row[1].toString())))
             .toList();
     }
+
+        @Override
+    @Transactional(readOnly = true)
+    public List<com.rowin.contabilidad.dto.factura.VentaSemanalProductoResponse> obtenerHistorialSemanal(Long empresaId, int semanas) {
+        if (semanas < 1 || semanas > 104) {
+            throw new IllegalArgumentException("El número de semanas debe estar entre 1 y 104");
+        }
+        LocalDate semanaActual = com.rowin.contabilidad.utils.HistorialSemanal.inicioSemana(LocalDate.now());
+        LocalDate semanaInicial = semanaActual.minusWeeks(semanas - 1L);
+        LocalDateTime inicio = semanaInicial.atStartOfDay();
+        LocalDateTime fin = semanaActual.plusDays(6).atTime(LocalTime.MAX);
+
+        List<com.rowin.contabilidad.utils.HistorialSemanal.Linea> lineas = facturaVentaRepository
+            .findLineasVentaParaHistorial(empresaId, FacturaEstado.VENTAS_VALIDAS, inicio, fin)
+            .stream()
+            .map(r -> new com.rowin.contabilidad.utils.HistorialSemanal.Linea(
+                (LocalDateTime) r[0], (FacturaEstado) r[1], (Long) r[2], (String) r[3],
+                (java.math.BigDecimal) r[4], (java.math.BigDecimal) r[5],
+                (java.math.BigDecimal) r[6], (java.math.BigDecimal) r[7]))
+            .toList();
+
+        java.util.Map<Long, LocalDateTime> primeraVenta = new java.util.HashMap<>();
+        for (Object[] r : facturaVentaRepository.findPrimeraVentaPorProducto(empresaId, FacturaEstado.VENTAS_VALIDAS)) {
+            primeraVenta.put((Long) r[0], (LocalDateTime) r[1]);
+        }
+
+        return com.rowin.contabilidad.utils.HistorialSemanal.agrupar(lineas, semanaInicial, semanaActual, primeraVenta);
+    }
+
 }
