@@ -56,6 +56,7 @@ public class AuthServiceImpl implements AuthService {
     private final UsuarioMapper usuarioMapper;
     private final com.rowin.contabilidad.config.JwtTokenProvider jwtTokenProvider;
     private final FormaPagoCreditoSeeder formaPagoCreditoSeeder;
+    private final ConfiguracionEmpresaSeeder configuracionEmpresaSeeder;
     private final CajaRepository cajaRepository;
     private final FormaPagoRepository formaPagoRepository;
     private final AperturaCajaService aperturaCajaService;
@@ -75,6 +76,7 @@ public class AuthServiceImpl implements AuthService {
             UsuarioMapper usuarioMapper,
             com.rowin.contabilidad.config.JwtTokenProvider jwtTokenProvider,
             FormaPagoCreditoSeeder formaPagoCreditoSeeder,
+            ConfiguracionEmpresaSeeder configuracionEmpresaSeeder,
             CajaRepository cajaRepository,
             FormaPagoRepository formaPagoRepository,
             AperturaCajaService aperturaCajaService
@@ -87,6 +89,7 @@ public class AuthServiceImpl implements AuthService {
             this.usuarioMapper = usuarioMapper;
             this.jwtTokenProvider = jwtTokenProvider;
             this.formaPagoCreditoSeeder = formaPagoCreditoSeeder;
+            this.configuracionEmpresaSeeder = configuracionEmpresaSeeder;
             this.cajaRepository = cajaRepository;
             this.formaPagoRepository = formaPagoRepository;
             this.aperturaCajaService = aperturaCajaService;
@@ -171,6 +174,7 @@ public class AuthServiceImpl implements AuthService {
         }
 
         formaPagoCreditoSeeder.sembrar(savedEmpresa);
+        configuracionEmpresaSeeder.sembrar(savedEmpresa);
 
         Rol savedRole = rolRepository.findByEmpresaIdAndNombreIgnoreCaseAndActiveTrue(savedEmpresa.getId(), "ADMIN")
             .orElseGet(() -> {
@@ -310,6 +314,7 @@ public class AuthServiceImpl implements AuthService {
         nuevaEmpresa.setNombre(request.empresaNombre());
         nuevaEmpresa.setNit("PENDIENTE");
         nuevaEmpresa = empresaRepository.save(nuevaEmpresa);
+        configuracionEmpresaSeeder.sembrar(nuevaEmpresa);
 
         // 3. Crear Rol ADMIN para la empresa
         Rol rolAdmin = new Rol();

@@ -1,4 +1,5 @@
 .set {
+	--set-danger: #b91c1c;
 	display: grid;
 	gap: 16px;
 }
@@ -228,7 +229,7 @@
 .set__editMsg {
 	margin: 0;
 	font-size: 13px;
-	color: #b91c1c;
+	color: var(--set-danger);
 }
 
 @media (max-width: 860px) {

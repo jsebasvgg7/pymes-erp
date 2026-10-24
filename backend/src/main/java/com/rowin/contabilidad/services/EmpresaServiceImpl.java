@@ -18,15 +18,18 @@ public class EmpresaServiceImpl extends BaseCrudService implements EmpresaServic
 	private final EmpresaRepository empresaRepository;
 	private final EmpresaMapper empresaMapper;
 	private final FormaPagoCreditoSeeder formaPagoCreditoSeeder;
+	private final ConfiguracionEmpresaSeeder configuracionEmpresaSeeder;
 
 	public EmpresaServiceImpl(
 		EmpresaRepository empresaRepository,
 		EmpresaMapper empresaMapper,
-		FormaPagoCreditoSeeder formaPagoCreditoSeeder
+		FormaPagoCreditoSeeder formaPagoCreditoSeeder,
+		ConfiguracionEmpresaSeeder configuracionEmpresaSeeder
 	) {
 		this.empresaRepository = empresaRepository;
 		this.empresaMapper = empresaMapper;
 		this.formaPagoCreditoSeeder = formaPagoCreditoSeeder;
+		this.configuracionEmpresaSeeder = configuracionEmpresaSeeder;
 	}
 
 	@Override
@@ -50,6 +53,7 @@ public class EmpresaServiceImpl extends BaseCrudService implements EmpresaServic
 		Empresa entity = empresaMapper.toEntity(request);
 		Empresa saved = empresaRepository.save(entity);
 		formaPagoCreditoSeeder.sembrar(saved);
+		configuracionEmpresaSeeder.sembrar(saved);
 		return empresaMapper.toResponse(saved);
 	}
 

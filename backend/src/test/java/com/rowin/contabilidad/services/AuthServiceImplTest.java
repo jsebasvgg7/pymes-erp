@@ -46,6 +46,7 @@ class AuthServiceImplTest {
     @Mock private UsuarioMapper usuarioMapper;
     @Mock private JwtTokenProvider jwtTokenProvider;
     @Mock private FormaPagoCreditoSeeder formaPagoCreditoSeeder;
+    @Mock private ConfiguracionEmpresaSeeder configuracionEmpresaSeeder;
     @Mock private AperturaCajaService aperturaCajaService;
     @Mock private EntityManager entityManager;
     @Mock private Query lockQuery;
@@ -96,6 +97,7 @@ class AuthServiceImplTest {
         assertEquals("encoded-password", savedUsuario.getPasswordHash());
         assertEquals("ADMIN", savedUsuario.getRoles().iterator().next().getNombre());
         verify(formaPagoCreditoSeeder).sembrar(any(Empresa.class));
+        verify(configuracionEmpresaSeeder).sembrar(any(Empresa.class));
     }
 
     @Test
