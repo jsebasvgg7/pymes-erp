@@ -14,6 +14,7 @@ public interface InventarioSemanalRepository extends JpaRepository<InventarioSem
     List<Long> findProductoIdsBySemanaInicio(@Param("semana") LocalDate semana);
 
     @Query("SELECT s FROM InventarioSemanal s JOIN FETCH s.producto p " +
+           "LEFT JOIN FETCH p.inventario " +
            "WHERE s.empresa.id = :empresaId AND s.active = true AND s.semanaInicio >= :desde " +
            "ORDER BY s.semanaInicio, p.nombre")
     List<InventarioSemanal> findHistorial(@Param("empresaId") Long empresaId, @Param("desde") LocalDate desde);
