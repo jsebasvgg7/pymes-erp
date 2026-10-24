@@ -1,0 +1,36 @@
+diff --git a/frontend/src/pages/ConfiguracionPage.css b/frontend/src/pages/ConfiguracionPage.css
+index c1b4f5b..4cf8532 100644
+--- a/frontend/src/pages/ConfiguracionPage.css
++++ b/frontend/src/pages/ConfiguracionPage.css
+@@ -67,6 +67,7 @@
+ 
+ .set__panel {
+ 	min-width: 0;
++	min-height: 624px;
+ 	overflow: hidden;
+ 	background: var(--paper);
+ 	border: 1px solid var(--line);
+@@ -134,6 +135,8 @@
+ 	grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr) 112px;
+ 	gap: 16px;
+ 	align-items: center;
++	box-sizing: border-box;
++	min-height: 78px;
+ 	padding: 18px 0;
+ 	border-bottom: 1px solid var(--line);
+ }
+@@ -251,6 +254,14 @@
+ 		white-space: nowrap;
+ 	}
+ 
++	.set__panel {
++		min-height: 0;
++	}
++
++	.set__row {
++		min-height: 0;
++	}
++
+ 	.set__panelHead {
+ 		padding: 14px 16px;
+ 	}
