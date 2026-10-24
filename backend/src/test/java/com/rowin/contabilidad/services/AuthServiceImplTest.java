@@ -46,6 +46,7 @@ class AuthServiceImplTest {
     @Mock private UsuarioMapper usuarioMapper;
     @Mock private JwtTokenProvider jwtTokenProvider;
     @Mock private FormaPagoCreditoSeeder formaPagoCreditoSeeder;
+    @Mock private AperturaCajaService aperturaCajaService;
     @Mock private EntityManager entityManager;
     @Mock private Query lockQuery;
     @Mock private Authentication authentication;

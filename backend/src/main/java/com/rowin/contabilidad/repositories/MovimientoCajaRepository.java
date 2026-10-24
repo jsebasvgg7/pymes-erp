@@ -40,6 +40,12 @@ public interface MovimientoCajaRepository extends JpaRepository<MovimientoCaja, 
            "GROUP BY m.caja.id, m.tipo")
     List<Object[]> resumenPorCajaYTipo(@Param("cajaIds") Collection<Long> cajaIds);
 
+    @Query("SELECT m.formaPago.tipo, m.tipo, SUM(m.monto) " +
+           "FROM MovimientoCaja m " +
+           "WHERE m.apertura.id = :aperturaId AND m.active = true " +
+           "GROUP BY m.formaPago.tipo, m.tipo")
+    List<Object[]> totalesPorApertura(@Param("aperturaId") Long aperturaId);
+
     @Query("SELECT m.fecha AS fecha, m.tipo AS tipo, m.monto AS monto " +
            "FROM MovimientoCaja m " +
            "WHERE m.empresa.id = :empresaId AND m.active = true " +

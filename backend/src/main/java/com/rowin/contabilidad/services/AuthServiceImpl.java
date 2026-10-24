@@ -58,6 +58,7 @@ public class AuthServiceImpl implements AuthService {
     private final FormaPagoCreditoSeeder formaPagoCreditoSeeder;
     private final CajaRepository cajaRepository;
     private final FormaPagoRepository formaPagoRepository;
+    private final AperturaCajaService aperturaCajaService;
 
     @PersistenceContext
     private EntityManager entityManager;
@@ -75,7 +76,8 @@ public class AuthServiceImpl implements AuthService {
             com.rowin.contabilidad.config.JwtTokenProvider jwtTokenProvider,
             FormaPagoCreditoSeeder formaPagoCreditoSeeder,
             CajaRepository cajaRepository,
-            FormaPagoRepository formaPagoRepository
+            FormaPagoRepository formaPagoRepository,
+            AperturaCajaService aperturaCajaService
         ) {
             this.authenticationManager = authenticationManager;
             this.usuarioRepository = usuarioRepository;
@@ -87,6 +89,7 @@ public class AuthServiceImpl implements AuthService {
             this.formaPagoCreditoSeeder = formaPagoCreditoSeeder;
             this.cajaRepository = cajaRepository;
             this.formaPagoRepository = formaPagoRepository;
+            this.aperturaCajaService = aperturaCajaService;
         }
 
         @Override
@@ -340,7 +343,8 @@ public class AuthServiceImpl implements AuthService {
         cajaInicial.setSaldoInicial(BigDecimal.ZERO);
         cajaInicial.setSaldoActual(BigDecimal.ZERO);
         cajaInicial.setEmpresa(nuevaEmpresa);
-        cajaRepository.save(cajaInicial);
+        Caja cajaGuardada = cajaRepository.save(cajaInicial);
+        aperturaCajaService.abrirInicial(cajaGuardada, nuevoAdmin);
 
         // 7. Generar y devolver la sesión activa (LoginResponse)
         Authentication authentication = authenticationManager.authenticate(

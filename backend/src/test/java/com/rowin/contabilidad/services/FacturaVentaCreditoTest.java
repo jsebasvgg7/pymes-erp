@@ -3,6 +3,7 @@ package com.rowin.contabilidad.services;
 import com.rowin.contabilidad.dto.detalle.DetalleFacturaRequest;
 import com.rowin.contabilidad.dto.factura.FacturaVentaCreateRequest;
 import com.rowin.contabilidad.dto.factura.FacturaVentaUpdateRequest;
+import com.rowin.contabilidad.entities.AperturaCaja;
 import com.rowin.contabilidad.entities.Caja;
 import com.rowin.contabilidad.entities.Cliente;
 import com.rowin.contabilidad.entities.CuentaPorCobrar;
@@ -58,6 +59,7 @@ class FacturaVentaCreditoTest {
     @Mock private CajaRepository cajaRepository;
     @Mock private FacturaVentaMapper facturaVentaMapper;
     @Mock private CuentaPorCobrarRepository cuentaPorCobrarRepository;
+    @Mock private AperturaCajaService aperturaCajaService;
 
     @InjectMocks private FacturaVentaServiceImpl service;
 
@@ -101,7 +103,9 @@ class FacturaVentaCreditoTest {
             when(clienteRepository.findById(2L)).thenReturn(Optional.of(cliente));
         }
         when(formaPagoRepository.findById(3L)).thenReturn(Optional.of(formaPago));
-        when(cajaRepository.findByEmpresaIdAndActiveTrue(1L)).thenReturn(List.of(caja));
+        AperturaCaja apertura = new AperturaCaja();
+        apertura.setCaja(caja);
+        when(aperturaCajaService.exigirAperturaDeEmpresa(1L)).thenReturn(apertura);
         when(facturaVentaMapper.toEntity(request)).thenReturn(new FacturaVenta());
         when(facturaVentaRepository.save(any(FacturaVenta.class))).thenAnswer(inv -> inv.getArgument(0));
     }

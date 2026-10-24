@@ -41,6 +41,7 @@ public class FacturaVentaServiceImpl extends BaseCrudService implements FacturaV
     private final CajaRepository cajaRepository;
     private final FacturaVentaMapper facturaVentaMapper;
     private final CuentaPorCobrarRepository cuentaPorCobrarRepository;
+    private final AperturaCajaService aperturaCajaService;
 
     public FacturaVentaServiceImpl(
         FacturaVentaRepository facturaVentaRepository,
@@ -54,7 +55,8 @@ public class FacturaVentaServiceImpl extends BaseCrudService implements FacturaV
         MovimientoCajaRepository movimientoCajaRepository,
         CajaRepository cajaRepository,
         FacturaVentaMapper facturaVentaMapper,
-        CuentaPorCobrarRepository cuentaPorCobrarRepository
+        CuentaPorCobrarRepository cuentaPorCobrarRepository,
+        AperturaCajaService aperturaCajaService
     ) {
         this.facturaVentaRepository = facturaVentaRepository;
         this.detalleFacturaRepository = detalleFacturaRepository;
@@ -68,6 +70,7 @@ public class FacturaVentaServiceImpl extends BaseCrudService implements FacturaV
         this.cajaRepository = cajaRepository;
         this.facturaVentaMapper = facturaVentaMapper;
         this.cuentaPorCobrarRepository = cuentaPorCobrarRepository;
+        this.aperturaCajaService = aperturaCajaService;
     }
 
     @Override
@@ -154,11 +157,8 @@ public class FacturaVentaServiceImpl extends BaseCrudService implements FacturaV
             throw new IllegalArgumentException("La factura debe tener al menos un detalle");
         }
 
-        // 5. Obtener caja activa para la empresa (por ahora tomamos la primera)
-        Caja caja = cajaRepository.findByEmpresaIdAndActiveTrue(empresa.getId())
-            .stream()
-            .findFirst()
-            .orElseThrow(() -> new ResourceNotFoundException("No hay una caja activa para esta empresa"));
+        AperturaCaja apertura = aperturaCajaService.exigirAperturaDeEmpresa(empresa.getId());
+        Caja caja = apertura.getCaja();
 
         // 6. Crear la factura
         FacturaVenta factura = facturaVentaMapper.toEntity(request);
@@ -278,6 +278,7 @@ public class FacturaVentaServiceImpl extends BaseCrudService implements FacturaV
             movimiento.setEmpresa(empresa);
             movimiento.setCaja(caja);
             movimiento.setFormaPago(formaPago);
+            movimiento.setApertura(apertura);
             movimiento.setFecha(LocalDateTime.now());
             movimiento.setTipo(TipoMovimientoCaja.INGRESO);
             movimiento.setMonto(savedFactura.getTotal());

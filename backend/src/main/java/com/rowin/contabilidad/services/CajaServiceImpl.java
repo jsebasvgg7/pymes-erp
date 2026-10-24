@@ -6,6 +6,7 @@ import com.rowin.contabilidad.dto.caja.CajaResumenResponse;
 import com.rowin.contabilidad.dto.caja.FlujoCajaDiarioResponse;
 import com.rowin.contabilidad.dto.caja.MovimientoCajaRequest;
 import com.rowin.contabilidad.dto.caja.MovimientoCajaResponse;
+import com.rowin.contabilidad.entities.AperturaCaja;
 import com.rowin.contabilidad.entities.Caja;
 import com.rowin.contabilidad.entities.Empresa;
 import com.rowin.contabilidad.entities.FormaPago;
@@ -38,6 +39,7 @@ public class CajaServiceImpl extends BaseCrudService implements CajaService {
     private final CajaRepository cajaRepository;
     private final EmpresaRepository empresaRepository;
     private final FormaPagoRepository formaPagoRepository;
+    private final AperturaCajaService aperturaCajaService;
     private final CajaMapper cajaMapper;
 
     public CajaServiceImpl(
@@ -45,12 +47,14 @@ public class CajaServiceImpl extends BaseCrudService implements CajaService {
         CajaRepository cajaRepository,
         EmpresaRepository empresaRepository,
         FormaPagoRepository formaPagoRepository,
+        AperturaCajaService aperturaCajaService,
         CajaMapper cajaMapper
     ) {
         this.movimientoCajaRepository = movimientoCajaRepository;
         this.cajaRepository = cajaRepository;
         this.empresaRepository = empresaRepository;
         this.formaPagoRepository = formaPagoRepository;
+        this.aperturaCajaService = aperturaCajaService;
         this.cajaMapper = cajaMapper;
     }
 
@@ -127,6 +131,8 @@ public class CajaServiceImpl extends BaseCrudService implements CajaService {
             throw new ResourceNotFoundException("Caja no encontrada: " + request.cajaId());
         }
 
+        AperturaCaja apertura = aperturaCajaService.exigirAperturaDeCaja(caja.getId());
+
         FormaPago formaPago = null;
         if (request.formaPagoId() != null) {
             formaPago = getByIdOrThrow(formaPagoRepository, request.formaPagoId(), "FormaPago");
@@ -141,6 +147,7 @@ public class CajaServiceImpl extends BaseCrudService implements CajaService {
             movimiento.setTipoReferencia(TipoReferenciaMovimientoCaja.AJUSTE);
         }
 
+        movimiento.setApertura(apertura);
         movimiento.setFecha(LocalDateTime.now());
         MovimientoCaja saved = movimientoCajaRepository.save(movimiento);
 

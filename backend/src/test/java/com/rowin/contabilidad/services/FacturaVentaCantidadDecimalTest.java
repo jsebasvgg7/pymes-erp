@@ -2,6 +2,7 @@ package com.rowin.contabilidad.services;
 
 import com.rowin.contabilidad.dto.detalle.DetalleFacturaRequest;
 import com.rowin.contabilidad.dto.factura.FacturaVentaCreateRequest;
+import com.rowin.contabilidad.entities.AperturaCaja;
 import com.rowin.contabilidad.entities.Caja;
 import com.rowin.contabilidad.entities.Empresa;
 import com.rowin.contabilidad.entities.FacturaVenta;
@@ -58,6 +59,7 @@ class FacturaVentaCantidadDecimalTest {
     @Mock private CajaRepository cajaRepository;
     @Mock private FacturaVentaMapper facturaVentaMapper;
     @Mock private CuentaPorCobrarRepository cuentaPorCobrarRepository;
+    @Mock private AperturaCajaService aperturaCajaService;
 
     @InjectMocks private FacturaVentaServiceImpl service;
 
@@ -87,7 +89,9 @@ class FacturaVentaCantidadDecimalTest {
 
         when(empresaRepository.findById(1L)).thenReturn(Optional.of(empresa));
         when(formaPagoRepository.findById(3L)).thenReturn(Optional.of(formaPago));
-        when(cajaRepository.findByEmpresaIdAndActiveTrue(1L)).thenReturn(List.of(caja));
+        AperturaCaja apertura = new AperturaCaja();
+        apertura.setCaja(caja);
+        when(aperturaCajaService.exigirAperturaDeEmpresa(1L)).thenReturn(apertura);
         when(productoRepository.findById(10L)).thenReturn(Optional.of(producto));
         when(facturaVentaMapper.toEntity(any(FacturaVentaCreateRequest.class))).thenReturn(new FacturaVenta());
     }

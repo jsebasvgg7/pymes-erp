@@ -23,6 +23,10 @@ public class MovimientoCaja extends BaseEntity {
     @JoinColumn(name = "forma_pago_id")
     private FormaPago formaPago;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "apertura_id")
+    private AperturaCaja apertura;
+
     @Column(nullable = false)
     private LocalDateTime fecha;
 
@@ -54,6 +58,10 @@ public class MovimientoCaja extends BaseEntity {
 
     public FormaPago getFormaPago() {
         return formaPago;
+    }
+
+    public AperturaCaja getApertura() {
+        return apertura;
     }
 
     public LocalDateTime getFecha() {
@@ -91,6 +99,10 @@ public class MovimientoCaja extends BaseEntity {
 
     public void setFormaPago(FormaPago formaPago) {
         this.formaPago = formaPago;
+    }
+
+    public void setApertura(AperturaCaja apertura) {
+        this.apertura = apertura;
     }
 
     public void setFecha(LocalDateTime fecha) {

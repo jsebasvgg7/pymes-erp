@@ -1,5 +1,6 @@
 package com.rowin.contabilidad.services;
 
+import com.rowin.contabilidad.entities.AperturaCaja;
 import com.rowin.contabilidad.entities.Caja;
 import com.rowin.contabilidad.entities.Cliente;
 import com.rowin.contabilidad.entities.CuentaPorCobrar;
@@ -49,6 +50,7 @@ class ClienteServiceImplAbonoTest {
     @Mock private CajaRepository cajaRepository;
     @Mock private MovimientoCajaRepository movimientoCajaRepository;
     @Mock private FacturaVentaRepository facturaVentaRepository;
+    @Mock private AperturaCajaService aperturaCajaService;
 
     @InjectMocks private ClienteServiceImpl service;
 
@@ -95,7 +97,9 @@ class ClienteServiceImplAbonoTest {
     }
 
     private void stubCajaYDeudas(CuentaPorCobrar... cuentas) {
-        when(cajaRepository.findByEmpresaIdAndActiveTrue(1L)).thenReturn(List.of(caja));
+        AperturaCaja apertura = new AperturaCaja();
+        apertura.setCaja(caja);
+        when(aperturaCajaService.exigirAperturaDeEmpresa(1L)).thenReturn(apertura);
         when(cuentaPorCobrarRepository.findPendientesByClienteId(2L)).thenReturn(List.of(cuentas));
     }
 

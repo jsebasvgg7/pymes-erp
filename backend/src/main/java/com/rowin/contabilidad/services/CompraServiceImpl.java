@@ -35,6 +35,7 @@ public class CompraServiceImpl extends BaseCrudService implements CompraService 
     private final MovimientoCajaRepository movimientoCajaRepository;
     private final CajaRepository cajaRepository;
     private final CompraMapper compraMapper;
+    private final AperturaCajaService aperturaCajaService;
 
     public CompraServiceImpl(
         CompraRepository compraRepository,
@@ -47,7 +48,8 @@ public class CompraServiceImpl extends BaseCrudService implements CompraService 
         ImpuestoRepository impuestoRepository,
         MovimientoCajaRepository movimientoCajaRepository,
         CajaRepository cajaRepository,
-        CompraMapper compraMapper
+        CompraMapper compraMapper,
+        AperturaCajaService aperturaCajaService
     ) {
         this.compraRepository = compraRepository;
         this.detalleCompraRepository = detalleCompraRepository;
@@ -60,6 +62,7 @@ public class CompraServiceImpl extends BaseCrudService implements CompraService 
         this.movimientoCajaRepository = movimientoCajaRepository;
         this.cajaRepository = cajaRepository;
         this.compraMapper = compraMapper;
+        this.aperturaCajaService = aperturaCajaService;
     }
 
     @Override
@@ -134,11 +137,8 @@ public class CompraServiceImpl extends BaseCrudService implements CompraService 
             throw new IllegalArgumentException("La compra debe tener al menos un detalle");
         }
 
-        // 5. Obtener caja activa para la empresa
-        Caja caja = cajaRepository.findByEmpresaIdAndActiveTrue(empresa.getId())
-            .stream()
-            .findFirst()
-            .orElseThrow(() -> new ResourceNotFoundException("No hay una caja activa para esta empresa"));
+        AperturaCaja apertura = aperturaCajaService.exigirAperturaDeEmpresa(empresa.getId());
+        Caja caja = apertura.getCaja();
 
         // 6. Crear la compra
         Compra compra = compraMapper.toEntity(request);
@@ -245,6 +245,7 @@ public class CompraServiceImpl extends BaseCrudService implements CompraService 
         movimiento.setEmpresa(empresa);
         movimiento.setCaja(caja);
         movimiento.setFormaPago(formaPago);
+        movimiento.setApertura(apertura);
         movimiento.setFecha(LocalDateTime.now());
         movimiento.setTipo(TipoMovimientoCaja.EGRESO);
         movimiento.setMonto(savedCompra.getTotal());

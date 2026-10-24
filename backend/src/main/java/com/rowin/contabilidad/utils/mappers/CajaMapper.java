@@ -37,6 +37,7 @@ public interface CajaMapper {
     @Mapping(target = "empresa", source = "empresa")
     @Mapping(target = "caja", source = "caja")
     @Mapping(target = "formaPago", source = "formaPago")
+    @Mapping(target = "apertura", ignore = true)
     @Mapping(target = "fecha", ignore = true)
     @Mapping(target = "tipo", source = "request.tipo")
     @Mapping(target = "monto", source = "request.monto")

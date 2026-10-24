@@ -35,6 +35,7 @@ public class ClienteServiceImpl extends BaseCrudService implements ClienteServic
     private final CajaRepository cajaRepository;
     private final MovimientoCajaRepository movimientoCajaRepository;
     private final FacturaVentaRepository facturaVentaRepository;
+    private final AperturaCajaService aperturaCajaService;
 
     public ClienteServiceImpl(
         ClienteRepository clienteRepository,
@@ -44,7 +45,8 @@ public class ClienteServiceImpl extends BaseCrudService implements ClienteServic
         FormaPagoRepository formaPagoRepository,
         CajaRepository cajaRepository,
         MovimientoCajaRepository movimientoCajaRepository,
-        FacturaVentaRepository facturaVentaRepository
+        FacturaVentaRepository facturaVentaRepository,
+        AperturaCajaService aperturaCajaService
     ) {
         this.clienteRepository = clienteRepository;
         this.empresaRepository = empresaRepository;
@@ -54,6 +56,7 @@ public class ClienteServiceImpl extends BaseCrudService implements ClienteServic
         this.cajaRepository = cajaRepository;
         this.movimientoCajaRepository = movimientoCajaRepository;
         this.facturaVentaRepository = facturaVentaRepository;
+        this.aperturaCajaService = aperturaCajaService;
     }
 
     @Override
@@ -174,9 +177,8 @@ public class ClienteServiceImpl extends BaseCrudService implements ClienteServic
                 throw new IllegalArgumentException("Un abono no se puede pagar con crédito.");
             }
 
-            Caja caja = cajaRepository.findByEmpresaIdAndActiveTrue(cliente.getEmpresa().getId())
-                .stream().findFirst()
-                .orElseThrow(() -> new ResourceNotFoundException("No hay una caja activa para procesar el abono"));
+            AperturaCaja apertura = aperturaCajaService.exigirAperturaDeEmpresa(cliente.getEmpresa().getId());
+            Caja caja = apertura.getCaja();
 
             List<CuentaPorCobrar> pendientes = cuentaPorCobrarRepository.findPendientesByClienteId(clienteId);
             BigDecimal deudaTotal = pendientes.stream()
@@ -216,6 +218,7 @@ public class ClienteServiceImpl extends BaseCrudService implements ClienteServic
             movimiento.setEmpresa(cliente.getEmpresa());
             movimiento.setCaja(caja);
             movimiento.setFormaPago(formaPago);
+            movimiento.setApertura(apertura);
             movimiento.setFecha(LocalDateTime.now());
             movimiento.setTipo(TipoMovimientoCaja.INGRESO);
             movimiento.setMonto(monto);
