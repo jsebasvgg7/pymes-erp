@@ -8,10 +8,7 @@ import { ChartTooltip } from "../charts/tooltip/chart-tooltip";
 import type { FlujoCajaDiario } from "../../services/cajaService";
 import { calcularFlujoCaja, type Periodo } from "../../services/dashboardAnalytics";
 import "./dashboard-charts.css";
-
-function formatCurrencyShort(value: number) {
-	return value.toLocaleString("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 });
-}
+import { formatCurrency as formatCurrencyShort, useFormato } from "../../utils/formatoConfig";
 
 type CashFlowChartProps = {
 	puntosDiarios: FlujoCajaDiario[];
@@ -24,6 +21,7 @@ const PERIODOS: Array<{ value: Periodo; label: string }> = [
 ];
 
 export default function CashFlowChart({ puntosDiarios }: CashFlowChartProps) {
+	useFormato();
 	const [periodo, setPeriodo] = useState<Periodo>("mensual");
 
 	const { puntos, flujoNeto } = useMemo(

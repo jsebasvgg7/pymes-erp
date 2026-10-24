@@ -16,6 +16,7 @@ import { clienteService, type Cliente, obtenerSaldosPendientes, abonarDeuda } fr
 import { useAccionRapida } from "../hooks/useAccionRapida";
 import { formaPagoService, type FormaPago } from "../services/formaPagoService";
 import "./ClientesPage.css";
+import { formatCurrency, formatDate, useFormato } from "../utils/formatoConfig";
 
 type ClienteFormState = {
 	nombre: string;
@@ -34,12 +35,13 @@ const defaultFormState: ClienteFormState = {
 };
 
 function DeudaBadge({ deuda, onAbonar }: { deuda: number; onAbonar: () => void }) {
+	useFormato();
 	if (deuda <= 0) return null;
 
 	return (
 		<div className="cli__debt">
 			<span className="cli__debtTag">
-				Deuda: {deuda.toLocaleString("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 })}
+				Deuda: {formatCurrency(deuda)}
 			</span>
 			<button type="button" className="cli__debtBtn" onClick={onAbonar}>
 				Abonar
@@ -49,6 +51,7 @@ function DeudaBadge({ deuda, onAbonar }: { deuda: number; onAbonar: () => void }
 }
 
 export default function ClientesPage() {
+	const formato = useFormato();
 	const empresaId = authService.getUsuario()?.empresaId;
 
 	const [clientes, setClientes] = useState<Cliente[]>([]);
@@ -233,11 +236,7 @@ export default function ClientesPage() {
 		return clientes.filter((c) => c.nombre.toLowerCase().includes(q));
 	}, [clientes, searchQuery]);
 
-	const formatFecha = useCallback(
-		(iso: string) =>
-			new Date(iso).toLocaleDateString("en-GB", { day: "2-digit", month: "2-digit", year: "numeric" }),
-		[]
-	);
+	const formatFecha = useCallback((iso: string) => formatDate(iso), [formato]);
 
 	const resumen = useMemo(() => {
 		const activos = clientes.filter((c) => c.active).length;
@@ -516,7 +515,7 @@ export default function ClientesPage() {
 							/>
 							{abonoExcede ? (
 								<span className="cli__fieldError">
-									El abono no puede superar la deuda ({abonoDeuda.toLocaleString("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 })}).
+									El abono no puede superar la deuda ({formatCurrency(abonoDeuda)}).
 								</span>
 							) : null}
 						</div>

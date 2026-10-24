@@ -31,10 +31,7 @@ import {
 } from "../services/comparacionDiaria";
 import "../components/dashboard/dashboard-charts.css";
 import "./DashboardPage.css";
-
-function formatCurrency(value: number) {
-	return value.toLocaleString("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 });
-}
+import { formatCurrency, useFormato } from "../utils/formatoConfig";
 
 function formatDateInput(value: Date) {
 	return value.toISOString().slice(0, 10);
@@ -62,6 +59,7 @@ type MovimientoUnificado = {
 const RANGO_DIAS_DEFECTO = 240;
 
 export default function DashboardPage() {
+	useFormato();
 	const usuario = authService.getUsuario();
 	const empresaId = usuario?.empresaId;
 	const { estados: estadosCaja } = useEstadoCaja(empresaId);

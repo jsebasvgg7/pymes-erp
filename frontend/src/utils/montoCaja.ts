@@ -1,3 +1,5 @@
+import { formatCurrency } from "./formatoConfig";
+
 export function parseMonto(value: string): number | null {
 	const limpio = value.replace(/[^\d.,]/g, "");
 	if (!limpio) return null;
@@ -12,7 +14,7 @@ export function parseMonto(value: string): number | null {
 }
 
 export function formatoMoneda(value: number | null | undefined): string {
-	return (value ?? 0).toLocaleString("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 });
+	return formatCurrency(value ?? 0);
 }
 
 export function mensajeDeError(err: unknown, fallback: string): string {

@@ -18,6 +18,7 @@ import { formaPagoService, type FormaPago } from "../services/formaPagoService";
 import { productoService, type Producto } from "../services/ProductoService";
 import { ventaService, type FacturaVentaResponse } from "../services/VentaService";
 import "./PosPage.css";
+import { formatCurrency, formatDateTime, useFormato } from "../utils/formatoConfig";
 
 type CartLine = {
 	productId: number;
@@ -89,15 +90,6 @@ const STATUS_LABELS: Record<StockStatus, string> = {
 	out: "Agotado"
 };
 
-function formatCurrency(value: number) {
-	return value.toLocaleString("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 });
-}
-
-function formatDateTime(value: string) {
-	const d = new Date(value);
-	return Number.isNaN(d.getTime()) ? value : d.toLocaleString("es-CO");
-}
-
 function formatUnits(stock: number, unidadMedida: string) {
 	const labels = UNIT_LABELS[unidadMedida] ?? UNIT_LABELS.UNIDAD;
 	return `${stock.toLocaleString("es-CO")} ${stock === 1 ? labels[0] : labels[1]}`;
@@ -140,6 +132,7 @@ function extractErrorMessage(err: unknown, fallback: string): string {
 }
 
 export default function PosPage() {
+	useFormato();
 	const empresaId = authService.getUsuario()?.empresaId;
 	const { estados: estadosCaja, cargado: estadosCargados } = useEstadoCaja(empresaId);
 	const sinCajaAbierta = estadosCargados && estadosCaja.length > 0 && !estadosCaja.some((e) => e.abierta);

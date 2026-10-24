@@ -6,9 +6,11 @@ import ConfigNav from "../components/configuracion/ConfigNav";
 import ConfigFila from "../components/configuracion/ConfigFila";
 import ConfigModalEditar from "../components/configuracion/ConfigModalEditar";
 import { describirError, errorSesion, type ErrorPagina } from "../utils/erroresPagina";
-import { MODULOS_CONFIG, type CampoEmpresa, type FilaConfig } from "../utils/configuracionModulos";
+import { MODULOS_CONFIG, type FilaConfig } from "../utils/configuracionModulos";
 import { authService } from "../services/authService";
 import { empresaService, type Empresa, type EmpresaUpdateRequest } from "../services/empresaService";
+import { configuracionService, type Configuracion } from "../services/configuracionService";
+import { aplicarFormatoEmpresa } from "../hooks/useFormatoEmpresa";
 import "./ConfiguracionPage.css";
 
 function extractErrorMessage(err: unknown, fallback: string): string {
@@ -19,8 +21,15 @@ function extractErrorMessage(err: unknown, fallback: string): string {
 	return fallback;
 }
 
-function valorDeCampo(empresa: Empresa | null, campo: CampoEmpresa): string {
-	return empresa?.[campo] ?? "";
+function valorDeFila(fila: FilaConfig, empresa: Empresa | null, configuracion: Configuracion | null): string {
+	if (fila.campo) return empresa?.[fila.campo] ?? "";
+	if (fila.campoConfig) return String(configuracion?.[fila.campoConfig] ?? "");
+	return "";
+}
+
+function textoDeFila(fila: FilaConfig, empresa: Empresa | null, configuracion: Configuracion | null): string {
+	const valor = valorDeFila(fila, empresa, configuracion);
+	return fila.opciones?.find((opcion) => opcion.valor === valor)?.etiqueta ?? valor;
 }
 
 export default function ConfiguracionPage() {
@@ -29,6 +38,7 @@ export default function ConfiguracionPage() {
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState<ErrorPagina | null>(null);
 	const [empresa, setEmpresa] = useState<Empresa | null>(null);
+	const [configuracion, setConfiguracion] = useState<Configuracion | null>(null);
 	const [moduloActivo, setModuloActivo] = useState(MODULOS_CONFIG[0].id);
 	const [editando, setEditando] = useState<FilaConfig | null>(null);
 	const [guardando, setGuardando] = useState(false);
@@ -46,7 +56,13 @@ export default function ConfiguracionPage() {
 		setLoading(true);
 		setError(null);
 		try {
-			setEmpresa(await empresaService.obtenerPorId(empresaId));
+			const [empresaCargada, configuracionCargada] = await Promise.all([
+				empresaService.obtenerPorId(empresaId),
+				configuracionService.obtener(empresaId)
+			]);
+			setEmpresa(empresaCargada);
+			setConfiguracion(configuracionCargada);
+			aplicarFormatoEmpresa(empresaId, configuracionCargada);
 		} catch (err) {
 			setError(describirError("configuracion", err));
 		} finally {
@@ -87,22 +103,28 @@ export default function ConfiguracionPage() {
 	};
 
 	const guardarCampo = async (valor: string) => {
-		if (!editando?.campo || !empresa || !empresaId) return;
-
-		const solicitud: EmpresaUpdateRequest = {
-			nombre: empresa.nombre ?? "",
-			nit: empresa.nit ?? "",
-			direccion: empresa.direccion ?? "",
-			telefono: empresa.telefono ?? "",
-			email: empresa.email ?? ""
-		};
-		solicitud[editando.campo] = valor;
+		if (!editando || !empresa || !empresaId) return;
+		const { campo, campoConfig } = editando;
+		if (!campo && !campoConfig) return;
 
 		setGuardando(true);
 		setErrorGuardado(null);
 		try {
-			const actualizada = await empresaService.actualizar(empresaId, solicitud);
-			setEmpresa(actualizada);
+			if (campoConfig) {
+				const actualizada = await configuracionService.actualizar(empresaId, { [campoConfig]: valor });
+				setConfiguracion(actualizada);
+				aplicarFormatoEmpresa(empresaId, actualizada);
+			} else if (campo) {
+				const solicitud: EmpresaUpdateRequest = {
+					nombre: empresa.nombre ?? "",
+					nit: empresa.nit ?? "",
+					direccion: empresa.direccion ?? "",
+					telefono: empresa.telefono ?? "",
+					email: empresa.email ?? ""
+				};
+				solicitud[campo] = valor;
+				setEmpresa(await empresaService.actualizar(empresaId, solicitud));
+			}
 			setEditando(null);
 			mostrarAviso(`${editando.etiqueta} actualizado.`);
 		} catch (err) {
@@ -162,7 +184,7 @@ export default function ConfiguracionPage() {
 							<ConfigFila
 								key={fila.id}
 								fila={fila}
-								valor={fila.campo ? valorDeCampo(empresa, fila.campo) : ""}
+								valor={textoDeFila(fila, empresa, configuracion)}
 								onEditar={abrirEdicion}
 							/>
 						))}
@@ -170,11 +192,11 @@ export default function ConfiguracionPage() {
 				</section>
 			</div>
 
-			{editando?.campo ? (
+			{editando ? (
 				<ConfigModalEditar
 					key={editando.id}
 					fila={editando}
-					valorInicial={valorDeCampo(empresa, editando.campo)}
+					valorInicial={valorDeFila(editando, empresa, configuracion)}
 					guardando={guardando}
 					error={errorGuardado}
 					onGuardar={guardarCampo}

@@ -25,8 +25,11 @@ export default function ConfigModalEditar({ fila, valorInicial, guardando, error
 		if (fila.tipoInput === "email" && limpio.length > 0 && !EMAIL_REGEX.test(limpio)) {
 			return "Escribe un correo válido, por ejemplo nombre@dominio.com.";
 		}
+		if (fila.patron && limpio.length > 0 && !fila.patron.test(limpio)) {
+			return fila.mensajePatron ?? "El valor no es válido.";
+		}
 		return null;
-	}, [valor, fila.requerido, fila.tipoInput]);
+	}, [valor, fila.requerido, fila.tipoInput, fila.patron, fila.mensajePatron]);
 
 	const sinCambios = valor.trim() === valorInicial.trim();
 	const mensaje = error ?? (mensajeValidacion && !sinCambios ? mensajeValidacion : null);
@@ -58,16 +61,33 @@ export default function ConfigModalEditar({ fila, valorInicial, guardando, error
 		>
 			<form id={FORM_ID} className="set__editForm" onSubmit={handleSubmit} noValidate>
 				<label htmlFor="set-edit-input">{fila.etiqueta}</label>
-				<input
-					id="set-edit-input"
-					type={fila.tipoInput ?? "text"}
-					value={valor}
-					maxLength={fila.maxLength}
-					onChange={(e) => setValor(e.target.value)}
-					autoFocus
-					aria-invalid={mensaje ? true : undefined}
-					aria-describedby={mensaje ? "set-edit-msg" : undefined}
-				/>
+				{fila.opciones ? (
+					<select
+						id="set-edit-input"
+						value={valor}
+						onChange={(e) => setValor(e.target.value)}
+						autoFocus
+						aria-invalid={mensaje ? true : undefined}
+						aria-describedby={mensaje ? "set-edit-msg" : undefined}
+					>
+						{fila.opciones.map((opcion) => (
+							<option key={opcion.valor} value={opcion.valor}>
+								{opcion.etiqueta}
+							</option>
+						))}
+					</select>
+				) : (
+					<input
+						id="set-edit-input"
+						type={fila.tipoInput ?? "text"}
+						value={valor}
+						maxLength={fila.maxLength}
+						onChange={(e) => setValor(fila.mayusculas ? e.target.value.toUpperCase() : e.target.value)}
+						autoFocus
+						aria-invalid={mensaje ? true : undefined}
+						aria-describedby={mensaje ? "set-edit-msg" : undefined}
+					/>
+				)}
 				{mensaje ? (
 					<p id="set-edit-msg" className="set__editMsg" role="alert">
 						{mensaje}

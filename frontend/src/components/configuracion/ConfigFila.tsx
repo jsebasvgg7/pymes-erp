@@ -8,7 +8,7 @@ type ConfigFilaProps = {
 };
 
 export default function ConfigFila({ fila, valor, onEditar }: ConfigFilaProps) {
-	const editable = Boolean(fila.campo);
+	const editable = Boolean(fila.campo || fila.campoConfig);
 	const vacio = valor.trim().length === 0;
 
 	let textoValor = valor;

@@ -2,14 +2,26 @@ import { Building2, Coins, Package, Receipt, ShoppingCart, Wallet, type LucideIc
 
 export type CampoEmpresa = "nombre" | "nit" | "direccion" | "telefono" | "email";
 
+export type CampoConfiguracion = "moneda" | "simboloMoneda" | "formatoFecha";
+
+export type OpcionConfig = {
+	valor: string;
+	etiqueta: string;
+};
+
 export type FilaConfig = {
 	id: string;
 	etiqueta: string;
 	descripcion: string;
 	campo?: CampoEmpresa;
+	campoConfig?: CampoConfiguracion;
 	tipoInput?: "text" | "email" | "tel";
 	requerido?: boolean;
 	maxLength?: number;
+	mayusculas?: boolean;
+	patron?: RegExp;
+	mensajePatron?: string;
+	opciones?: OpcionConfig[];
 	valorFijo?: string;
 };
 
@@ -79,19 +91,34 @@ export const MODULOS_CONFIG: ModuloConfig[] = [
 			{
 				id: "moneda",
 				etiqueta: "Moneda",
-				descripcion: "Moneda en la que se registran ventas y compras.",
-				valorFijo: "COP"
+				descripcion: "Código de 3 letras de la moneda en la que se registran ventas y compras.",
+				campoConfig: "moneda",
+				requerido: true,
+				maxLength: 3,
+				mayusculas: true,
+				patron: /^[A-Z]{3}$/,
+				mensajePatron: "Escribe el código de 3 letras, por ejemplo COP o USD."
 			},
 			{
 				id: "simbolo",
 				etiqueta: "Símbolo",
 				descripcion: "Símbolo que acompaña a los valores.",
-				valorFijo: "$"
+				campoConfig: "simboloMoneda",
+				requerido: true,
+				maxLength: 5,
+				patron: /^\S{1,5}$/,
+				mensajePatron: "Usa de 1 a 5 caracteres, sin espacios."
 			},
 			{
 				id: "fecha",
 				etiqueta: "Formato de fecha",
-				descripcion: "Cómo se muestran las fechas en pantallas y reportes."
+				descripcion: "Cómo se muestran las fechas en pantallas y reportes.",
+				campoConfig: "formatoFecha",
+				opciones: [
+					{ valor: "DD/MM/AAAA", etiqueta: "DD/MM/AAAA (24/10/2026)" },
+					{ valor: "MM/DD/AAAA", etiqueta: "MM/DD/AAAA (10/24/2026)" },
+					{ valor: "AAAA-MM-DD", etiqueta: "AAAA-MM-DD (2026-10-24)" }
+				]
 			}
 		]
 	},

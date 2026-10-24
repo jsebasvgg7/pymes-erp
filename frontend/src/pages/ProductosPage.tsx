@@ -17,6 +17,7 @@ import { categoriaProductoService, type CategoriaProducto } from "../services/Ca
 import { productoService, type Producto, type ProductoCreateRequest, type ProductoUpdateRequest } from "../services/ProductoService";
 import { useAccionRapida } from "../hooks/useAccionRapida";
 import "./ProductosPage.css";
+import { formatCurrency, useFormato } from "../utils/formatoConfig";
 
 const UNIDADES_MEDIDA = ["UNIDAD", "KILOGRAMO", "GRAMO", "LITRO", "MILILITRO", "CAJA", "PAQUETE"] as const;
 
@@ -50,11 +51,8 @@ function parseDecimalInput(value: string) {
 	return Number.isFinite(n) ? n : 0;
 }
 
-function formatCurrency(value: number) {
-	return value.toLocaleString("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 });
-}
-
 export default function ProductosPage() {
+	useFormato();
 	const navigate = useNavigate();
 	const empresaId = authService.getUsuario()?.empresaId;
 

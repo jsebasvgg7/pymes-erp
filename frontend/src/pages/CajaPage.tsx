@@ -19,6 +19,7 @@ import { useEstadoCaja } from "../hooks/useEstadoCaja";
 import { useAccionRapida } from "../hooks/useAccionRapida";
 import { formatoMoneda } from "../utils/montoCaja";
 import "./CajaPage.css";
+import { formatCurrency, useFormato } from "../utils/formatoConfig";
 
 type CashFormState = {
     tipo: "INGRESO" | "EGRESO";
@@ -44,10 +45,6 @@ const defaultNewCajaForm: NewCajaFormState = {
     saldoInicial: ""
 };
 
-function formatCurrency(value: number) {
-    return value.toLocaleString("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 });
-}
-
 function parseDecimalInput(value: string) {
     const normalized = value.replace(/[^\d,.-]/g, "").replace(",", ".");
     const n = Number(normalized);
@@ -63,6 +60,7 @@ function extractErrorMessage(err: unknown, fallback: string): string {
 }
 
 export default function CajaPage() {
+    useFormato();
     const empresaId = authService.getUsuario()?.empresaId;
 
     const [cajas, setCajas] = useState<CajaResumen[]>([]);

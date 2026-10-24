@@ -16,6 +16,7 @@ import { productoService, type Producto } from "../services/ProductoService";
 import { proveedorService, type Proveedor } from "../services/proveedorService";
 import { useAccionRapida } from "../hooks/useAccionRapida";
 import "./ComprasPage.css";
+import { formatCurrency, formatDate, useFormato } from "../utils/formatoConfig";
 
 type PurchaseLine = {
 	rowId: string;
@@ -46,16 +47,6 @@ function parseIntegerInput(value: string) {
 	return Number.isFinite(n) ? Math.trunc(n) : 0;
 }
 
-function formatCurrency(value: number) {
-	return value.toLocaleString("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 });
-}
-
-function formatDateLabel(value: string) {
-	if (!value) return "";
-	const d = new Date(value);
-	return Number.isNaN(d.getTime()) ? value : d.toLocaleDateString("es-CO");
-}
-
 function extractErrorMessage(err: unknown, fallback: string): string {
 	if (err && typeof err === "object" && "response" in err) {
 		const response = (err as { response?: { data?: { message?: string } } }).response;
@@ -65,6 +56,7 @@ function extractErrorMessage(err: unknown, fallback: string): string {
 }
 
 export default function ComprasPage() {
+	useFormato();
 	const empresaId = authService.getUsuario()?.empresaId;
 
 	const [compras, setCompras] = useState<CompraResponse[]>([]);
@@ -274,7 +266,7 @@ export default function ComprasPage() {
 
 	const listLayout: DataTableLayout<CompraResponse> = {
 		principal: (r) => r.proveedorNombre,
-		secundario: (r) => `${r.numeroDocumento} · ${formatDateLabel(r.fechaCompra)}`,
+		secundario: (r) => `${r.numeroDocumento} · ${formatDate(r.fechaCompra)}`,
 		etiquetas: (r) => (r.formaPagoNombre ? <span className="ui-list__chip">{r.formaPagoNombre}</span> : null),
 		valor: (r) => formatCurrency(r.total)
 	};

@@ -8,10 +8,7 @@ import { ChartTooltip } from "../charts/tooltip/chart-tooltip";
 import type { CategoriaVenta } from "../../services/dashboardAnalytics";
 import { totalVentasPorCategoria, promedioVentasPorCategoria } from "../../services/dashboardAnalytics";
 import "./dashboard-charts.css";
-
-function formatCurrencyShort(value: number) {
-	return value.toLocaleString("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 });
-}
+import { formatCurrency as formatCurrencyShort, useFormato } from "../../utils/formatoConfig";
 
 function formatDateInput(value: Date) {
 	return value.toISOString().slice(0, 10);
@@ -30,6 +27,7 @@ export default function CategoryBreakdownChart({
 	fechaFin,
 	onChangeRango
 }: CategoryBreakdownChartProps) {
+	useFormato();
 	const total = useMemo(() => totalVentasPorCategoria(categorias), [categorias]);
 	const promedio = useMemo(() => promedioVentasPorCategoria(categorias), [categorias]);
 	const data = useMemo(

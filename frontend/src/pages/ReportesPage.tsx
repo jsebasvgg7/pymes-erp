@@ -24,6 +24,7 @@ import {
 } from "../services/comparacionDiaria";
 import { downloadCsv } from "../utils/csv";
 import "./ReportesPage.css";
+import { formatCurrency, formatDate, useFormato } from "../utils/formatoConfig";
 
 function fechaLocal(fecha: Date) {
 	const año = fecha.getFullYear();
@@ -40,21 +41,12 @@ function periodoMesActual() {
 	};
 }
 
-function formatCurrency(value: number) {
-	return value.toLocaleString("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 });
-}
-
-function formatDate(value: string) {
-	if (!value) return "";
-	const d = new Date(value.length <= 10 ? `${value}T00:00:00` : value);
-	return Number.isNaN(d.getTime()) ? value : d.toLocaleDateString("es-CO");
-}
-
 function sumCantidad(detalles: Array<{ cantidad: number }>) {
 	return detalles.reduce((acc, d) => acc + d.cantidad, 0);
 }
 
 export default function ReportesPage() {
+	useFormato();
 	const empresaId = authService.getUsuario()?.empresaId;
 	const [periodo, setPeriodo] = useState(periodoMesActual);
 

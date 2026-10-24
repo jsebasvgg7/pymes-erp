@@ -24,6 +24,7 @@ import Avatar from "../components/Avatar";
 import CommandPalette from "../components/CommandPalette";
 import { authService } from "../services/authService";
 import { empresaService } from "../services/empresaService";
+import { useFormatoEmpresa } from "../hooks/useFormatoEmpresa";
 import { ATAJO_BUSQUEDA } from "../utils/commandCatalog";
 import logo from "../assets/logo-black.png";
 import "./Sidebar.css";
@@ -90,6 +91,8 @@ export default function Sidebar() {
 	const navigate = useNavigate();
 
 	const usuario = useMemo(() => authService.getUsuario(), []);
+
+	useFormatoEmpresa(usuario?.empresaId);
 
 	useEffect(() => {
 		if (!usuario?.empresaId) return;

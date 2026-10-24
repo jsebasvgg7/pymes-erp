@@ -12,6 +12,7 @@ import SearchBar from "../components/SearchBar";
 import { authService } from "../services/authService";
 import { inventarioService, type Inventario, type MovimientoInventario, type TipoMovimientoInventario } from "../services/inventarioService";
 import "./InventarioPage.css";
+import { formatCurrency, formatDateTime, useFormato } from "../utils/formatoConfig";
 
 type StockLevel = "Agotado" | "Stock Bajo" | "Disponible";
 
@@ -19,16 +20,6 @@ function getStockLevel(stock: number, stockMinimo: number): StockLevel {
   if (stock <= 0) return "Agotado";
   if (stock <= stockMinimo) return "Stock Bajo";
   return "Disponible";
-}
-
-function formatCurrency(value: number) {
-  return value.toLocaleString("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 });
-}
-
-function formatDateTime(value: string | null) {
-  if (!value) return "";
-  const d = new Date(value);
-  return Number.isNaN(d.getTime()) ? value : d.toLocaleString("es-CO");
 }
 
 function parseDecimalInput(value: string) {
@@ -74,6 +65,7 @@ function unidadCorta(unidad: string) {
 }
 
 export default function InventarioPage() {
+  useFormato();
   const empresaId = authService.getUsuario()?.empresaId;
   const usuarioId = authService.getUsuario()?.id;
 

@@ -18,6 +18,7 @@ import { rolService, type Rol } from "../services/rolService";
 import { usuarioService, type Usuario } from "../services/usuarioService";
 import { useAccionRapida } from "../hooks/useAccionRapida";
 import "./UsuariosPage.css";
+import { formatDate, useFormato } from "../utils/formatoConfig";
 
 type UserFormState = {
 	username: string;
@@ -35,10 +36,7 @@ const defaultFormState: UserFormState = {
 
 function formatFecha(value?: string) {
 	if (!value) return "—";
-	const d = new Date(value);
-	return Number.isNaN(d.getTime())
-		? value
-		: d.toLocaleDateString("en-GB", { day: "2-digit", month: "2-digit", year: "numeric" });
+	return formatDate(value);
 }
 
 function normalizeText(value: string) {
@@ -54,6 +52,7 @@ function extractErrorMessage(err: unknown, fallback: string): string {
 }
 
 export default function UsuariosPage() {
+	useFormato();
 	const empresaId = authService.getUsuario()?.empresaId;
 	const currentUserId = authService.getUsuario()?.id;
 
