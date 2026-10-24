@@ -5,7 +5,7 @@
 	justify-content: center;
 	gap: 16px;
 	text-align: center;
-	min-height: calc(100vh - 96px);
+	min-height: var(--loading-min, calc(100vh - 96px));
 	width: 100%;
 }
 

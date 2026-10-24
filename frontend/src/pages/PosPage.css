@@ -2,7 +2,7 @@
 	--pos-danger: #b91c1c;
 	--pos-warn: #b45309;
 	--pos-ok: #15803d;
-	--pos-panel: max(580px, calc(100dvh - 214px));
+	--pos-panel: max(580px, calc(100dvh - 214px - 2 * var(--frame-gap, 0px)));
 	display: grid;
 	gap: 20px;
 	font-variant-numeric: tabular-nums;
