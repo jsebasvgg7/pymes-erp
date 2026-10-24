@@ -14,6 +14,7 @@ import SecondaryButton from "../components/SecondaryButton";
 import { authService } from "../services/authService";
 import { cajaService } from "../services/cajaService";
 import { clienteService, type Cliente } from "../services/clienteService";
+import { empresaService } from "../services/empresaService";
 import { formaPagoService, type FormaPago } from "../services/formaPagoService";
 import { productoService, type Producto } from "../services/ProductoService";
 import { ventaService, type FacturaVentaResponse } from "../services/VentaService";
@@ -134,7 +135,8 @@ function extractErrorMessage(err: unknown, fallback: string): string {
 
 export default function PosPage() {
 	useFormato();
-	const { clienteObligatorio } = useAjustes();
+	const { clienteObligatorio, anchoRecibo, nombreRecibo, mensajePieRecibo } = useAjustes();
+	const [empresaNombre, setEmpresaNombre] = useState("");
 	const empresaId = authService.getUsuario()?.empresaId;
 	const { estados: estadosCaja, cargado: estadosCargados } = useEstadoCaja(empresaId);
 	const sinCajaAbierta = estadosCargados && estadosCaja.length > 0 && !estadosCaja.some((e) => e.abierta);
@@ -175,13 +177,15 @@ export default function PosPage() {
         setError(null);
         try {
             // reducimos la carga de clientes a 50
-            const [cajas, formasPagoData, clientesData, productosData] = await Promise.all([
+            const [cajas, formasPagoData, clientesData, productosData, empresaData] = await Promise.all([
                 cajaService.listarPorEmpresa(empresaId).catch(() => null),
                 formaPagoService.listarPorEmpresa(empresaId, 0, 50),
                 clienteService.listarPorEmpresa(empresaId, 0, 50),
-                productoService.listarPorEmpresa(empresaId, 0, 200)
+                productoService.listarPorEmpresa(empresaId, 0, 200),
+                empresaService.obtenerPorId(empresaId).catch(() => null)
             ]);
 
+            setEmpresaNombre(empresaData?.nombre ?? "");
             setProducts(productosData.content);
             setFormasPago(formasPagoData.content.filter((f) => f.active));
             setClientes(clientesData.content.filter((c) => c.active));
@@ -779,7 +783,10 @@ export default function PosPage() {
 				}
 			>
 				{receipt ? (
-					<div className="pos__ticket">
+					<div className={`pos__ticket pos__ticket--${anchoRecibo === 80 ? "80" : "58"}`}>
+						{nombreRecibo.trim() || empresaNombre ? (
+							<p className="pos__ticketHead">{nombreRecibo.trim() || empresaNombre}</p>
+						) : null}
 						<div className="pos__ticketMeta">
 							<div>
 								<span>Fecha</span>
@@ -836,6 +843,7 @@ export default function PosPage() {
 								</>
 							) : null}
 						</div>
+						{mensajePieRecibo.trim() ? <p className="pos__ticketFoot">{mensajePieRecibo.trim()}</p> : null}
 					</div>
 				) : null}
 			</Modal>

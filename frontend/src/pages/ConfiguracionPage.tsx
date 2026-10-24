@@ -36,6 +36,7 @@ function textoDeFila(fila: FilaConfig, empresa: Empresa | null, configuracion: C
 
 function datoDeConfiguracion(campo: NonNullable<FilaConfig["campoConfig"]>, valor: string): string | number {
 	if (campo === "stockMinimoDefecto") return Number(valor.replace(",", "."));
+	if (campo === "anchoRecibo") return Number(valor);
 	if (campo === "diasVencimientoCredito") return valor === "" ? 0 : Number(valor);
 	return valor;
 }

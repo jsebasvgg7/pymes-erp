@@ -15,7 +15,10 @@ export function aplicarFormatoEmpresa(empresaId: number, configuracion: Configur
 	const ajustes: AjustesConfig = {
 		stockMinimoDefecto: Number(configuracion.stockMinimoDefecto),
 		avisarStockBajo: configuracion.avisarStockBajo,
-		clienteObligatorio: configuracion.clienteObligatorio
+		clienteObligatorio: configuracion.clienteObligatorio,
+		anchoRecibo: configuracion.anchoRecibo === 80 ? 80 : 58,
+		nombreRecibo: configuracion.nombreRecibo ?? "",
+		mensajePieRecibo: configuracion.mensajePieRecibo ?? ""
 	};
 	setFormato(formato);
 	setAjustes(ajustes);

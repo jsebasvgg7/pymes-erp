@@ -2,7 +2,7 @@ import { Building2, Coins, Package, Receipt, ShoppingCart, Wallet, type LucideIc
 
 export type CampoEmpresa = "nombre" | "nit" | "direccion" | "telefono" | "email";
 
-export type CampoConfiguracion = "moneda" | "simboloMoneda" | "formatoFecha" | "stockMinimoDefecto" | "avisarStockBajo" | "diasVencimientoCredito" | "clienteObligatorio";
+export type CampoConfiguracion = "moneda" | "simboloMoneda" | "formatoFecha" | "stockMinimoDefecto" | "avisarStockBajo" | "diasVencimientoCredito" | "clienteObligatorio" | "anchoRecibo" | "nombreRecibo" | "mensajePieRecibo";
 
 export type OpcionConfig = {
 	valor: string;
@@ -204,16 +204,33 @@ export const MODULOS_CONFIG: ModuloConfig[] = [
 		descripcion: "Cómo se ve el recibo que recibe tu cliente.",
 		icono: Receipt,
 		filas: [
-			{ id: "ancho", etiqueta: "Ancho del recibo", descripcion: "Tamaño del papel de la impresora térmica." },
+			{
+				id: "ancho",
+				etiqueta: "Ancho del recibo",
+				descripcion: "Tamaño del papel con el que se imprime el recibo.",
+				campoConfig: "anchoRecibo",
+				opciones: [
+					{ valor: "58", etiqueta: "58 mm" },
+					{ valor: "80", etiqueta: "80 mm" }
+				]
+			},
 			{
 				id: "nombreRecibo",
 				etiqueta: "Nombre en el recibo",
-				descripcion: "Nombre del negocio que se imprime en el encabezado."
+				descripcion: "Nombre del negocio que se imprime en el encabezado. Si lo dejas vacío se usa el nombre de la empresa.",
+				campoConfig: "nombreRecibo",
+				maxLength: 150,
+				textoVacio: "Nombre de la empresa",
+				placeholder: "Nombre de la empresa"
 			},
 			{
 				id: "mensajePie",
 				etiqueta: "Mensaje al pie",
-				descripcion: "Texto de agradecimiento o aviso al final del recibo."
+				descripcion: "Texto de agradecimiento o aviso al final del recibo.",
+				campoConfig: "mensajePieRecibo",
+				maxLength: 255,
+				textoVacio: "Sin mensaje",
+				placeholder: "Gracias por su compra"
 			}
 		]
 	}
