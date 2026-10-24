@@ -15,13 +15,13 @@ spring:
       maximum-pool-size: 40
   jpa:
     database-platform: org.hibernate.dialect.PostgreSQLDialect
-    show-sql: true
+    show-sql: false
     hibernate:
       ddl-auto: validate
     open-in-view: false
     properties:
       hibernate:
-        format_sql: true
+        format_sql: false
         default_batch_fetch_size: 50
         jdbc:
           lob:

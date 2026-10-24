@@ -16,23 +16,25 @@ import java.util.Optional;
 
 public interface FacturaVentaRepository extends JpaRepository<FacturaVenta, Long> {
 
-    @EntityGraph(attributePaths = {"cliente", "formaPago"})
+    @EntityGraph(attributePaths = {"cliente", "formaPago", "cuentaPorCobrar"})
     Page<FacturaVenta> findByActiveTrue(Pageable pageable);
 
-    @EntityGraph(attributePaths = {"cliente", "formaPago"})
+    @EntityGraph(attributePaths = {"cliente", "formaPago", "cuentaPorCobrar"})
     Page<FacturaVenta> findByActiveTrueAndEmpresaId(Pageable pageable, Long empresaId);
 
-    @EntityGraph(attributePaths = {"cliente", "formaPago"})
+    @EntityGraph(attributePaths = {"cliente", "formaPago", "cuentaPorCobrar"})
     Page<FacturaVenta> findByActiveTrueAndEmpresaIdAndClienteId(Pageable pageable, Long empresaId, Long clienteId);
 
-    @EntityGraph(attributePaths = {"cliente", "formaPago", "detalles", "detalles.producto"})
+    @EntityGraph(attributePaths = {"cliente", "formaPago", "cuentaPorCobrar", "detalles", "detalles.producto", "detalles.producto.inventario"})
     Optional<FacturaVenta> findByIdAndActiveTrue(Long id);
 
     @Query("SELECT DISTINCT f FROM FacturaVenta f " +
            "LEFT JOIN FETCH f.cliente " +
            "LEFT JOIN FETCH f.formaPago " +
+           "LEFT JOIN FETCH f.cuentaPorCobrar " +
            "LEFT JOIN FETCH f.detalles d " +
-           "LEFT JOIN FETCH d.producto " +
+           "LEFT JOIN FETCH d.producto p " +
+           "LEFT JOIN FETCH p.inventario " +
            "WHERE f.empresa.id = :empresaId AND f.active = true " +
            "AND f.fechaEmision BETWEEN :inicio AND :fin")
     List<FacturaVenta> findByEmpresaAndFechaBetween(@Param("empresaId") Long empresaId,
