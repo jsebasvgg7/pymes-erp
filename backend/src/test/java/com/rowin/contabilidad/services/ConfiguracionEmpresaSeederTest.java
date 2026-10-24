@@ -13,6 +13,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
@@ -44,7 +45,7 @@ class ConfiguracionEmpresaSeederTest {
         verify(configuracionEmpresaRepository).save(captor.capture());
         assertSame(empresa, captor.getValue().getEmpresa());
         assertEquals("COP", creada.getMoneda());
-        assertEquals(30, creada.getDiasVencimientoCredito());
+        assertNull(creada.getDiasVencimientoCredito());
     }
 
     @Test

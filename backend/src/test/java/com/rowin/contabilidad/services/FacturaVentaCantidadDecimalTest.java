@@ -13,6 +13,7 @@ import com.rowin.contabilidad.entities.TipoFormaPago;
 import com.rowin.contabilidad.entities.UnidadMedida;
 import com.rowin.contabilidad.repositories.CajaRepository;
 import com.rowin.contabilidad.repositories.ClienteRepository;
+import com.rowin.contabilidad.repositories.ConfiguracionEmpresaRepository;
 import com.rowin.contabilidad.repositories.CuentaPorCobrarRepository;
 import com.rowin.contabilidad.repositories.DetalleFacturaRepository;
 import com.rowin.contabilidad.repositories.EmpresaRepository;
@@ -60,6 +61,7 @@ class FacturaVentaCantidadDecimalTest {
     @Mock private FacturaVentaMapper facturaVentaMapper;
     @Mock private CuentaPorCobrarRepository cuentaPorCobrarRepository;
     @Mock private AperturaCajaService aperturaCajaService;
+    @Mock private ConfiguracionEmpresaRepository configuracionEmpresaRepository;
 
     @InjectMocks private FacturaVentaServiceImpl service;
 

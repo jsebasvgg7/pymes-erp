@@ -49,8 +49,13 @@ class ConfiguracionEmpresaRequestValidationTest {
 
     @Test
     void creditDaysOutOfRangeAreRejected() {
-        assertEquals(1, validator.validate(request(null, null, null, 0, null, null)).size());
+        assertEquals(1, validator.validate(request(null, null, null, -1, null, null)).size());
         assertEquals(1, validator.validate(request(null, null, null, 366, null, null)).size());
+    }
+
+    @Test
+    void zeroCreditDaysMeansNoLimitAndIsAccepted() {
+        assertTrue(validator.validate(request(null, null, null, 0, null, null)).isEmpty());
     }
 
     @Test

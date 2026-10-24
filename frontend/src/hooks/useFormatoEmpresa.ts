@@ -14,7 +14,8 @@ export function aplicarFormatoEmpresa(empresaId: number, configuracion: Configur
 	};
 	const ajustes: AjustesConfig = {
 		stockMinimoDefecto: Number(configuracion.stockMinimoDefecto),
-		avisarStockBajo: configuracion.avisarStockBajo
+		avisarStockBajo: configuracion.avisarStockBajo,
+		clienteObligatorio: configuracion.clienteObligatorio
 	};
 	setFormato(formato);
 	setAjustes(ajustes);

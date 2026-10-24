@@ -66,7 +66,7 @@ public class ConfiguracionEmpresaService {
             configuracion.setClienteObligatorio(request.clienteObligatorio());
         }
         if (request.diasVencimientoCredito() != null) {
-            configuracion.setDiasVencimientoCredito(request.diasVencimientoCredito());
+            configuracion.setDiasVencimientoCredito(request.diasVencimientoCredito() == 0 ? null : request.diasVencimientoCredito());
         }
         if (request.codigoBarrasActivo() != null) {
             configuracion.setCodigoBarrasActivo(request.codigoBarrasActivo());

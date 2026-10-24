@@ -6,6 +6,7 @@ import com.rowin.contabilidad.dto.factura.FacturaVentaUpdateRequest;
 import com.rowin.contabilidad.entities.AperturaCaja;
 import com.rowin.contabilidad.entities.Caja;
 import com.rowin.contabilidad.entities.Cliente;
+import com.rowin.contabilidad.entities.ConfiguracionEmpresa;
 import com.rowin.contabilidad.entities.CuentaPorCobrar;
 import com.rowin.contabilidad.entities.Empresa;
 import com.rowin.contabilidad.entities.EstadoCuenta;
@@ -16,6 +17,7 @@ import com.rowin.contabilidad.entities.MovimientoCaja;
 import com.rowin.contabilidad.entities.TipoFormaPago;
 import com.rowin.contabilidad.repositories.CajaRepository;
 import com.rowin.contabilidad.repositories.ClienteRepository;
+import com.rowin.contabilidad.repositories.ConfiguracionEmpresaRepository;
 import com.rowin.contabilidad.repositories.CuentaPorCobrarRepository;
 import com.rowin.contabilidad.repositories.DetalleFacturaRepository;
 import com.rowin.contabilidad.repositories.EmpresaRepository;
@@ -35,11 +37,14 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -60,6 +65,7 @@ class FacturaVentaCreditoTest {
     @Mock private FacturaVentaMapper facturaVentaMapper;
     @Mock private CuentaPorCobrarRepository cuentaPorCobrarRepository;
     @Mock private AperturaCajaService aperturaCajaService;
+    @Mock private ConfiguracionEmpresaRepository configuracionEmpresaRepository;
 
     @InjectMocks private FacturaVentaServiceImpl service;
 
@@ -213,5 +219,87 @@ class FacturaVentaCreditoTest {
 
         assertEquals(BigDecimal.ZERO, cuenta.getSaldo());
         assertEquals(EstadoCuenta.CERRADA, cuenta.getEstado());
+    }
+
+    private ConfiguracionEmpresa configuracion(boolean clienteObligatorio, Integer dias) {
+        ConfiguracionEmpresa configuracion = new ConfiguracionEmpresa();
+        configuracion.setEmpresa(empresa);
+        configuracion.setClienteObligatorio(clienteObligatorio);
+        configuracion.setDiasVencimientoCredito(dias);
+        return configuracion;
+    }
+
+    @Test
+    void saleWithoutClientIsRejectedWhenClientIsRequired() {
+        when(empresaRepository.findById(1L)).thenReturn(Optional.of(empresa));
+        when(formaPagoRepository.findById(3L)).thenReturn(Optional.of(formaPago(TipoFormaPago.EFECTIVO, empresa)));
+        when(configuracionEmpresaRepository.findByEmpresaId(1L)).thenReturn(Optional.of(configuracion(true, null)));
+
+        assertThrows(IllegalArgumentException.class, () -> service.crear(request(null)));
+
+        verify(facturaVentaRepository, never()).save(any(FacturaVenta.class));
+    }
+
+    @Test
+    void saleWithClientIsAcceptedWhenClientIsRequired() {
+        FacturaVentaCreateRequest request = request(2L);
+        stubFlujoDeVenta(formaPago(TipoFormaPago.EFECTIVO, empresa), request, true);
+        when(configuracionEmpresaRepository.findByEmpresaId(1L)).thenReturn(Optional.of(configuracion(true, null)));
+
+        service.crear(request);
+
+        verify(movimientoCajaRepository).save(any(MovimientoCaja.class));
+    }
+
+    @Test
+    void saleWithoutClientIsAcceptedWhenClientIsNotRequired() {
+        FacturaVentaCreateRequest request = request(null);
+        stubFlujoDeVenta(formaPago(TipoFormaPago.EFECTIVO, empresa), request, false);
+        when(configuracionEmpresaRepository.findByEmpresaId(1L)).thenReturn(Optional.of(configuracion(false, null)));
+
+        service.crear(request);
+
+        verify(movimientoCajaRepository).save(any(MovimientoCaja.class));
+    }
+
+    @Test
+    void creditSaleUsesConfiguredDueDays() {
+        FacturaVentaCreateRequest request = request(2L);
+        stubFlujoDeVenta(formaPago(TipoFormaPago.CREDITO, empresa), request, true);
+        when(configuracionEmpresaRepository.findByEmpresaId(1L)).thenReturn(Optional.of(configuracion(false, 45)));
+        LocalDateTime antes = LocalDateTime.now();
+
+        service.crear(request);
+
+        ArgumentCaptor<CuentaPorCobrar> captor = ArgumentCaptor.forClass(CuentaPorCobrar.class);
+        verify(cuentaPorCobrarRepository).save(captor.capture());
+        LocalDateTime vencimiento = captor.getValue().getFechaVencimiento();
+        assertTrue(!vencimiento.isBefore(antes.plusDays(45)));
+        assertTrue(!vencimiento.isAfter(LocalDateTime.now().plusDays(45)));
+    }
+
+    @Test
+    void creditSaleHasNoDueDateWhenThereIsNoLimit() {
+        FacturaVentaCreateRequest request = request(2L);
+        stubFlujoDeVenta(formaPago(TipoFormaPago.CREDITO, empresa), request, true);
+        when(configuracionEmpresaRepository.findByEmpresaId(1L)).thenReturn(Optional.of(configuracion(false, null)));
+
+        service.crear(request);
+
+        ArgumentCaptor<CuentaPorCobrar> captor = ArgumentCaptor.forClass(CuentaPorCobrar.class);
+        verify(cuentaPorCobrarRepository).save(captor.capture());
+        assertNull(captor.getValue().getFechaVencimiento());
+    }
+
+    @Test
+    void creditSaleHasNoDueDateWhenCompanyHasNoConfiguration() {
+        FacturaVentaCreateRequest request = request(2L);
+        stubFlujoDeVenta(formaPago(TipoFormaPago.CREDITO, empresa), request, true);
+
+        service.crear(request);
+
+        ArgumentCaptor<CuentaPorCobrar> captor = ArgumentCaptor.forClass(CuentaPorCobrar.class);
+        verify(cuentaPorCobrarRepository).save(captor.capture());
+        assertNull(captor.getValue().getFechaVencimiento());
     }
 }

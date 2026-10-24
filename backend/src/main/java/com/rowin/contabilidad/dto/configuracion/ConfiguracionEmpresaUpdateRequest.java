@@ -14,7 +14,7 @@ public record ConfiguracionEmpresaUpdateRequest(
     @Pattern(regexp = "^\\S{1,5}$", message = "El símbolo debe tener entre 1 y 5 caracteres sin espacios") String simboloMoneda,
     @Pattern(regexp = "^(DD/MM/AAAA|MM/DD/AAAA|AAAA-MM-DD)$", message = "El formato de fecha no es válido") String formatoFecha,
     Boolean clienteObligatorio,
-    @Min(value = 1, message = "El vencimiento del crédito debe ser de al menos 1 día")
+    @Min(value = 0, message = "El vencimiento del crédito no puede ser negativo")
     @Max(value = 365, message = "El vencimiento del crédito no puede superar 365 días") Integer diasVencimientoCredito,
     Boolean codigoBarrasActivo,
     @DecimalMin(value = "0", message = "El stock mínimo no puede ser negativo")

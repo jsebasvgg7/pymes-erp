@@ -3,11 +3,13 @@ import { useSyncExternalStore } from "react";
 export type AjustesConfig = {
 	stockMinimoDefecto: number;
 	avisarStockBajo: boolean;
+	clienteObligatorio: boolean;
 };
 
 const AJUSTES_INICIALES: AjustesConfig = {
 	stockMinimoDefecto: 0,
-	avisarStockBajo: true
+	avisarStockBajo: true,
+	clienteObligatorio: false
 };
 
 let estado: AjustesConfig = AJUSTES_INICIALES;
@@ -33,11 +35,14 @@ export function setAjustes(parcial: Partial<AjustesConfig>) {
 	const siguiente: AjustesConfig = {
 		stockMinimoDefecto:
 			parcial.stockMinimoDefecto !== undefined && Number.isFinite(stock) && stock >= 0 ? stock : estado.stockMinimoDefecto,
-		avisarStockBajo: typeof parcial.avisarStockBajo === "boolean" ? parcial.avisarStockBajo : estado.avisarStockBajo
+		avisarStockBajo: typeof parcial.avisarStockBajo === "boolean" ? parcial.avisarStockBajo : estado.avisarStockBajo,
+		clienteObligatorio:
+			typeof parcial.clienteObligatorio === "boolean" ? parcial.clienteObligatorio : estado.clienteObligatorio
 	};
 	if (
 		siguiente.stockMinimoDefecto === estado.stockMinimoDefecto &&
-		siguiente.avisarStockBajo === estado.avisarStockBajo
+		siguiente.avisarStockBajo === estado.avisarStockBajo &&
+		siguiente.clienteObligatorio === estado.clienteObligatorio
 	) {
 		return;
 	}

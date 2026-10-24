@@ -62,6 +62,10 @@ class ConfiguracionEmpresaServiceTest {
         return new ConfiguracionEmpresaUpdateRequest(null, null, null, null, null, null, null, null, null, null, null, null);
     }
 
+    private ConfiguracionEmpresaUpdateRequest conDias(Integer dias) {
+        return new ConfiguracionEmpresaUpdateRequest(null, null, null, null, dias, null, null, null, null, null, null, null);
+    }
+
     private ConfiguracionEmpresaUpdateRequest conAncho(Integer ancho) {
         return new ConfiguracionEmpresaUpdateRequest(null, null, null, null, null, null, null, null, null, ancho, null, null);
     }
@@ -82,7 +86,7 @@ class ConfiguracionEmpresaServiceTest {
         assertEquals("$", configuracion.getSimboloMoneda());
         assertEquals("DD/MM/AAAA", configuracion.getFormatoFecha());
         assertFalse(configuracion.isClienteObligatorio());
-        assertEquals(30, configuracion.getDiasVencimientoCredito());
+        assertNull(configuracion.getDiasVencimientoCredito());
         assertFalse(configuracion.isCodigoBarrasActivo());
         assertEquals(BigDecimal.ZERO, configuracion.getStockMinimoDefecto());
         assertTrue(configuracion.isAvisarStockBajo());
@@ -162,8 +166,35 @@ class ConfiguracionEmpresaServiceTest {
         assertEquals("USD", response.moneda());
         assertEquals("US$", response.simboloMoneda());
         assertEquals("AAAA-MM-DD", response.formatoFecha());
-        assertEquals(30, response.diasVencimientoCredito());
+        assertNull(response.diasVencimientoCredito());
         assertEquals(58, response.anchoRecibo());
+    }
+
+    @Test
+    void actualizarStoresCreditDays() {
+        Empresa empresa = empresa(1L);
+        ConfiguracionEmpresa configuracion = configuracion(empresa);
+        when(usuarioRepository.findByEmailAndActiveTrue(EMAIL)).thenReturn(Optional.of(usuario(empresa)));
+        when(configuracionEmpresaRepository.findByEmpresaId(1L)).thenReturn(Optional.of(configuracion));
+        when(configuracionEmpresaRepository.save(configuracion)).thenReturn(configuracion);
+
+        ConfiguracionEmpresaResponse response = service.actualizar(1L, conDias(45), EMAIL);
+
+        assertEquals(45, response.diasVencimientoCredito());
+    }
+
+    @Test
+    void actualizarWithZeroRemovesCreditLimit() {
+        Empresa empresa = empresa(1L);
+        ConfiguracionEmpresa configuracion = configuracion(empresa);
+        configuracion.setDiasVencimientoCredito(45);
+        when(usuarioRepository.findByEmailAndActiveTrue(EMAIL)).thenReturn(Optional.of(usuario(empresa)));
+        when(configuracionEmpresaRepository.findByEmpresaId(1L)).thenReturn(Optional.of(configuracion));
+        when(configuracionEmpresaRepository.save(configuracion)).thenReturn(configuracion);
+
+        ConfiguracionEmpresaResponse response = service.actualizar(1L, conDias(0), EMAIL);
+
+        assertNull(response.diasVencimientoCredito());
     }
 
     @Test

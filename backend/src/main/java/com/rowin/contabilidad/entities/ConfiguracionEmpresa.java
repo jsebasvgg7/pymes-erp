@@ -33,8 +33,8 @@ public class ConfiguracionEmpresa extends BaseEntity {
     @Column(nullable = false)
     private boolean clienteObligatorio = false;
 
-    @Column(nullable = false)
-    private int diasVencimientoCredito = 30;
+    @Column
+    private Integer diasVencimientoCredito;
 
     @Column(nullable = false)
     private boolean codigoBarrasActivo = false;

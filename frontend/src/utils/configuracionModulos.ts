@@ -2,7 +2,7 @@ import { Building2, Coins, Package, Receipt, ShoppingCart, Wallet, type LucideIc
 
 export type CampoEmpresa = "nombre" | "nit" | "direccion" | "telefono" | "email";
 
-export type CampoConfiguracion = "moneda" | "simboloMoneda" | "formatoFecha" | "stockMinimoDefecto" | "avisarStockBajo";
+export type CampoConfiguracion = "moneda" | "simboloMoneda" | "formatoFecha" | "stockMinimoDefecto" | "avisarStockBajo" | "diasVencimientoCredito" | "clienteObligatorio";
 
 export type OpcionConfig = {
 	valor: string;
@@ -24,6 +24,9 @@ export type FilaConfig = {
 	mensajePatron?: string;
 	opciones?: OpcionConfig[];
 	valorFijo?: string;
+	textoVacio?: string;
+	placeholder?: string;
+	unidad?: [string, string];
 };
 
 export type ModuloConfig = {
@@ -132,13 +135,21 @@ export const MODULOS_CONFIG: ModuloConfig[] = [
 			{
 				id: "credito",
 				etiqueta: "Vencimiento del crédito",
-				descripcion: "Días que tiene un cliente para pagar una venta a crédito.",
-				valorFijo: "30 días"
+				descripcion: "Días que tiene un cliente para pagar una venta a crédito. Déjalo vacío si no quieres poner un límite.",
+				campoConfig: "diasVencimientoCredito",
+				maxLength: 3,
+				patron: /^([1-9]\d?|[12]\d{2}|3[0-5]\d|36[0-5])$/,
+				mensajePatron: "Escribe un número de 1 a 365, o déjalo vacío para no poner límite.",
+				textoVacio: "Sin límite",
+				placeholder: "Sin límite",
+				unidad: ["día", "días"]
 			},
 			{
 				id: "cliente",
 				etiqueta: "Cliente obligatorio",
-				descripcion: "Exigir un cliente en todas las ventas, no solo en las de crédito."
+				descripcion: "Exigir un cliente en todas las ventas, no solo en las de crédito. Desactivado por defecto.",
+				campoConfig: "clienteObligatorio",
+				interruptor: true
 			},
 			{
 				id: "barras",

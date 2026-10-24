@@ -10,7 +10,7 @@ public record ConfiguracionEmpresaResponse(
     String simboloMoneda,
     String formatoFecha,
     boolean clienteObligatorio,
-    int diasVencimientoCredito,
+    Integer diasVencimientoCredito,
     boolean codigoBarrasActivo,
     BigDecimal stockMinimoDefecto,
     boolean avisarStockBajo,

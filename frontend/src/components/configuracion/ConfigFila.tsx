@@ -16,7 +16,7 @@ export default function ConfigFila({ fila, valor, onEditar, activo = false, camb
 
 	let textoValor = valor;
 	if (!editable) textoValor = fila.valorFijo ?? "—";
-	else if (vacio) textoValor = "Sin definir";
+	else if (vacio) textoValor = fila.textoVacio ?? "Sin definir";
 
 	const valorMuted = !editable || vacio;
 

@@ -82,6 +82,7 @@ export default function ConfigModalEditar({ fila, valorInicial, guardando, error
 						type={fila.tipoInput ?? "text"}
 						value={valor}
 						maxLength={fila.maxLength}
+						placeholder={fila.placeholder}
 						onChange={(e) => setValor(fila.mayusculas ? e.target.value.toUpperCase() : e.target.value)}
 						autoFocus
 						aria-invalid={mensaje ? true : undefined}

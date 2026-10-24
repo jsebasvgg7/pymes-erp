@@ -42,6 +42,7 @@ public class FacturaVentaServiceImpl extends BaseCrudService implements FacturaV
     private final FacturaVentaMapper facturaVentaMapper;
     private final CuentaPorCobrarRepository cuentaPorCobrarRepository;
     private final AperturaCajaService aperturaCajaService;
+    private final ConfiguracionEmpresaRepository configuracionEmpresaRepository;
 
     public FacturaVentaServiceImpl(
         FacturaVentaRepository facturaVentaRepository,
@@ -56,7 +57,8 @@ public class FacturaVentaServiceImpl extends BaseCrudService implements FacturaV
         CajaRepository cajaRepository,
         FacturaVentaMapper facturaVentaMapper,
         CuentaPorCobrarRepository cuentaPorCobrarRepository,
-        AperturaCajaService aperturaCajaService
+        AperturaCajaService aperturaCajaService,
+        ConfiguracionEmpresaRepository configuracionEmpresaRepository
     ) {
         this.facturaVentaRepository = facturaVentaRepository;
         this.detalleFacturaRepository = detalleFacturaRepository;
@@ -71,6 +73,7 @@ public class FacturaVentaServiceImpl extends BaseCrudService implements FacturaV
         this.facturaVentaMapper = facturaVentaMapper;
         this.cuentaPorCobrarRepository = cuentaPorCobrarRepository;
         this.aperturaCajaService = aperturaCajaService;
+        this.configuracionEmpresaRepository = configuracionEmpresaRepository;
     }
 
     @Override
@@ -147,9 +150,13 @@ public class FacturaVentaServiceImpl extends BaseCrudService implements FacturaV
             throw new IllegalArgumentException("La forma de pago no pertenece a la empresa de la venta.");
         }
 
+        Optional<ConfiguracionEmpresa> configuracion = configuracionEmpresaRepository.findByEmpresaId(empresa.getId());
         boolean esCredito = formaPago.getTipo() == TipoFormaPago.CREDITO;
         if (esCredito && cliente == null) {
             throw new IllegalArgumentException("El cliente es obligatorio para ventas a crédito.");
+        }
+        if (cliente == null && configuracion.map(ConfiguracionEmpresa::isClienteObligatorio).orElse(false)) {
+            throw new IllegalArgumentException("El cliente es obligatorio en todas las ventas.");
         }
 
         // 4. Validar que haya detalles
@@ -299,7 +306,8 @@ public class FacturaVentaServiceImpl extends BaseCrudService implements FacturaV
             cuenta.setFacturaVenta(savedFactura);
             cuenta.setMontoOriginal(savedFactura.getTotal());
             cuenta.setSaldo(savedFactura.getTotal());
-            cuenta.setFechaVencimiento(LocalDateTime.now().plusDays(30));
+            Integer diasCredito = configuracion.map(ConfiguracionEmpresa::getDiasVencimientoCredito).orElse(null);
+            cuenta.setFechaVencimiento(diasCredito == null ? null : LocalDateTime.now().plusDays(diasCredito));
             cuenta.setEstado(EstadoCuenta.ABIERTA);
 
             cuentaPorCobrarRepository.save(cuenta);

@@ -8,7 +8,7 @@ export type Configuracion = {
 	simboloMoneda: string;
 	formatoFecha: FormatoFecha;
 	clienteObligatorio: boolean;
-	diasVencimientoCredito: number;
+	diasVencimientoCredito: number | null;
 	codigoBarrasActivo: boolean;
 	stockMinimoDefecto: number;
 	avisarStockBajo: boolean;

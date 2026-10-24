@@ -30,7 +30,14 @@ function valorDeFila(fila: FilaConfig, empresa: Empresa | null, configuracion: C
 function textoDeFila(fila: FilaConfig, empresa: Empresa | null, configuracion: Configuracion | null): string {
 	const valor = valorDeFila(fila, empresa, configuracion);
 	if (fila.interruptor) return valor === "true" ? "Activado" : "Desactivado";
+	if (fila.unidad && valor !== "") return `${valor} ${valor === "1" ? fila.unidad[0] : fila.unidad[1]}`;
 	return fila.opciones?.find((opcion) => opcion.valor === valor)?.etiqueta ?? valor;
+}
+
+function datoDeConfiguracion(campo: NonNullable<FilaConfig["campoConfig"]>, valor: string): string | number {
+	if (campo === "stockMinimoDefecto") return Number(valor.replace(",", "."));
+	if (campo === "diasVencimientoCredito") return valor === "" ? 0 : Number(valor);
+	return valor;
 }
 
 export default function ConfiguracionPage() {
@@ -135,8 +142,9 @@ export default function ConfiguracionPage() {
 		setErrorGuardado(null);
 		try {
 			if (campoConfig) {
-				const dato = campoConfig === "stockMinimoDefecto" ? Number(valor.replace(",", ".")) : valor;
-				const actualizada = await configuracionService.actualizar(empresaId, { [campoConfig]: dato });
+				const actualizada = await configuracionService.actualizar(empresaId, {
+					[campoConfig]: datoDeConfiguracion(campoConfig, valor)
+				});
 				setConfiguracion(actualizada);
 				aplicarFormatoEmpresa(empresaId, actualizada);
 			} else if (campo) {

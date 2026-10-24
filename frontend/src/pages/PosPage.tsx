@@ -134,7 +134,7 @@ function extractErrorMessage(err: unknown, fallback: string): string {
 
 export default function PosPage() {
 	useFormato();
-	useAjustes();
+	const { clienteObligatorio } = useAjustes();
 	const empresaId = authService.getUsuario()?.empresaId;
 	const { estados: estadosCaja, cargado: estadosCargados } = useEstadoCaja(empresaId);
 	const sinCajaAbierta = estadosCargados && estadosCaja.length > 0 && !estadosCaja.some((e) => e.abierta);
@@ -249,7 +249,7 @@ export default function PosPage() {
 	const received = receivedDigits ? Number(receivedDigits) : 0;
 	const changeDue = received - total;
 	const insufficientCash = cashPayment && received > 0 && received < total;
-	const missingClientForCredit = creditPayment && !clienteId;
+	const missingClientForCredit = (creditPayment || clienteObligatorio) && !clienteId;
 
 	const hasInvalidQuantity = cartItems.some((i) => !isValidQuantity(i.quantity, i.product.unidadMedida));
 	const canFinalize =
@@ -653,11 +653,11 @@ export default function PosPage() {
 
 							<div className="pos__line">
 								<label htmlFor="pos-cliente">
-									Cliente {creditPayment ? <span className="pos__req">*</span> : null}
+									Cliente {creditPayment || clienteObligatorio ? <span className="pos__req">*</span> : null}
 								</label>
 								<div className="pos__pill">
 									<select id="pos-cliente" value={clienteId} onChange={(e) => setClienteId(e.target.value)}>
-										<option value="">Sin cliente</option>
+										<option value="">{clienteObligatorio || creditPayment ? "Selecciona un cliente" : "Sin cliente"}</option>
 										{clientes.map((c) => (
 											<option key={c.id} value={c.id}>
 												{c.nombre}
@@ -667,8 +667,10 @@ export default function PosPage() {
 									<ChevronDown size={13} strokeWidth={2} aria-hidden="true" />
 								</div>
 							</div>
-							{creditPayment && !clienteId ? (
-								<p className="pos__hint pos__hint--error">Obligatorio para ventas a crédito.</p>
+							{(creditPayment || clienteObligatorio) && !clienteId ? (
+								<p className="pos__hint pos__hint--error">
+									{creditPayment ? "Obligatorio para ventas a crédito." : "Tu negocio exige un cliente en todas las ventas."}
+								</p>
 							) : clienteId && creditPayment ? (
 								<p className="pos__hint">Se creará una cuenta por cobrar para este cliente.</p>
 							) : null}
