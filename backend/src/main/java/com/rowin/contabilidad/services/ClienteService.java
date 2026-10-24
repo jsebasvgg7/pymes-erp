@@ -13,6 +13,8 @@ public interface ClienteService {
 
     Page<ClienteResponse> listarPorEmpresa(Long empresaId, Pageable pageable);
 
+    long contarPorEmpresa(Long empresaId);
+
     ClienteResponse obtenerPorId(Long id);
 
     ClienteResponse crear(ClienteCreateRequest request);

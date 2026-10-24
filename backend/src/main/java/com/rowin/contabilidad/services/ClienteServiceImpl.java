@@ -78,6 +78,12 @@ public class ClienteServiceImpl extends BaseCrudService implements ClienteServic
 
     @Override
     @Transactional(readOnly = true)
+    public long contarPorEmpresa(Long empresaId) {
+        return clienteRepository.countByEmpresaIdAndActiveTrue(empresaId);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public ClienteResponse obtenerPorId(Long id) {
         Cliente entity = clienteRepository.findByIdAndActiveTrue(id)
             .orElseThrow(() -> new ResourceNotFoundException("Cliente no encontrado: " + id));

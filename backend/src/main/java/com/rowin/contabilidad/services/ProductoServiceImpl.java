@@ -67,6 +67,12 @@ public class ProductoServiceImpl extends BaseCrudService implements ProductoServ
 
     @Override
     @Transactional(readOnly = true)
+    public long contarPorEmpresa(Long empresaId) {
+        return productoRepository.countByEmpresaIdAndActiveTrue(empresaId);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public Page<ProductoResponse> listarPorEmpresaYCategoria(Long empresaId, Long categoriaId, Pageable pageable) {
         Empresa empresa = getByIdOrThrow(empresaRepository, empresaId, "Empresa");
         if (!isActive(empresa)) {

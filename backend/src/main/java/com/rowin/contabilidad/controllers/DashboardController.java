@@ -10,8 +10,6 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -43,17 +41,14 @@ public class DashboardController {
     @GetMapping("/resumen/{empresaId}")
     public ResponseEntity<Map<String, Object>> obtenerResumen(@PathVariable Long empresaId) {
         Map<String, Object> dashboard = new HashMap<>();
-        Pageable firstPage = PageRequest.of(0, 1);
 
-        // Totales usando consultas a la bd
-        dashboard.put("totalClientes", clienteService.listarPorEmpresa(empresaId, firstPage).getTotalElements());
-        dashboard.put("totalProveedores", proveedorService.listarPorEmpresa(empresaId, firstPage).getTotalElements());
-        dashboard.put("totalProductos", productoService.listarPorEmpresa(empresaId, firstPage).getTotalElements());
+        dashboard.put("totalClientes", clienteService.contarPorEmpresa(empresaId));
+        dashboard.put("totalProveedores", proveedorService.contarPorEmpresa(empresaId));
+        dashboard.put("totalProductos", productoService.contarPorEmpresa(empresaId));
 
         dashboard.put("productosStockBajo", productoService.contarProductosConStockBajo(empresaId));
         dashboard.put("productosSinStock", productoService.contarProductosSinStock(empresaId));
 
-        // Caja
         List<CajaResumenResponse> cajas = cajaService.obtenerResumenTodasCajas(empresaId);
         dashboard.put("totalCajas", cajas.size());
 

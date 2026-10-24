@@ -22,4 +22,6 @@ public interface ProveedorRepository extends JpaRepository<Proveedor, Long> {
     Page<Proveedor> searchByEmpresaAndNombre(@Param("empresaId") Long empresaId, @Param("search") String search, Pageable pageable);
 
     List<Proveedor> findByEmpresaIdAndActiveTrue(Long empresaId);
+
+    long countByEmpresaIdAndActiveTrue(Long empresaId);
 }

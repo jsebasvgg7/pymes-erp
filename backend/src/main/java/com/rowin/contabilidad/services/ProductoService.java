@@ -14,6 +14,8 @@ public interface ProductoService {
 
     Page<ProductoResponse> listarPorEmpresa(Long empresaId, Pageable pageable);
 
+    long contarPorEmpresa(Long empresaId);
+
     Page<ProductoResponse> listarPorEmpresaYCategoria(Long empresaId, Long categoriaId, Pageable pageable);
 
     ProductoResponse obtenerPorId(Long id);

@@ -25,7 +25,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -171,8 +173,38 @@ public class CajaServiceImpl extends BaseCrudService implements CajaService {
             throw new ResourceNotFoundException("Empresa no encontrada: " + empresaId);
         }
 
-        return cajaRepository.findByEmpresaIdAndActiveTrue(empresaId).stream()
-            .map(this::construirResumen)
+        List<Caja> cajas = cajaRepository.findByEmpresaIdAndActiveTrue(empresaId);
+        if (cajas.isEmpty()) {
+            return List.of();
+        }
+
+        List<Long> cajaIds = cajas.stream().map(Caja::getId).toList();
+        Map<Long, BigDecimal> ingresos = new HashMap<>();
+        Map<Long, BigDecimal> egresos = new HashMap<>();
+        Map<Long, Long> cantidades = new HashMap<>();
+
+        for (Object[] fila : movimientoCajaRepository.resumenPorCajaYTipo(cajaIds)) {
+            Long cajaId = (Long) fila[0];
+            TipoMovimientoCaja tipo = (TipoMovimientoCaja) fila[1];
+            BigDecimal suma = (BigDecimal) fila[2];
+            cantidades.merge(cajaId, (Long) fila[3], Long::sum);
+            if (tipo == TipoMovimientoCaja.INGRESO) {
+                ingresos.put(cajaId, suma);
+            } else {
+                egresos.put(cajaId, suma);
+            }
+        }
+
+        return cajas.stream()
+            .map(caja -> new CajaResumenResponse(
+                caja.getId(),
+                caja.getNombre(),
+                caja.getSaldoInicial(),
+                caja.getSaldoActual(),
+                ingresos.getOrDefault(caja.getId(), BigDecimal.ZERO),
+                egresos.getOrDefault(caja.getId(), BigDecimal.ZERO),
+                cantidades.getOrDefault(caja.getId(), 0L).intValue()
+            ))
             .collect(Collectors.toList());
     }
 

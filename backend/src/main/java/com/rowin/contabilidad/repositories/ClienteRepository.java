@@ -22,4 +22,6 @@ public interface ClienteRepository extends JpaRepository<Cliente, Long> {
     Page<Cliente> searchByEmpresaAndNombre(@Param("empresaId") Long empresaId, @Param("search") String search, Pageable pageable);
 
     List<Cliente> findByEmpresaIdAndActiveTrue(Long empresaId);
+
+    long countByEmpresaIdAndActiveTrue(Long empresaId);
 }

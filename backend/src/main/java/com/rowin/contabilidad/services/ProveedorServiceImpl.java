@@ -53,6 +53,12 @@ public class ProveedorServiceImpl extends BaseCrudService implements ProveedorSe
 
     @Override
     @Transactional(readOnly = true)
+    public long contarPorEmpresa(Long empresaId) {
+        return proveedorRepository.countByEmpresaIdAndActiveTrue(empresaId);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public ProveedorResponse obtenerPorId(Long id) {
         Proveedor entity = proveedorRepository.findByIdAndActiveTrue(id)
             .orElseThrow(() -> new ResourceNotFoundException("Proveedor no encontrado: " + id));

@@ -10,6 +10,7 @@ import org.springframework.data.repository.query.Param;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.Collection;
 import java.util.List;
 
 public interface MovimientoCajaRepository extends JpaRepository<MovimientoCaja, Long> {
@@ -28,6 +29,12 @@ public interface MovimientoCajaRepository extends JpaRepository<MovimientoCaja, 
            "WHERE m.caja.id = :cajaId AND m.active = true AND m.tipo = :tipo")
     BigDecimal sumMontoByCajaAndTipo(@Param("cajaId") Long cajaId,
                                       @Param("tipo") TipoMovimientoCaja tipo);
+
+    @Query("SELECT m.caja.id, m.tipo, SUM(m.monto), COUNT(m) " +
+           "FROM MovimientoCaja m " +
+           "WHERE m.caja.id IN :cajaIds AND m.active = true " +
+           "GROUP BY m.caja.id, m.tipo")
+    List<Object[]> resumenPorCajaYTipo(@Param("cajaIds") Collection<Long> cajaIds);
 
     @Query("SELECT m.fecha AS fecha, m.tipo AS tipo, m.monto AS monto " +
            "FROM MovimientoCaja m " +

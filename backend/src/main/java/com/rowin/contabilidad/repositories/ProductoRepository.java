@@ -52,5 +52,7 @@ public interface ProductoRepository extends JpaRepository<Producto, Long> {
     @EntityGraph(attributePaths = "inventario")
     List<Producto> findByEmpresaIdAndActiveTrue(Long empresaId);
 
+    long countByEmpresaIdAndActiveTrue(Long empresaId);
+
     boolean existsByEmpresaIdAndSkuAndActiveTrue(Long empresaId, String sku);
 }

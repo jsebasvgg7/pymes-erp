@@ -12,6 +12,8 @@ public interface ProveedorService {
 
     Page<ProveedorResponse> listarPorEmpresa(Long empresaId, Pageable pageable);
 
+    long contarPorEmpresa(Long empresaId);
+
     ProveedorResponse obtenerPorId(Long id);
 
     ProveedorResponse crear(ProveedorCreateRequest request);
