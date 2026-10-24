@@ -234,4 +234,5 @@ class ConfiguracionEmpresaServiceTest {
         assertNull(response.nombreRecibo());
         assertNull(response.mensajePieRecibo());
     }
+
 }

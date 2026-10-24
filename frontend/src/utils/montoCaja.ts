@@ -17,6 +17,10 @@ export function formatoMoneda(value: number | null | undefined): string {
 	return formatCurrency(value ?? 0);
 }
 
+export function esConflicto(err: unknown): boolean {
+	return Boolean(err && typeof err === "object" && "response" in err && (err as { response?: { status?: number } }).response?.status === 409);
+}
+
 export function mensajeDeError(err: unknown, fallback: string): string {
 	if (err && typeof err === "object" && "response" in err) {
 		const data = (err as { response?: { data?: { message?: string } } }).response?.data;

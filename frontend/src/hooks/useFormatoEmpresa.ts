@@ -18,7 +18,8 @@ export function aplicarFormatoEmpresa(empresaId: number, configuracion: Configur
 		clienteObligatorio: configuracion.clienteObligatorio,
 		anchoRecibo: configuracion.anchoRecibo === 80 ? 80 : 58,
 		nombreRecibo: configuracion.nombreRecibo ?? "",
-		mensajePieRecibo: configuracion.mensajePieRecibo ?? ""
+		mensajePieRecibo: configuracion.mensajePieRecibo ?? "",
+		horaCierreAutomatico: configuracion.horaCierreAutomatico
 	};
 	setFormato(formato);
 	setAjustes(ajustes);

@@ -4,7 +4,7 @@ import Modal from "./Modal";
 import PrimaryButton from "./PrimaryButton";
 import SecondaryButton from "./SecondaryButton";
 import { cajaService, type CierreCajaResultado, type EstadoCaja } from "../services/cajaService";
-import { formatoMoneda, mensajeDeError, parseMonto } from "../utils/montoCaja";
+import { esConflicto, formatoMoneda, mensajeDeError, parseMonto } from "../utils/montoCaja";
 import "./AperturaCaja.css";
 
 type ModalAbrirProps = {
@@ -81,12 +81,12 @@ export function ModalAbrirCaja({ estado, onClose, onDone }: ModalAbrirProps) {
 
 type ModalCerrarProps = {
 	estado: EstadoCaja;
-	obligatorio?: boolean;
+	aviso?: boolean;
 	onClose: () => void;
 	onDone: () => void;
 };
 
-export function ModalCerrarCaja({ estado, obligatorio = false, onClose, onDone }: ModalCerrarProps) {
+export function ModalCerrarCaja({ estado, aviso = false, onClose, onDone }: ModalCerrarProps) {
 	const [valor, setValor] = useState("");
 	const [saving, setSaving] = useState(false);
 	const [error, setError] = useState<string | null>(null);
@@ -103,6 +103,11 @@ export function ModalCerrarCaja({ estado, obligatorio = false, onClose, onDone }
 		try {
 			setResultado(await cajaService.cerrarCaja(estado.cajaId, monto));
 		} catch (err) {
+			if (esConflicto(err)) {
+				onDone();
+				onClose();
+				return;
+			}
 			setError(mensajeDeError(err, "No se pudo cerrar la caja. Intenta nuevamente."));
 		} finally {
 			setSaving(false);
@@ -189,17 +194,15 @@ export function ModalCerrarCaja({ estado, obligatorio = false, onClose, onDone }
 	return (
 		<Modal
 			open
-			title={obligatorio ? "Cierra la caja del día anterior" : "Cerrar caja"}
+			title={aviso ? "Es hora de cerrar la caja" : "Cerrar caja"}
 			subtitle={estado.cajaNombre}
 			icon={<Lock size={20} strokeWidth={2} />}
-			onClose={saving || obligatorio ? undefined : onClose}
+			onClose={saving ? undefined : onClose}
 			footer={
 				<div className="apc__actions">
-					{obligatorio ? null : (
-						<SecondaryButton type="button" onClick={onClose} disabled={saving}>
-							Cancelar
-						</SecondaryButton>
-					)}
+					<SecondaryButton type="button" onClick={onClose} disabled={saving}>
+						{aviso ? "Todavía no" : "Cancelar"}
+					</SecondaryButton>
 					<PrimaryButton type="button" onClick={confirmar} disabled={!valido || saving}>
 						{saving ? "Cerrando..." : "Cerrar caja"}
 					</PrimaryButton>
@@ -207,9 +210,10 @@ export function ModalCerrarCaja({ estado, obligatorio = false, onClose, onDone }
 			}
 		>
 			<form className="apc__modal" onSubmit={(e) => e.preventDefault()}>
-				{obligatorio ? (
+				{aviso ? (
 					<p className="apc__hint">
-						Hay una caja abierta de un día anterior. Cuenta el efectivo que hay y ciérrala para seguir vendiendo.
+						Llegó la hora de cierre. Cuenta el efectivo que hay y ciérrala, o elige "Todavía no" para seguir vendiendo; el aviso
+						volverá en 30 minutos.
 					</p>
 				) : null}
 				<label className="apc__label" htmlFor="apc-contado">

@@ -29,8 +29,17 @@ export function useEstadoCaja(empresaId?: number) {
 
 	useEffect(() => {
 		recargar();
+		const alVolver = () => {
+			if (document.visibilityState === "visible") recargar();
+		};
 		window.addEventListener(EVENTO_CAMBIO, recargar);
-		return () => window.removeEventListener(EVENTO_CAMBIO, recargar);
+		window.addEventListener("focus", alVolver);
+		document.addEventListener("visibilitychange", alVolver);
+		return () => {
+			window.removeEventListener(EVENTO_CAMBIO, recargar);
+			window.removeEventListener("focus", alVolver);
+			document.removeEventListener("visibilitychange", alVolver);
+		};
 	}, [recargar]);
 
 	return { estados, cargado, recargar };

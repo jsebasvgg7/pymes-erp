@@ -9,6 +9,7 @@ export type AjustesConfig = {
 	anchoRecibo: AnchoRecibo;
 	nombreRecibo: string;
 	mensajePieRecibo: string;
+	horaCierreAutomatico: string;
 };
 
 const AJUSTES_INICIALES: AjustesConfig = {
@@ -17,7 +18,8 @@ const AJUSTES_INICIALES: AjustesConfig = {
 	clienteObligatorio: false,
 	anchoRecibo: 58,
 	nombreRecibo: "",
-	mensajePieRecibo: ""
+	mensajePieRecibo: "",
+	horaCierreAutomatico: "04:00"
 };
 
 let estado: AjustesConfig = AJUSTES_INICIALES;
@@ -38,6 +40,8 @@ export function ajustesActuales(): AjustesConfig {
 	return estado;
 }
 
+const FORMATO_HORA = /^([01]\d|2[0-3]):[0-5]\d$/;
+
 function textoOActual(nuevo: unknown, actual: string): string {
 	return typeof nuevo === "string" ? nuevo : actual;
 }
@@ -53,7 +57,11 @@ export function setAjustes(parcial: Partial<AjustesConfig>) {
 			typeof parcial.clienteObligatorio === "boolean" ? parcial.clienteObligatorio : estado.clienteObligatorio,
 		anchoRecibo: ancho === 58 || ancho === 80 ? ancho : estado.anchoRecibo,
 		nombreRecibo: textoOActual(parcial.nombreRecibo, estado.nombreRecibo),
-		mensajePieRecibo: textoOActual(parcial.mensajePieRecibo, estado.mensajePieRecibo)
+		mensajePieRecibo: textoOActual(parcial.mensajePieRecibo, estado.mensajePieRecibo),
+		horaCierreAutomatico:
+			typeof parcial.horaCierreAutomatico === "string" && FORMATO_HORA.test(parcial.horaCierreAutomatico)
+				? parcial.horaCierreAutomatico
+				: estado.horaCierreAutomatico
 	};
 	if (
 		siguiente.stockMinimoDefecto === estado.stockMinimoDefecto &&
@@ -61,7 +69,8 @@ export function setAjustes(parcial: Partial<AjustesConfig>) {
 		siguiente.clienteObligatorio === estado.clienteObligatorio &&
 		siguiente.anchoRecibo === estado.anchoRecibo &&
 		siguiente.nombreRecibo === estado.nombreRecibo &&
-		siguiente.mensajePieRecibo === estado.mensajePieRecibo
+		siguiente.mensajePieRecibo === estado.mensajePieRecibo &&
+		siguiente.horaCierreAutomatico === estado.horaCierreAutomatico
 	) {
 		return;
 	}

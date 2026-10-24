@@ -2,7 +2,7 @@ import { Building2, Coins, Package, Receipt, ShoppingCart, Wallet, type LucideIc
 
 export type CampoEmpresa = "nombre" | "nit" | "direccion" | "telefono" | "email";
 
-export type CampoConfiguracion = "moneda" | "simboloMoneda" | "formatoFecha" | "stockMinimoDefecto" | "avisarStockBajo" | "diasVencimientoCredito" | "clienteObligatorio" | "anchoRecibo" | "nombreRecibo" | "mensajePieRecibo";
+export type CampoConfiguracion = "moneda" | "simboloMoneda" | "formatoFecha" | "stockMinimoDefecto" | "avisarStockBajo" | "diasVencimientoCredito" | "clienteObligatorio" | "horaCierreAutomatico" | "anchoRecibo" | "nombreRecibo" | "mensajePieRecibo";
 
 export type OpcionConfig = {
 	valor: string;
@@ -16,7 +16,7 @@ export type FilaConfig = {
 	campo?: CampoEmpresa;
 	campoConfig?: CampoConfiguracion;
 	interruptor?: boolean;
-	tipoInput?: "text" | "email" | "tel";
+	tipoInput?: "text" | "email" | "tel" | "time";
 	requerido?: boolean;
 	maxLength?: number;
 	mayusculas?: boolean;
@@ -192,9 +192,13 @@ export const MODULOS_CONFIG: ModuloConfig[] = [
 		filas: [
 			{
 				id: "cierre",
-				etiqueta: "Cierre automático",
-				descripcion: "Hora en la que el sistema cierra una caja que quedó abierta.",
-				valorFijo: "04:00, hora de Bogotá"
+				etiqueta: "Aviso de cierre de caja",
+				descripcion: "Hora (de Bogotá) a la que el sistema te avisa que es momento de cerrar la caja y contar el efectivo. Puedes posponer el aviso y seguir vendiendo.",
+				campoConfig: "horaCierreAutomatico",
+				tipoInput: "time",
+				requerido: true,
+				patron: /^([01]\d|2[0-3]):[0-5]\d$/,
+				mensajePatron: "Escribe una hora válida, por ejemplo 04:00 o 22:30."
 			}
 		]
 	},

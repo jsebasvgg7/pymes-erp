@@ -16,14 +16,12 @@ import com.rowin.contabilidad.entities.Usuario;
 import com.rowin.contabilidad.exceptions.ResourceNotFoundException;
 import com.rowin.contabilidad.repositories.AperturaCajaRepository;
 import com.rowin.contabilidad.repositories.CajaRepository;
+import com.rowin.contabilidad.repositories.ConfiguracionEmpresaRepository;
 import com.rowin.contabilidad.repositories.MovimientoCajaRepository;
 import com.rowin.contabilidad.repositories.UsuarioRepository;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
@@ -38,49 +36,40 @@ import java.util.List;
 @Service
 public class AperturaCajaService {
 
-    private static final Logger log = LoggerFactory.getLogger(AperturaCajaService.class);
-
     static final ZoneId ZONA = ZoneId.of("America/Bogota");
     static final LocalTime HORA_CORTE = LocalTime.of(4, 0);
 
     static final String MENSAJE_CERRADA = "La caja está cerrada. Ábrela para registrar ventas y movimientos.";
-    static final String MENSAJE_VENCIDA = "Hay una caja abierta de un día anterior. Ciérrala para continuar.";
 
     private final AperturaCajaRepository aperturaCajaRepository;
     private final CajaRepository cajaRepository;
     private final MovimientoCajaRepository movimientoCajaRepository;
     private final UsuarioRepository usuarioRepository;
+    private final ConfiguracionEmpresaRepository configuracionEmpresaRepository;
 
     public AperturaCajaService(
         AperturaCajaRepository aperturaCajaRepository,
         CajaRepository cajaRepository,
         MovimientoCajaRepository movimientoCajaRepository,
-        UsuarioRepository usuarioRepository
+        UsuarioRepository usuarioRepository,
+        ConfiguracionEmpresaRepository configuracionEmpresaRepository
     ) {
         this.aperturaCajaRepository = aperturaCajaRepository;
         this.cajaRepository = cajaRepository;
         this.movimientoCajaRepository = movimientoCajaRepository;
         this.usuarioRepository = usuarioRepository;
+        this.configuracionEmpresaRepository = configuracionEmpresaRepository;
     }
 
     public AperturaCaja exigirAperturaDeCaja(Long cajaId) {
-        AperturaCaja apertura = aperturaCajaRepository.findFirstByCajaIdAndEstado(cajaId, EstadoAperturaCaja.ABIERTA)
+        return aperturaCajaRepository.findFirstByCajaIdAndEstado(cajaId, EstadoAperturaCaja.ABIERTA)
             .orElseThrow(() -> conflicto(MENSAJE_CERRADA));
-        if (esVencida(apertura)) {
-            throw conflicto(MENSAJE_VENCIDA);
-        }
-        return apertura;
     }
 
     public AperturaCaja exigirAperturaDeEmpresa(Long empresaId) {
-        List<AperturaCaja> abiertas = aperturaCajaRepository.findPorEmpresaYEstado(empresaId, EstadoAperturaCaja.ABIERTA);
-        if (abiertas.isEmpty()) {
-            throw conflicto(MENSAJE_CERRADA);
-        }
-        return abiertas.stream()
-            .filter(apertura -> !esVencida(apertura))
+        return aperturaCajaRepository.findPorEmpresaYEstado(empresaId, EstadoAperturaCaja.ABIERTA).stream()
             .findFirst()
-            .orElseThrow(() -> conflicto(MENSAJE_VENCIDA));
+            .orElseThrow(() -> conflicto(MENSAJE_CERRADA));
     }
 
     public AperturaCaja abrirInicial(Caja caja, Usuario usuario) {
@@ -133,7 +122,7 @@ public class AperturaCajaService {
         if (ultima.getEstado() == EstadoAperturaCaja.ABIERTA) {
             throw conflicto("La caja ya está abierta.");
         }
-        if (ultima.getFechaApertura().isBefore(ultimoCorte(ahora()))) {
+        if (ultima.getFechaApertura().isBefore(ultimoCorte(ahora(), horaCorteDe(ultima)))) {
             throw conflicto("Solo se puede reabrir un cierre del día en curso.");
         }
         ultima.setEstado(EstadoAperturaCaja.ABIERTA);
@@ -154,26 +143,20 @@ public class AperturaCajaService {
             .map(this::aRespuesta);
     }
 
-    @Scheduled(cron = "0 0 4 * * *", zone = "America/Bogota")
-    @Transactional
-    public void cerrarAutomaticamente() {
-        List<AperturaCaja> abiertas = aperturaCajaRepository.findByEstado(EstadoAperturaCaja.ABIERTA);
-        for (AperturaCaja apertura : abiertas) {
-            Totales totales = calcularTotales(apertura);
-            aplicarCierre(apertura, totales.efectivoEsperado(), null, null, TipoCierreCaja.AUTOMATICO);
-            aperturaCajaRepository.save(apertura);
-        }
-        log.info("Cierre automático de cajas: {} cajas cerradas", abiertas.size());
-    }
-
     boolean esVencida(AperturaCaja apertura) {
         return apertura.getEstado() == EstadoAperturaCaja.ABIERTA
-            && apertura.getFechaApertura().isBefore(ultimoCorte(ahora()));
+            && apertura.getFechaApertura().isBefore(ultimoCorte(ahora(), horaCorteDe(apertura)));
     }
 
-    static LocalDateTime ultimoCorte(LocalDateTime ahora) {
-        LocalDateTime corteDeHoy = ahora.toLocalDate().atTime(HORA_CORTE);
+    static LocalDateTime ultimoCorte(LocalDateTime ahora, LocalTime horaCorte) {
+        LocalDateTime corteDeHoy = ahora.toLocalDate().atTime(horaCorte);
         return ahora.isBefore(corteDeHoy) ? corteDeHoy.minusDays(1) : corteDeHoy;
+    }
+
+    private LocalTime horaCorteDe(AperturaCaja apertura) {
+        return configuracionEmpresaRepository.findByEmpresaId(apertura.getEmpresa().getId())
+            .map(configuracion -> configuracion.getHoraCierreAutomatico())
+            .orElse(HORA_CORTE);
     }
 
     private static LocalDateTime ahora() {

@@ -16,6 +16,8 @@ import com.rowin.contabilidad.entities.TipoMovimientoCaja;
 import com.rowin.contabilidad.entities.Usuario;
 import com.rowin.contabilidad.repositories.AperturaCajaRepository;
 import com.rowin.contabilidad.repositories.CajaRepository;
+import com.rowin.contabilidad.repositories.ConfiguracionEmpresaRepository;
+import com.rowin.contabilidad.entities.ConfiguracionEmpresa;
 import com.rowin.contabilidad.repositories.MovimientoCajaRepository;
 import com.rowin.contabilidad.repositories.UsuarioRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -33,6 +35,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
@@ -59,6 +62,7 @@ class AperturaCajaServiceTest {
     @Mock private CajaRepository cajaRepository;
     @Mock private MovimientoCajaRepository movimientoCajaRepository;
     @Mock private UsuarioRepository usuarioRepository;
+    @Mock private ConfiguracionEmpresaRepository configuracionEmpresaRepository;
 
     @InjectMocks private AperturaCajaService service;
 
@@ -88,11 +92,11 @@ class AperturaCajaServiceTest {
     }
 
     private LocalDateTime fechaVigente() {
-        return AperturaCajaService.ultimoCorte(ahoraBogota()).plusSeconds(1);
+        return AperturaCajaService.ultimoCorte(ahoraBogota(), AperturaCajaService.HORA_CORTE).plusSeconds(1);
     }
 
     private LocalDateTime fechaVencida() {
-        return AperturaCajaService.ultimoCorte(ahoraBogota()).minusSeconds(1);
+        return AperturaCajaService.ultimoCorte(ahoraBogota(), AperturaCajaService.HORA_CORTE).minusSeconds(1);
     }
 
     private AperturaCaja apertura(Long id, EstadoAperturaCaja estado, LocalDateTime fechaApertura, String inicial) {
@@ -264,13 +268,22 @@ class AperturaCajaServiceTest {
     }
 
     @Test
-    void aperturaDeUnDiaAnteriorExigeCerrarla() {
+    void aperturaConLaHoraDeAvisoPasadaSigueSirviendoParaOperar() {
+        AperturaCaja vencida = apertura(100L, EstadoAperturaCaja.ABIERTA, fechaVencida(), "0.00");
         when(aperturaCajaRepository.findFirstByCajaIdAndEstado(CAJA_ID, EstadoAperturaCaja.ABIERTA))
-            .thenReturn(Optional.of(apertura(100L, EstadoAperturaCaja.ABIERTA, fechaVencida(), "0.00")));
+            .thenReturn(Optional.of(vencida));
 
-        ResponseStatusException ex = assertEstado(HttpStatus.CONFLICT, () -> service.exigirAperturaDeCaja(CAJA_ID));
+        assertSame(vencida, service.exigirAperturaDeCaja(CAJA_ID));
+    }
 
-        assertEquals(AperturaCajaService.MENSAJE_VENCIDA, ex.getReason());
+    @Test
+    void laEmpresaUsaLaPrimeraCajaAbiertaAunqueYaPasoLaHoraDeAviso() {
+        AperturaCaja vencida = apertura(100L, EstadoAperturaCaja.ABIERTA, fechaVencida(), "0.00");
+        AperturaCaja vigente = apertura(101L, EstadoAperturaCaja.ABIERTA, fechaVigente(), "0.00");
+        when(aperturaCajaRepository.findPorEmpresaYEstado(EMPRESA_ID, EstadoAperturaCaja.ABIERTA))
+            .thenReturn(List.of(vencida, vigente));
+
+        assertSame(vencida, service.exigirAperturaDeEmpresa(EMPRESA_ID));
     }
 
     @Test
@@ -289,27 +302,6 @@ class AperturaCajaServiceTest {
         ResponseStatusException ex = assertEstado(HttpStatus.CONFLICT, () -> service.exigirAperturaDeEmpresa(EMPRESA_ID));
 
         assertEquals(AperturaCajaService.MENSAJE_CERRADA, ex.getReason());
-    }
-
-    @Test
-    void laEmpresaUsaLaPrimeraCajaAbiertaVigente() {
-        AperturaCaja vencida = apertura(100L, EstadoAperturaCaja.ABIERTA, fechaVencida(), "0.00");
-        AperturaCaja vigente = apertura(101L, EstadoAperturaCaja.ABIERTA, fechaVigente(), "0.00");
-        when(aperturaCajaRepository.findPorEmpresaYEstado(EMPRESA_ID, EstadoAperturaCaja.ABIERTA))
-            .thenReturn(List.of(vencida, vigente));
-
-        assertSame(vigente, service.exigirAperturaDeEmpresa(EMPRESA_ID));
-    }
-
-    @Test
-    void siTodasLasAbiertasSonDeDiasAnterioresLaEmpresaDebeCerrarlas() {
-        AperturaCaja vencida = apertura(100L, EstadoAperturaCaja.ABIERTA, fechaVencida(), "0.00");
-        when(aperturaCajaRepository.findPorEmpresaYEstado(EMPRESA_ID, EstadoAperturaCaja.ABIERTA))
-            .thenReturn(List.of(vencida));
-
-        ResponseStatusException ex = assertEstado(HttpStatus.CONFLICT, () -> service.exigirAperturaDeEmpresa(EMPRESA_ID));
-
-        assertEquals(AperturaCajaService.MENSAJE_VENCIDA, ex.getReason());
     }
 
     @Test
@@ -365,25 +357,6 @@ class AperturaCajaServiceTest {
         when(aperturaCajaRepository.findFirstByCajaIdOrderByIdDesc(CAJA_ID)).thenReturn(Optional.empty());
 
         assertEstado(HttpStatus.CONFLICT, () -> service.reabrir(CAJA_ID, EMAIL));
-    }
-
-    @Test
-    void cierreAutomaticoNoPideConteoYQuedaMarcadoComoAutomatico() {
-        AperturaCaja abierta = apertura(100L, EstadoAperturaCaja.ABIERTA, fechaVencida(), "20000.00");
-        stubGuardar();
-        when(aperturaCajaRepository.findByEstado(EstadoAperturaCaja.ABIERTA)).thenReturn(List.of(abierta));
-        when(movimientoCajaRepository.totalesPorApertura(100L)).thenReturn(filas(
-            total(TipoFormaPago.EFECTIVO, TipoMovimientoCaja.INGRESO, "30000.00")
-        ));
-
-        service.cerrarAutomaticamente();
-
-        assertEquals(EstadoAperturaCaja.CERRADA, abierta.getEstado());
-        assertEquals(TipoCierreCaja.AUTOMATICO, abierta.getTipoCierre());
-        assertEquals(0, new BigDecimal("50000.00").compareTo(abierta.getEfectivoEsperado()));
-        assertNull(abierta.getEfectivoContado());
-        assertNull(abierta.getDiferencia());
-        assertNull(abierta.getUsuarioCierre());
     }
 
     @Test
@@ -453,15 +426,53 @@ class AperturaCajaServiceTest {
     void elCorteDelDiaOperativoEsALas4DeLaMadrugada() {
         assertEquals(
             LocalDateTime.of(2026, 10, 23, 4, 0),
-            AperturaCajaService.ultimoCorte(LocalDateTime.of(2026, 10, 24, 3, 59))
+            AperturaCajaService.ultimoCorte(LocalDateTime.of(2026, 10, 24, 3, 59), LocalTime.of(4, 0))
         );
         assertEquals(
             LocalDateTime.of(2026, 10, 24, 4, 0),
-            AperturaCajaService.ultimoCorte(LocalDateTime.of(2026, 10, 24, 4, 0))
+            AperturaCajaService.ultimoCorte(LocalDateTime.of(2026, 10, 24, 4, 0), LocalTime.of(4, 0))
         );
         assertEquals(
             LocalDateTime.of(2026, 10, 24, 4, 0),
-            AperturaCajaService.ultimoCorte(LocalDateTime.of(2026, 10, 24, 23, 30))
+            AperturaCajaService.ultimoCorte(LocalDateTime.of(2026, 10, 24, 23, 30), LocalTime.of(4, 0))
         );
     }
+
+    @Test
+    void elCorteSigueLaHoraConfiguradaPorLaEmpresa() {
+        assertEquals(
+            LocalDateTime.of(2026, 10, 23, 22, 0),
+            AperturaCajaService.ultimoCorte(LocalDateTime.of(2026, 10, 24, 21, 59), LocalTime.of(22, 0))
+        );
+        assertEquals(
+            LocalDateTime.of(2026, 10, 24, 22, 0),
+            AperturaCajaService.ultimoCorte(LocalDateTime.of(2026, 10, 24, 22, 0), LocalTime.of(22, 0))
+        );
+    }
+
+    @Test
+    void laAperturaSeVenceConLaHoraDeSuEmpresa() {
+        LocalDateTime ahora = ahoraBogota();
+        LocalTime hora = ahora.toLocalTime().minusHours(1).withSecond(0).withNano(0);
+        if (hora.isAfter(ahora.toLocalTime())) {
+            hora = ahora.toLocalTime().withSecond(0).withNano(0);
+        }
+        ConfiguracionEmpresa configuracion = new ConfiguracionEmpresa();
+        configuracion.setEmpresa(empresa);
+        configuracion.setHoraCierreAutomatico(hora);
+        when(configuracionEmpresaRepository.findByEmpresaId(EMPRESA_ID)).thenReturn(Optional.of(configuracion));
+        LocalDateTime corte = AperturaCajaService.ultimoCorte(ahora, hora);
+
+        assertTrue(service.esVencida(apertura(100L, EstadoAperturaCaja.ABIERTA, corte.minusMinutes(1), "0.00")));
+        assertFalse(service.esVencida(apertura(101L, EstadoAperturaCaja.ABIERTA, corte.plusSeconds(1), "0.00")));
+    }
+
+    @Test
+    void sinConfiguracionSeUsaElCorteDeLas4() {
+        when(configuracionEmpresaRepository.findByEmpresaId(EMPRESA_ID)).thenReturn(Optional.empty());
+
+        assertTrue(service.esVencida(apertura(100L, EstadoAperturaCaja.ABIERTA, fechaVencida(), "0.00")));
+        assertFalse(service.esVencida(apertura(101L, EstadoAperturaCaja.ABIERTA, fechaVigente(), "0.00")));
+    }
+
 }
