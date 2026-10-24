@@ -14,7 +14,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class HistorialSemanalTest {
 
-    // 2026-10-19 es lunes; 2026-10-25 es domingo.
     private static final LocalDate LUNES = LocalDate.of(2026, 10, 19);
 
     private static Linea linea(LocalDateTime fecha, FacturaEstado estado, String cantidad, String total) {
@@ -28,8 +27,8 @@ class HistorialSemanalTest {
             List.of(linea(LocalDateTime.of(2026, 10, 25, 23, 30), FacturaEstado.EMITIDA, "2", "6000")),
             LUNES, LUNES.plusWeeks(1));
         assertEquals(2, res.size());
-        assertEquals(new BigDecimal("2"), res.get(0).unidades());   // semana del 19 al 25
-        assertEquals(BigDecimal.ZERO, res.get(1).unidades());       // semana siguiente sin ventas
+        assertEquals(new BigDecimal("2"), res.get(0).unidades());
+        assertEquals(BigDecimal.ZERO, res.get(1).unidades());
     }
 
     @Test
@@ -66,7 +65,6 @@ class HistorialSemanalTest {
 
     @Test
     void productoConMenosDeOchoSemanasQuedaSinDatosSuficientes() {
-        // Primera venta hace 2 semanas (semana del 5 de octubre) y hoy estamos en la semana del 19.
         var res = HistorialSemanal.agrupar(
             List.of(linea(LocalDateTime.of(2026, 10, 21, 10, 0), FacturaEstado.EMITIDA, "1", "1000")),
             LUNES.minusWeeks(3), LUNES,
@@ -77,7 +75,6 @@ class HistorialSemanalTest {
 
     @Test
     void productoConOchoSemanasOMasTieneDatosSuficientes() {
-        // Primera venta el 31 de agosto: 8 semanas completas hasta la semana del 19 de octubre.
         var res = HistorialSemanal.agrupar(
             List.of(linea(LocalDateTime.of(2026, 10, 21, 10, 0), FacturaEstado.EMITIDA, "1", "1000")),
             LUNES.minusWeeks(3), LUNES,

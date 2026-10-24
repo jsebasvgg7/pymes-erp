@@ -16,16 +16,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
-/** Agrupa líneas de factura por producto y por semana (lunes a domingo). */
 public final class HistorialSemanal {
 
-    /** Un producto con menos semanas de historia que esto queda como «sin datos suficientes» (AC5). */
     public static final int MIN_SEMANAS_HISTORIAL = 8;
 
     private HistorialSemanal() {
     }
 
-    /** Una línea de factura con los datos mínimos para el historial. */
     public record Linea(
         LocalDateTime fechaEmision,
         FacturaEstado estado,
@@ -46,15 +43,6 @@ public final class HistorialSemanal {
         return agrupar(lineas, semanaInicial, semanaFinal, Map.of());
     }
 
-    /**
-     * Devuelve una fila por producto y por semana del rango, con 0 en las semanas sin ventas
-     * (para estimar demanda, una semana sin ventas es un dato, no un hueco).
-     * Solo cuentan los estados de {@link FacturaEstado#VENTAS_VALIDAS}.
-     *
-     * @param primeraVentaPorProducto fecha de la primera venta válida de cada producto (de toda su vida),
-     *                                para calcular cuántas semanas de historia tiene. Si falta un producto,
-     *                                se usa la primera venta que aparece en {@code lineas}.
-     */
     public static List<VentaSemanalProductoResponse> agrupar(
         List<Linea> lineas,
         LocalDate semanaInicial,
@@ -105,7 +93,6 @@ public final class HistorialSemanal {
         return resultado;
     }
 
-    /** Valor de la línea descontando la parte proporcional del descuento de la factura. */
     private static BigDecimal netoDeLinea(Linea l) {
         if (l.subtotalFactura() != null && l.subtotalFactura().signum() > 0 && l.descuentoFactura() != null) {
             BigDecimal descuento = l.descuentoFactura().multiply(l.totalLinea())

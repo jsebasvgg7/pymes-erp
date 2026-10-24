@@ -10,7 +10,6 @@ import jakarta.persistence.Table;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
-/** Stock de un producto registrado una vez por semana (lunes a domingo). */
 @Entity
 @Table(name = "inventario_semanal")
 public class InventarioSemanal extends BaseEntity {

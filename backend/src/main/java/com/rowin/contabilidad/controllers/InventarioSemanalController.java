@@ -3,6 +3,7 @@ package com.rowin.contabilidad.controllers;
 import com.rowin.contabilidad.dto.inventario.InventarioSemanalResponse;
 import com.rowin.contabilidad.services.InventarioSemanalService;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -24,8 +25,9 @@ public class InventarioSemanalController {
     @GetMapping("/{empresaId}")
     public ResponseEntity<List<InventarioSemanalResponse>> historial(
         @PathVariable Long empresaId,
-        @RequestParam(defaultValue = "12") int semanas
+        @RequestParam(defaultValue = "12") int semanas,
+        Authentication authentication
     ) {
-        return ResponseEntity.ok(inventarioSemanalService.historial(empresaId, semanas));
+        return ResponseEntity.ok(inventarioSemanalService.historial(empresaId, semanas, authentication.getName()));
     }
 }
