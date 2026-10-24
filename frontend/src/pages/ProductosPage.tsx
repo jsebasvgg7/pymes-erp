@@ -18,6 +18,7 @@ import { productoService, type Producto, type ProductoCreateRequest, type Produc
 import { useAccionRapida } from "../hooks/useAccionRapida";
 import "./ProductosPage.css";
 import { formatCurrency, useFormato } from "../utils/formatoConfig";
+import { ajustesActuales } from "../utils/ajustesConfig";
 
 const UNIDADES_MEDIDA = ["UNIDAD", "KILOGRAMO", "GRAMO", "LITRO", "MILILITRO", "CAJA", "PAQUETE"] as const;
 
@@ -111,7 +112,8 @@ export default function ProductosPage() {
 	}, []);
 
 	const openCreateModal = useCallback(() => {
-		setForm(defaultFormState);
+		const { stockMinimoDefecto } = ajustesActuales();
+		setForm({ ...defaultFormState, stockMinimo: stockMinimoDefecto > 0 ? String(stockMinimoDefecto) : "" });
 		setEditingProduct(null);
 		setFormError(null);
 		setModalOpen(true);

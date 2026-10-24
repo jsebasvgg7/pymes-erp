@@ -29,6 +29,7 @@ function valorDeFila(fila: FilaConfig, empresa: Empresa | null, configuracion: C
 
 function textoDeFila(fila: FilaConfig, empresa: Empresa | null, configuracion: Configuracion | null): string {
 	const valor = valorDeFila(fila, empresa, configuracion);
+	if (fila.interruptor) return valor === "true" ? "Activado" : "Desactivado";
 	return fila.opciones?.find((opcion) => opcion.valor === valor)?.etiqueta ?? valor;
 }
 
@@ -44,6 +45,8 @@ export default function ConfiguracionPage() {
 	const [guardando, setGuardando] = useState(false);
 	const [errorGuardado, setErrorGuardado] = useState<string | null>(null);
 	const [aviso, setAviso] = useState<string | null>(null);
+	const [errorFila, setErrorFila] = useState<string | null>(null);
+	const [cambiandoId, setCambiandoId] = useState<string | null>(null);
 	const avisoTimer = useRef<number | null>(null);
 
 	const loadData = useCallback(async () => {
@@ -85,10 +88,31 @@ export default function ConfiguracionPage() {
 		[moduloActivo]
 	);
 
+	const seleccionarModulo = (id: string) => {
+		setErrorFila(null);
+		setModuloActivo(id);
+	};
+
 	const mostrarAviso = (texto: string) => {
 		if (avisoTimer.current !== null) window.clearTimeout(avisoTimer.current);
 		setAviso(texto);
 		avisoTimer.current = window.setTimeout(() => setAviso(null), 3500);
+	};
+
+	const cambiarInterruptor = async (fila: FilaConfig, activo: boolean) => {
+		if (!fila.campoConfig || !empresaId || cambiandoId) return;
+		setCambiandoId(fila.id);
+		setErrorFila(null);
+		try {
+			const actualizada = await configuracionService.actualizar(empresaId, { [fila.campoConfig]: activo });
+			setConfiguracion(actualizada);
+			aplicarFormatoEmpresa(empresaId, actualizada);
+			mostrarAviso(`${fila.etiqueta}: ${activo ? "activado" : "desactivado"}.`);
+		} catch (err) {
+			setErrorFila(extractErrorMessage(err, "No se pudo guardar el cambio. Intenta nuevamente."));
+		} finally {
+			setCambiandoId(null);
+		}
 	};
 
 	const abrirEdicion = (fila: FilaConfig) => {
@@ -111,7 +135,8 @@ export default function ConfiguracionPage() {
 		setErrorGuardado(null);
 		try {
 			if (campoConfig) {
-				const actualizada = await configuracionService.actualizar(empresaId, { [campoConfig]: valor });
+				const dato = campoConfig === "stockMinimoDefecto" ? Number(valor.replace(",", ".")) : valor;
+				const actualizada = await configuracionService.actualizar(empresaId, { [campoConfig]: dato });
 				setConfiguracion(actualizada);
 				aplicarFormatoEmpresa(empresaId, actualizada);
 			} else if (campo) {
@@ -160,7 +185,7 @@ export default function ConfiguracionPage() {
 			/>
 
 			<div className="set__layout">
-				<ConfigNav modulos={MODULOS_CONFIG} activo={moduloActivo} onSeleccionar={setModuloActivo} />
+				<ConfigNav modulos={MODULOS_CONFIG} activo={moduloActivo} onSeleccionar={seleccionarModulo} />
 
 				<section className="set__panel" aria-labelledby="set-panel-title">
 					<header className="set__panelHead">
@@ -178,6 +203,11 @@ export default function ConfiguracionPage() {
 					<div role="status" aria-live="polite">
 						{aviso ? <span className="set__notice">{aviso}</span> : null}
 					</div>
+					{errorFila ? (
+						<span className="set__noticeError" role="alert">
+							{errorFila}
+						</span>
+					) : null}
 
 					<ul className="set__rows">
 						{modulo.filas.map((fila) => (
@@ -186,6 +216,9 @@ export default function ConfiguracionPage() {
 								fila={fila}
 								valor={textoDeFila(fila, empresa, configuracion)}
 								onEditar={abrirEdicion}
+								activo={fila.interruptor ? valorDeFila(fila, empresa, configuracion) === "true" : false}
+								cambiando={cambiandoId === fila.id}
+								onCambiar={cambiarInterruptor}
 							/>
 						))}
 					</ul>

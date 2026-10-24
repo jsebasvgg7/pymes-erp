@@ -32,6 +32,7 @@ import {
 import "../components/dashboard/dashboard-charts.css";
 import "./DashboardPage.css";
 import { formatCurrency, useFormato } from "../utils/formatoConfig";
+import { useAjustes } from "../utils/ajustesConfig";
 
 function formatDateInput(value: Date) {
 	return value.toISOString().slice(0, 10);
@@ -60,6 +61,7 @@ const RANGO_DIAS_DEFECTO = 240;
 
 export default function DashboardPage() {
 	useFormato();
+	const { avisarStockBajo } = useAjustes();
 	const usuario = authService.getUsuario();
 	const empresaId = usuario?.empresaId;
 	const { estados: estadosCaja } = useEstadoCaja(empresaId);
@@ -309,8 +311,9 @@ export default function DashboardPage() {
 				<StatCard
 					icon={<AlertTriangle size={20} strokeWidth={1.8} />}
 					title="Productos con stock bajo"
-					value={stockBajo.toLocaleString("es-CO")}
-					color={stockBajo > 0 ? "amber" : "green"}
+					value={avisarStockBajo ? stockBajo.toLocaleString("es-CO") : "—"}
+					color={avisarStockBajo ? (stockBajo > 0 ? "amber" : "green") : "blue"}
+					footnote={avisarStockBajo ? undefined : "Avisos desactivados"}
 				/>
 				<StatCard
 					icon={<Wallet size={20} strokeWidth={1.8} />}

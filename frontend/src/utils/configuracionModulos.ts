@@ -2,7 +2,7 @@ import { Building2, Coins, Package, Receipt, ShoppingCart, Wallet, type LucideIc
 
 export type CampoEmpresa = "nombre" | "nit" | "direccion" | "telefono" | "email";
 
-export type CampoConfiguracion = "moneda" | "simboloMoneda" | "formatoFecha";
+export type CampoConfiguracion = "moneda" | "simboloMoneda" | "formatoFecha" | "stockMinimoDefecto" | "avisarStockBajo";
 
 export type OpcionConfig = {
 	valor: string;
@@ -15,6 +15,7 @@ export type FilaConfig = {
 	descripcion: string;
 	campo?: CampoEmpresa;
 	campoConfig?: CampoConfiguracion;
+	interruptor?: boolean;
 	tipoInput?: "text" | "email" | "tel";
 	requerido?: boolean;
 	maxLength?: number;
@@ -156,13 +157,19 @@ export const MODULOS_CONFIG: ModuloConfig[] = [
 			{
 				id: "stockMinimo",
 				etiqueta: "Stock mínimo por defecto",
-				descripcion: "Valor inicial para los productos nuevos.",
-				valorFijo: "Por producto"
+				descripcion: "Valor inicial para los productos nuevos. Cada producto conserva su propio mínimo.",
+				campoConfig: "stockMinimoDefecto",
+				requerido: true,
+				maxLength: 12,
+				patron: /^\d+([.,]\d{1,3})?$/,
+				mensajePatron: "Escribe un número igual o mayor a 0, con hasta 3 decimales."
 			},
 			{
 				id: "avisos",
 				etiqueta: "Avisos de stock bajo",
-				descripcion: "Mostrar una alerta cuando un producto llegue a su mínimo."
+				descripcion: "Mostrar una alerta cuando un producto llegue a su mínimo.",
+				campoConfig: "avisarStockBajo",
+				interruptor: true
 			}
 		]
 	},

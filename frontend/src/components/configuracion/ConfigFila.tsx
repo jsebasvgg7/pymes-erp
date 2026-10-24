@@ -5,9 +5,12 @@ type ConfigFilaProps = {
 	fila: FilaConfig;
 	valor: string;
 	onEditar: (fila: FilaConfig) => void;
+	activo?: boolean;
+	cambiando?: boolean;
+	onCambiar?: (fila: FilaConfig, activo: boolean) => void;
 };
 
-export default function ConfigFila({ fila, valor, onEditar }: ConfigFilaProps) {
+export default function ConfigFila({ fila, valor, onEditar, activo = false, cambiando = false, onCambiar }: ConfigFilaProps) {
 	const editable = Boolean(fila.campo || fila.campoConfig);
 	const vacio = valor.trim().length === 0;
 
@@ -27,7 +30,17 @@ export default function ConfigFila({ fila, valor, onEditar }: ConfigFilaProps) {
 				{textoValor}
 			</div>
 			<div className="set__rowAction">
-				{editable ? (
+				{fila.interruptor && onCambiar ? (
+					<button
+						type="button"
+						role="switch"
+						aria-checked={activo}
+						aria-label={fila.etiqueta}
+						className={["set__switch", activo ? "set__switch--on" : ""].filter(Boolean).join(" ")}
+						disabled={cambiando}
+						onClick={() => onCambiar(fila, !activo)}
+					/>
+				) : editable ? (
 					<button
 						type="button"
 						className="set__edit"

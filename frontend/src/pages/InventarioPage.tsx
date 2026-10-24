@@ -13,6 +13,7 @@ import { authService } from "../services/authService";
 import { inventarioService, type Inventario, type MovimientoInventario, type TipoMovimientoInventario } from "../services/inventarioService";
 import "./InventarioPage.css";
 import { formatCurrency, formatDateTime, useFormato } from "../utils/formatoConfig";
+import { useAjustes } from "../utils/ajustesConfig";
 
 type StockLevel = "Agotado" | "Stock Bajo" | "Disponible";
 
@@ -66,6 +67,7 @@ function unidadCorta(unidad: string) {
 
 export default function InventarioPage() {
   useFormato();
+  const { avisarStockBajo } = useAjustes();
   const empresaId = authService.getUsuario()?.empresaId;
   const usuarioId = authService.getUsuario()?.id;
 
@@ -225,7 +227,7 @@ export default function InventarioPage() {
         if (r.estadoInventario === "Agotado") {
           return <span className="inv__stockBadge inv__stockBadge--out">Agotado</span>;
         }
-        if (r.estadoInventario === "Stock Bajo") {
+        if (r.estadoInventario === "Stock Bajo" && avisarStockBajo) {
           return <span className="inv__stockBadge inv__stockBadge--low">Stock Bajo</span>;
         }
         return <span className="inv__stockBadge inv__stockBadge--ok">Disponible</span>;
@@ -242,7 +244,7 @@ export default function InventarioPage() {
         </>
       )
     }),
-    [openAjuste, openHistory]
+    [openAjuste, openHistory, avisarStockBajo]
   );
 
   const emptyState = useMemo(() => {

@@ -19,6 +19,7 @@ import { productoService, type Producto } from "../services/ProductoService";
 import { ventaService, type FacturaVentaResponse } from "../services/VentaService";
 import "./PosPage.css";
 import { formatCurrency, formatDateTime, useFormato } from "../utils/formatoConfig";
+import { ajustesActuales, useAjustes } from "../utils/ajustesConfig";
 
 type CartLine = {
 	productId: number;
@@ -97,7 +98,7 @@ function formatUnits(stock: number, unidadMedida: string) {
 
 function stockStatus(p: Producto): StockStatus {
 	if (p.stockActual <= 0) return "out";
-	if (p.stockActual <= p.stockMinimo) return "low";
+	if (p.stockActual <= p.stockMinimo && ajustesActuales().avisarStockBajo) return "low";
 	return "ok";
 }
 
@@ -133,6 +134,7 @@ function extractErrorMessage(err: unknown, fallback: string): string {
 
 export default function PosPage() {
 	useFormato();
+	useAjustes();
 	const empresaId = authService.getUsuario()?.empresaId;
 	const { estados: estadosCaja, cargado: estadosCargados } = useEstadoCaja(empresaId);
 	const sinCajaAbierta = estadosCargados && estadosCaja.length > 0 && !estadosCaja.some((e) => e.abierta);

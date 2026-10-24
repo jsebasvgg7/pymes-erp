@@ -25,6 +25,7 @@ import {
 import { downloadCsv } from "../utils/csv";
 import "./ReportesPage.css";
 import { formatCurrency, formatDate, useFormato } from "../utils/formatoConfig";
+import { useAjustes } from "../utils/ajustesConfig";
 
 function fechaLocal(fecha: Date) {
 	const año = fecha.getFullYear();
@@ -47,6 +48,7 @@ function sumCantidad(detalles: Array<{ cantidad: number }>) {
 
 export default function ReportesPage() {
 	useFormato();
+	const { avisarStockBajo } = useAjustes();
 	const empresaId = authService.getUsuario()?.empresaId;
 	const [periodo, setPeriodo] = useState(periodoMesActual);
 
@@ -386,24 +388,26 @@ export default function ReportesPage() {
 					}
 				/>
 
-				<DataTable
-					title="Productos con poco inventario"
-					layout={lowStockLayout}
-					data={lowStockProducts}
-					pageSize={10}
-					headerActions={
-						<button type="button" className="rep__exportButton" onClick={exportLowStock} disabled={lowStockProducts.length === 0}>
-							<Download size={15} />
-							<span>Exportar CSV</span>
-						</button>
-					}
-					emptyState={
-						<div className="rep__empty">
-							<div className="rep__emptyTitle">No hay productos con poco inventario.</div>
-							<div className="rep__emptySubtitle">Los productos con stock bajo aparecen automáticamente aquí.</div>
-						</div>
-					}
-				/>
+				{avisarStockBajo ? (
+					<DataTable
+						title="Productos con poco inventario"
+						layout={lowStockLayout}
+						data={lowStockProducts}
+						pageSize={10}
+						headerActions={
+							<button type="button" className="rep__exportButton" onClick={exportLowStock} disabled={lowStockProducts.length === 0}>
+								<Download size={15} />
+								<span>Exportar CSV</span>
+							</button>
+						}
+						emptyState={
+							<div className="rep__empty">
+								<div className="rep__emptyTitle">No hay productos con poco inventario.</div>
+								<div className="rep__emptySubtitle">Los productos con stock bajo aparecen automáticamente aquí.</div>
+							</div>
+						}
+					/>
+				) : null}
 
 				<DataTable
 					title="Movimientos recientes de Caja"
