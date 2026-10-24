@@ -1,6 +1,7 @@
 package com.rowin.contabilidad.services;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import com.rowin.contabilidad.dto.detalle.DetalleFacturaRequest;
 import com.rowin.contabilidad.dto.factura.CategoriaVentaResponse;
 import com.rowin.contabilidad.dto.factura.FacturaVentaCreateRequest;
@@ -16,6 +17,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -189,6 +192,7 @@ public class FacturaVentaServiceImpl extends BaseCrudService implements FacturaV
         for (DetalleFacturaRequest detalleReq : request.detalles()) {
             DetalleFactura detalle = new DetalleFactura();
             detalle.setFacturaVenta(factura);
+            validarDecimalesDeCantidad(detalleReq.cantidad());
             detalle.setDescripcion(detalleReq.descripcion());
             detalle.setCantidad(detalleReq.cantidad());
             detalle.setPrecioUnitario(detalleReq.precioUnitario());
@@ -199,6 +203,8 @@ public class FacturaVentaServiceImpl extends BaseCrudService implements FacturaV
                 if (!isActive(producto)) {
                     throw new ResourceNotFoundException("Producto no encontrado: " + detalleReq.productoId());
                 }
+
+                validarUnidadDeCantidad(producto, detalleReq.cantidad());
 
                 // Validar stock
                 Inventario inventario = inventarioRepository.findByProductoIdAndActiveTrue(producto.getId())
@@ -225,9 +231,9 @@ public class FacturaVentaServiceImpl extends BaseCrudService implements FacturaV
                         }
                         impuestos.add(impuesto);
                         // Calcular impuesto
-                        BigDecimal impuestoMonto = detalleReq.cantidad()
+                        BigDecimal impuestoMonto = redondearMoneda(detalleReq.cantidad()
                             .multiply(detalleReq.precioUnitario())
-                            .multiply(impuesto.getPorcentaje().divide(new BigDecimal(100)));
+                            .multiply(impuesto.getPorcentaje().divide(new BigDecimal(100))));
                         totalImpuestos = totalImpuestos.add(impuestoMonto);
                     }
                     detalle.setImpuestos(impuestos);
@@ -235,7 +241,7 @@ public class FacturaVentaServiceImpl extends BaseCrudService implements FacturaV
             }
 
             // Calcular total del detalle
-            BigDecimal totalLinea = detalleReq.cantidad().multiply(detalleReq.precioUnitario());
+            BigDecimal totalLinea = redondearMoneda(detalleReq.cantidad().multiply(detalleReq.precioUnitario()));
             detalle.setTotalLinea(totalLinea);
             subtotal = subtotal.add(totalLinea);
 
@@ -373,5 +379,53 @@ public class FacturaVentaServiceImpl extends BaseCrudService implements FacturaV
             .stream()
             .map(row -> new CategoriaVentaResponse((String) row[0], row[1] instanceof BigDecimal bd ? bd : new BigDecimal(row[1].toString())))
             .toList();
+    }
+
+        @Override
+    @Transactional(readOnly = true)
+    public List<com.rowin.contabilidad.dto.factura.VentaSemanalProductoResponse> obtenerHistorialSemanal(Long empresaId, int semanas) {
+        if (semanas < 1 || semanas > 104) {
+            throw new IllegalArgumentException("El número de semanas debe estar entre 1 y 104");
+        }
+        LocalDate semanaActual = com.rowin.contabilidad.utils.HistorialSemanal.inicioSemana(LocalDate.now());
+        LocalDate semanaInicial = semanaActual.minusWeeks(semanas - 1L);
+        LocalDateTime inicio = semanaInicial.atStartOfDay();
+        LocalDateTime fin = semanaActual.plusDays(6).atTime(LocalTime.MAX);
+
+        List<com.rowin.contabilidad.utils.HistorialSemanal.Linea> lineas = facturaVentaRepository
+            .findLineasVentaParaHistorial(empresaId, FacturaEstado.VENTAS_VALIDAS, inicio, fin)
+            .stream()
+            .map(r -> new com.rowin.contabilidad.utils.HistorialSemanal.Linea(
+                (LocalDateTime) r[0], (FacturaEstado) r[1], (Long) r[2], (String) r[3],
+                (java.math.BigDecimal) r[4], (java.math.BigDecimal) r[5],
+                (java.math.BigDecimal) r[6], (java.math.BigDecimal) r[7]))
+            .toList();
+
+        java.util.Map<Long, LocalDateTime> primeraVenta = new java.util.HashMap<>();
+        for (Object[] r : facturaVentaRepository.findPrimeraVentaPorProducto(empresaId, FacturaEstado.VENTAS_VALIDAS)) {
+            primeraVenta.put((Long) r[0], (LocalDateTime) r[1]);
+        }
+
+        return com.rowin.contabilidad.utils.HistorialSemanal.agrupar(lineas, semanaInicial, semanaActual, primeraVenta);
+    }
+
+    private static final int MAX_DECIMALES_CANTIDAD = 3;
+
+    private void validarDecimalesDeCantidad(BigDecimal cantidad) {
+        if (cantidad.stripTrailingZeros().scale() > MAX_DECIMALES_CANTIDAD) {
+            throw new IllegalArgumentException("La cantidad admite máximo " + MAX_DECIMALES_CANTIDAD + " decimales.");
+        }
+    }
+
+    private void validarUnidadDeCantidad(Producto producto, BigDecimal cantidad) {
+        boolean esDecimal = cantidad.stripTrailingZeros().scale() > 0;
+        UnidadMedida unidad = producto.getUnidadMedida();
+        if (esDecimal && (unidad == null || !unidad.permiteDecimales())) {
+            throw new IllegalArgumentException("El producto " + producto.getNombre() + " no admite cantidades decimales.");
+        }
+    }
+
+    private static BigDecimal redondearMoneda(BigDecimal valor) {
+        return valor.scale() > 2 ? valor.setScale(2, RoundingMode.HALF_UP) : valor;
     }
 }

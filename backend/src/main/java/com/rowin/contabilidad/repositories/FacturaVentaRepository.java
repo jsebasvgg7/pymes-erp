@@ -1,3 +1,4 @@
+
 package com.rowin.contabilidad.repositories;
 
 import com.rowin.contabilidad.entities.FacturaVenta;
@@ -15,54 +16,72 @@ import java.util.Optional;
 
 public interface FacturaVentaRepository extends JpaRepository<FacturaVenta, Long> {
 
-       @Query(value = "SELECT f FROM FacturaVenta f LEFT JOIN FETCH f.cliente LEFT JOIN FETCH f.formaPago WHERE f.empresa.id = :empresaId AND f.active = true", countQuery = "SELECT count(f) FROM FacturaVenta f WHERE f.empresa.id = :empresaId AND f.active = true")
-       Page<FacturaVenta> findByEmpresaIdAndActiveTrue(@Param("empresaId") Long empresaId, Pageable pageable);
+    @EntityGraph(attributePaths = {"cliente", "formaPago"})
+    Page<FacturaVenta> findByActiveTrue(Pageable pageable);
 
-       @EntityGraph(attributePaths = { "cliente", "formaPago" })
-       Page<FacturaVenta> findByActiveTrue(Pageable pageable);
+    @EntityGraph(attributePaths = {"cliente", "formaPago"})
+    Page<FacturaVenta> findByActiveTrueAndEmpresaId(Pageable pageable, Long empresaId);
 
-       @EntityGraph(attributePaths = { "cliente", "formaPago" })
-       Page<FacturaVenta> findByActiveTrueAndEmpresaId(Pageable pageable, Long empresaId);
+    @EntityGraph(attributePaths = {"cliente", "formaPago"})
+    Page<FacturaVenta> findByActiveTrueAndEmpresaIdAndClienteId(Pageable pageable, Long empresaId, Long clienteId);
 
-       @EntityGraph(attributePaths = { "cliente", "formaPago" })
-       Page<FacturaVenta> findByActiveTrueAndEmpresaIdAndClienteId(Pageable pageable, Long empresaId, Long clienteId);
+    @EntityGraph(attributePaths = {"cliente", "formaPago", "detalles", "detalles.producto"})
+    Optional<FacturaVenta> findByIdAndActiveTrue(Long id);
 
-       @EntityGraph(attributePaths = { "cliente", "formaPago", "detalles", "detalles.producto" })
-       Optional<FacturaVenta> findByIdAndActiveTrue(Long id);
+    @Query("SELECT DISTINCT f FROM FacturaVenta f " +
+           "LEFT JOIN FETCH f.cliente " +
+           "LEFT JOIN FETCH f.formaPago " +
+           "LEFT JOIN FETCH f.detalles d " +
+           "LEFT JOIN FETCH d.producto " +
+           "WHERE f.empresa.id = :empresaId AND f.active = true " +
+           "AND f.fechaEmision BETWEEN :inicio AND :fin")
+    List<FacturaVenta> findByEmpresaAndFechaBetween(@Param("empresaId") Long empresaId,
+                                                     @Param("inicio") LocalDateTime inicio,
+                                                     @Param("fin") LocalDateTime fin);
 
-       @Query("SELECT DISTINCT f FROM FacturaVenta f " +
-                     "LEFT JOIN FETCH f.cliente " +
-                     "LEFT JOIN FETCH f.formaPago " +
-                     "LEFT JOIN FETCH f.detalles d " +
-                     "LEFT JOIN FETCH d.producto " +
-                     "WHERE f.empresa.id = :empresaId AND f.active = true " +
-                     "AND f.fechaEmision BETWEEN :inicio AND :fin")
-       List<FacturaVenta> findByEmpresaAndFechaBetween(@Param("empresaId") Long empresaId,
-                     @Param("inicio") LocalDateTime inicio,
-                     @Param("fin") LocalDateTime fin);
+    @Query("SELECT COALESCE(SUM(f.total), 0) FROM FacturaVenta f " +
+           "WHERE f.empresa.id = :empresaId AND f.active = true " +
+           "AND f.fechaEmision BETWEEN :inicio AND :fin")
+    BigDecimal sumTotalByEmpresaAndFechaBetween(@Param("empresaId") Long empresaId,
+                                                 @Param("inicio") LocalDateTime inicio,
+                                                 @Param("fin") LocalDateTime fin);
 
-       @Query("SELECT COALESCE(SUM(f.total), 0) FROM FacturaVenta f " +
-                     "WHERE f.empresa.id = :empresaId AND f.active = true " +
-                     "AND f.fechaEmision BETWEEN :inicio AND :fin")
-       BigDecimal sumTotalByEmpresaAndFechaBetween(@Param("empresaId") Long empresaId,
-                     @Param("inicio") LocalDateTime inicio,
-                     @Param("fin") LocalDateTime fin);
+    @Query("SELECT COALESCE(MAX(f.numero), '0') FROM FacturaVenta f WHERE f.empresa.id = :empresaId")
+    String findMaxNumeroByEmpresa(@Param("empresaId") Long empresaId);
 
-       @Query("SELECT COALESCE(MAX(f.numero), '0') FROM FacturaVenta f WHERE f.empresa.id = :empresaId")
-       String findMaxNumeroByEmpresa(@Param("empresaId") Long empresaId);
+    @Query("SELECT COALESCE(c.nombre, 'Sin categoría') AS categoria, " +
+           "SUM(CASE WHEN f.subtotal > 0 THEN d.totalLinea - (f.descuento * d.totalLinea / f.subtotal) ELSE d.totalLinea END) AS total " +
+           "FROM FacturaVenta f " +
+           "JOIN f.detalles d " +
+           "LEFT JOIN d.producto p " +
+           "LEFT JOIN p.categoria c " +
+           "WHERE f.empresa.id = :empresaId AND f.active = true " +
+           "AND f.fechaEmision BETWEEN :inicio AND :fin " +
+           "GROUP BY c.nombre " +
+           "ORDER BY SUM(CASE WHEN f.subtotal > 0 THEN d.totalLinea - (f.descuento * d.totalLinea / f.subtotal) ELSE d.totalLinea END) DESC")
+    List<Object[]> sumVentasPorCategoria(@Param("empresaId") Long empresaId,
+                                          @Param("inicio") LocalDateTime inicio,
+                                          @Param("fin") LocalDateTime fin);
+     @Query("SELECT f.fechaEmision, f.estado, p.id, p.nombre, d.cantidad, d.totalLinea, f.subtotal, f.descuento " +
+           "FROM FacturaVenta f " +
+           "JOIN f.detalles d " +
+           "JOIN d.producto p " +
+           "WHERE f.empresa.id = :empresaId AND f.active = true " +
+           "AND f.estado IN :estados " +
+           "AND f.fechaEmision BETWEEN :inicio AND :fin")
+    List<Object[]> findLineasVentaParaHistorial(@Param("empresaId") Long empresaId,
+                                                @Param("estados") java.util.Collection<com.rowin.contabilidad.entities.FacturaEstado> estados,
+                                                @Param("inicio") LocalDateTime inicio,
+                                                @Param("fin") LocalDateTime fin);
 
-       @Query("SELECT COALESCE(c.nombre, 'Sin categoría') AS categoria, " +
-                     "SUM(CASE WHEN f.subtotal > 0 THEN d.totalLinea - (f.descuento * d.totalLinea / f.subtotal) ELSE d.totalLinea END) AS total "
-                     +
-                     "FROM FacturaVenta f " +
-                     "JOIN f.detalles d " +
-                     "LEFT JOIN d.producto p " +
-                     "LEFT JOIN p.categoria c " +
-                     "WHERE f.empresa.id = :empresaId AND f.active = true " +
-                     "AND f.fechaEmision BETWEEN :inicio AND :fin " +
-                     "GROUP BY c.nombre " +
-                     "ORDER BY SUM(CASE WHEN f.subtotal > 0 THEN d.totalLinea - (f.descuento * d.totalLinea / f.subtotal) ELSE d.totalLinea END) DESC")
-       List<Object[]> sumVentasPorCategoria(@Param("empresaId") Long empresaId,
-                     @Param("inicio") LocalDateTime inicio,
-                     @Param("fin") LocalDateTime fin);
+      @Query("SELECT p.id, MIN(f.fechaEmision) " +
+           "FROM FacturaVenta f " +
+           "JOIN f.detalles d " +
+           "JOIN d.producto p " +
+           "WHERE f.empresa.id = :empresaId AND f.active = true " +
+           "AND f.estado IN :estados " +
+           "GROUP BY p.id")
+    List<Object[]> findPrimeraVentaPorProducto(@Param("empresaId") Long empresaId,
+                                               @Param("estados") java.util.Collection<com.rowin.contabilidad.entities.FacturaEstado> estados);
+
 }

@@ -278,12 +278,12 @@ export default function Sidebar() {
 					<div className="dash__headerRight">
 						<button
 							type="button"
-							className="ui-search dash__headerSearch"
+							className="dash__headerSearch"
 							aria-label="Buscar en la aplicación"
 							aria-haspopup="dialog"
 							onClick={() => setPaletteOpen(true)}
 						>
-							<Search size={16} className="ui-search__icon" aria-hidden="true" />
+							<Search size={16} className="dash__headerSearchIcon" aria-hidden="true" />
 							<span className="dash__headerSearchText">Buscar...</span>
 							<kbd className="dash__headerSearchKbd">{ATAJO_BUSQUEDA}</kbd>
 						</button>

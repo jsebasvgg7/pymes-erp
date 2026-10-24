@@ -4,6 +4,7 @@ import com.rowin.contabilidad.dto.factura.CategoriaVentaResponse;
 import com.rowin.contabilidad.dto.factura.FacturaVentaCreateRequest;
 import com.rowin.contabilidad.dto.factura.FacturaVentaResponse;
 import com.rowin.contabilidad.dto.factura.FacturaVentaUpdateRequest;
+import com.rowin.contabilidad.dto.factura.VentaSemanalProductoResponse;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
@@ -32,4 +33,6 @@ public interface FacturaVentaService {
     BigDecimal obtenerTotalVentasPorPeriodo(Long empresaId, LocalDateTime inicio, LocalDateTime fin);
 
     List<CategoriaVentaResponse> obtenerVentasPorCategoria(Long empresaId, LocalDateTime inicio, LocalDateTime fin);
+
+        List<VentaSemanalProductoResponse> obtenerHistorialSemanal(Long empresaId, int semanas);
 }

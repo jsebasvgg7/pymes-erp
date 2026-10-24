@@ -5,6 +5,7 @@ import com.rowin.contabilidad.dto.factura.FacturaVentaCreateRequest;
 import com.rowin.contabilidad.dto.factura.FacturaVentaResponse;
 import com.rowin.contabilidad.dto.factura.FacturaVentaUpdateRequest;
 import com.rowin.contabilidad.services.FacturaVentaService;
+import com.rowin.contabilidad.dto.factura.VentaSemanalProductoResponse;
 import jakarta.validation.Valid;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Page;
@@ -101,4 +102,13 @@ public class FacturaVentaController {
     ) {
         return ResponseEntity.ok(facturaVentaService.obtenerVentasPorCategoria(empresaId, inicio, fin));
     }
+
+    @GetMapping("/historial-semanal/{empresaId}")
+    public ResponseEntity<List<VentaSemanalProductoResponse>> obtenerHistorialSemanal(
+        @PathVariable Long empresaId,
+        @RequestParam(defaultValue = "12") int semanas
+    ) {
+        return ResponseEntity.ok(facturaVentaService.obtenerHistorialSemanal(empresaId, semanas));
+    }
+
 }

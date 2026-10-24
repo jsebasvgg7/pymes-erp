@@ -43,6 +43,43 @@ const UNIT_LABELS: Record<string, [string, string]> = {
 	PAQUETE: ["paquete", "paquetes"]
 };
 
+const DECIMAL_UNITS = new Set(["KILOGRAMO", "GRAMO", "LITRO", "MILILITRO"]);
+const DECIMAL_STEP = 0.5;
+const MAX_DECIMALS = 3;
+
+function allowsDecimals(unidadMedida: string) {
+	return DECIMAL_UNITS.has(unidadMedida);
+}
+
+function quantityStep(unidadMedida: string) {
+	return allowsDecimals(unidadMedida) ? DECIMAL_STEP : 1;
+}
+
+function roundQuantity(value: number) {
+	const factor = 10 ** MAX_DECIMALS;
+	return Math.round(value * factor) / factor;
+}
+
+function isValidQuantity(quantity: number, unidadMedida: string) {
+	return allowsDecimals(unidadMedida) ? quantity > 0 : quantity >= 1;
+}
+
+function formatQuantity(quantity: number) {
+	return quantity.toLocaleString("es-CO", { maximumFractionDigits: MAX_DECIMALS, useGrouping: false });
+}
+
+function quantitySuffix(unidadMedida: string) {
+	return allowsDecimals(unidadMedida) ? ` ${(UNIT_LABELS[unidadMedida] ?? UNIT_LABELS.UNIDAD)[1]}` : "";
+}
+
+function parseQuantityInput(raw: string, decimals: boolean) {
+	if (!decimals) return raw.replace(/\D/g, "");
+	const cleaned = raw.replace(/\./g, ",").replace(/[^\d,]/g, "");
+	const [integer, ...rest] = cleaned.split(",");
+	if (rest.length === 0) return integer;
+	return `${integer},${rest.join("").slice(0, MAX_DECIMALS)}`;
+}
+
 const STATUS_LABELS: Record<StockStatus, string> = {
 	ok: "Disponible",
 	low: "Stock bajo",
@@ -110,6 +147,7 @@ export default function PosPage() {
 	const [error, setError] = useState<string | null>(null);
 
 	const [lines, setLines] = useState<CartLine[]>([]);
+	const [quantityDrafts, setQuantityDrafts] = useState<Record<number, string>>({});
 	const [formaPagoId, setFormaPagoId] = useState<string>("");
 	const [clienteId, setClienteId] = useState<string>("");
 	const [receivedDigits, setReceivedDigits] = useState("");
@@ -199,7 +237,10 @@ export default function PosPage() {
 	const discount = Math.min(discountDigits ? Number(discountDigits) : 0, subtotal);
 	const discountPercent = subtotal > 0 ? (discount / subtotal) * 100 : 0;
 	const total = subtotal - discount;
-	const unitsCount = useMemo(() => cartItems.reduce((acc, i) => acc + i.quantity, 0), [cartItems]);
+	const unitsCount = useMemo(
+		() => cartItems.reduce((acc, i) => acc + (allowsDecimals(i.product.unidadMedida) ? 1 : i.quantity), 0),
+		[cartItems]
+	);
 
 	const selectedFormaPago = useMemo(() => formasPago.find((f) => String(f.id) === formaPagoId), [formaPagoId, formasPago]);
 	const cashPayment = isCashMethod(selectedFormaPago);
@@ -210,7 +251,7 @@ export default function PosPage() {
 	const insufficientCash = cashPayment && received > 0 && received < total;
 	const missingClientForCredit = creditPayment && !clienteId;
 
-	const hasInvalidQuantity = cartItems.some((i) => i.quantity < 1);
+	const hasInvalidQuantity = cartItems.some((i) => !isValidQuantity(i.quantity, i.product.unidadMedida));
 	const canFinalize =
 		cartItems.length > 0 &&
 		Boolean(formaPagoId) &&
@@ -225,18 +266,43 @@ export default function PosPage() {
 		setSaleError(null);
 		setLines((prev) => {
 			const existing = prev.find((l) => l.productId === p.id);
-			if (!existing) return [...prev, { productId: p.id, quantity: 1 }];
-			return prev.map((l) => (l.productId === p.id ? { ...l, quantity: Math.min(l.quantity + 1, p.stockActual) } : l));
+			if (!existing) return [...prev, { productId: p.id, quantity: Math.min(1, p.stockActual) }];
+			return prev.map((l) =>
+				l.productId === p.id
+					? { ...l, quantity: roundQuantity(Math.min(l.quantity + quantityStep(p.unidadMedida), p.stockActual)) }
+					: l
+			);
 		});
 	}, []);
 
 	const setQuantity = useCallback((p: Producto, quantity: number) => {
-		const next = Math.max(0, Math.min(quantity, p.stockActual));
+		const next = Math.max(0, Math.min(roundQuantity(quantity), p.stockActual));
 		setLines((prev) => prev.map((l) => (l.productId === p.id ? { ...l, quantity: next } : l)));
 	}, []);
 
-	const normalizeQuantity = useCallback((productId: number) => {
-		setLines((prev) => prev.map((l) => (l.productId === productId && l.quantity < 1 ? { ...l, quantity: 1 } : l)));
+	const changeQuantity = useCallback(
+		(p: Producto, raw: string) => {
+			const text = parseQuantityInput(raw, allowsDecimals(p.unidadMedida));
+			const value = Number(text.replace(",", ".")) || 0;
+			setQuantityDrafts((prev) => ({ ...prev, [p.id]: value > p.stockActual ? formatQuantity(p.stockActual) : text }));
+			setQuantity(p, value);
+		},
+		[setQuantity]
+	);
+
+	const normalizeQuantity = useCallback((p: Producto) => {
+		setQuantityDrafts((prev) => {
+			const next = { ...prev };
+			delete next[p.id];
+			return next;
+		});
+		setLines((prev) =>
+			prev.map((l) =>
+				l.productId === p.id && !isValidQuantity(l.quantity, p.unidadMedida)
+					? { ...l, quantity: Math.min(quantityStep(p.unidadMedida), p.stockActual) }
+					: l
+			)
+		);
 	}, []);
 
 	const removeLine = useCallback((productId: number) => {
@@ -253,6 +319,7 @@ export default function PosPage() {
 
 	const resetOrder = useCallback(() => {
 		setLines([]);
+		setQuantityDrafts({});
 		setClienteId("");
 		setReceivedDigits("");
 		setDiscountDigits("");
@@ -415,6 +482,9 @@ export default function PosPage() {
 								const inCart = qty !== undefined;
 								const status = stockStatus(p);
 								const atMax = inCart && qty >= p.stockActual;
+								const decimals = allowsDecimals(p.unidadMedida);
+								const step = quantityStep(p.unidadMedida);
+								const canDecrease = inCart && (decimals ? qty - step > 0 : qty - step >= 1);
 								return (
 									<li key={p.id} className={`pos__row${inCart ? " pos__row--selected" : ""}${status === "out" ? " pos__row--out" : ""}`}>
 										<button
@@ -464,19 +534,19 @@ export default function PosPage() {
 														type="button"
 														className="pos__ctrl"
 														aria-label="Disminuir cantidad"
-														disabled={qty <= 1}
-														onClick={() => setQuantity(p, qty - 1)}
+														disabled={!canDecrease}
+														onClick={() => setQuantity(p, qty - step)}
 													>
 														<Minus size={13} strokeWidth={2.2} />
 													</button>
 													<input
 														className="pos__qty"
 														type="text"
-														inputMode="numeric"
+														inputMode={decimals ? "decimal" : "numeric"}
 														aria-label={`Cantidad de ${p.nombre}`}
-														value={qty === 0 ? "" : qty}
-														onChange={(e) => setQuantity(p, Number(e.target.value.replace(/\D/g, "")))}
-														onBlur={() => normalizeQuantity(p.id)}
+														value={quantityDrafts[p.id] ?? (qty === 0 ? "" : formatQuantity(qty))}
+														onChange={(e) => changeQuantity(p, e.target.value)}
+														onBlur={() => normalizeQuantity(p)}
 														onFocus={(e) => e.target.select()}
 													/>
 													<button
@@ -485,7 +555,7 @@ export default function PosPage() {
 														aria-label="Aumentar cantidad"
 														disabled={atMax}
 														title={atMax ? "Stock máximo alcanzado" : undefined}
-														onClick={() => setQuantity(p, qty + 1)}
+														onClick={() => setQuantity(p, qty + step)}
 													>
 														<Plus size={13} strokeWidth={2.2} />
 													</button>
@@ -522,7 +592,13 @@ export default function PosPage() {
 											<li key={i.productId} className="pos__line">
 												<span className="pos__lineName">
 													{i.product.nombre}
-													{i.quantity > 1 ? <span className="pos__lineQty"> ×{i.quantity}</span> : null}
+													{i.quantity !== 1 || allowsDecimals(i.product.unidadMedida) ? (
+														<span className="pos__lineQty">
+															{" "}
+															×{formatQuantity(i.quantity)}
+															{quantitySuffix(i.product.unidadMedida)}
+														</span>
+													) : null}
 												</span>
 												<span className="pos__num">{formatCurrency(i.quantity * i.product.precioVenta)}</span>
 											</li>

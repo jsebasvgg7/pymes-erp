@@ -9,5 +9,9 @@ public enum UnidadMedida {
 	CAJA,
 	PAQUETE,
 	HORA,
-	SERVICIO
+	SERVICIO;
+
+	public boolean permiteDecimales() {
+		return this == KILOGRAMO || this == GRAMO || this == LITRO || this == MILILITRO;
+	}
 }
