@@ -2,6 +2,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { RefreshCw, Users, Package, AlertTriangle, Wallet, ShoppingCart } from "lucide-react";
 import DataTable, { DataTableLayout } from "../components/DataTable";
 import PageHeader from "../components/PageHeader";
+import AperturaCajaControl from "../components/AperturaCajaControl";
+import { useEstadoCaja } from "../hooks/useEstadoCaja";
 import PrimaryButton from "../components/PrimaryButton";
 import SecondaryButton from "../components/SecondaryButton";
 import StatusBadge from "../components/StatusBadge";
@@ -62,6 +64,8 @@ const RANGO_DIAS_DEFECTO = 240;
 export default function DashboardPage() {
 	const usuario = authService.getUsuario();
 	const empresaId = usuario?.empresaId;
+	const { estados: estadosCaja } = useEstadoCaja(empresaId);
+	const estadoCaja = estadosCaja.find((e) => e.abierta) ?? estadosCaja[0] ?? null;
 
 	const [loading, setLoading] = useState(true);
 	const [reloading, setReloading] = useState(false);
@@ -270,6 +274,7 @@ export default function DashboardPage() {
 				subtitle="Resumen en tiempo real de la operación de tu negocio."
 				actions={
 					<>
+						<AperturaCajaControl estado={estadoCaja} />
 						<SecondaryButton type="button" disabled>
 							Hoy
 						</SecondaryButton>

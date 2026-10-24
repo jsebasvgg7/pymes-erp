@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
+import GuardiaCierreCaja from "../components/GuardiaCierreCaja";
 import {
 	LayoutDashboard,
 	Users,
@@ -338,6 +339,7 @@ export default function Sidebar() {
 				</header>
 
 				<main className="dash__content">
+					<GuardiaCierreCaja />
 					<Outlet />
 				</main>
 			</div>

@@ -62,6 +62,45 @@ export type CajaResumen = {
   totalMovimientos: number;
 };
 
+export type EstadoApertura = "ABIERTA" | "CERRADA";
+export type ResultadoCierre = "CUADRADA" | "FALTANTE" | "SOBRANTE";
+export type TipoCierre = "MANUAL" | "AUTOMATICO";
+
+export type AperturaCaja = {
+  id: number;
+  cajaId: number;
+  cajaNombre: string;
+  estado: EstadoApertura;
+  usuarioAperturaId: number | null;
+  usuarioAperturaNombre: string | null;
+  fechaApertura: string;
+  efectivoInicial: number;
+  usuarioCierreId: number | null;
+  usuarioCierreNombre: string | null;
+  fechaCierre: string | null;
+  efectivoEsperado: number | null;
+  efectivoContado: number | null;
+  diferencia: number | null;
+  tipoCierre: TipoCierre | null;
+  resultado: ResultadoCierre | null;
+  requiereCierre: boolean;
+};
+
+export type EstadoCaja = {
+  cajaId: number;
+  cajaNombre: string;
+  abierta: boolean;
+  requiereCierre: boolean;
+  apertura: AperturaCaja | null;
+  efectivoSugerido: number | null;
+};
+
+export type CierreCajaResultado = {
+  apertura: AperturaCaja;
+  ingresosOtrosMedios: number;
+  egresosOtrosMedios: number;
+};
+
 export const cajaService = {
   async crear(data: CajaCreateRequest): Promise<Caja> {
     const response = await http.post("/api/caja/crear", data);
@@ -112,6 +151,31 @@ export const cajaService = {
     const response = await http.get(`/api/caja/movimientos/flujo-diario/${empresaId}`, {
       params: mesesAtras ? { mesesAtras } : undefined
     });
+    return response.data;
+  },
+
+  async obtenerEstados(empresaId: number): Promise<EstadoCaja[]> {
+    const response = await http.get(`/api/caja/estados/${empresaId}`);
+    return response.data;
+  },
+
+  async abrirCaja(cajaId: number, efectivoInicial: number): Promise<AperturaCaja> {
+    const response = await http.post(`/api/caja/abrir/${cajaId}`, { efectivoInicial });
+    return response.data;
+  },
+
+  async cerrarCaja(cajaId: number, efectivoContado: number): Promise<CierreCajaResultado> {
+    const response = await http.post(`/api/caja/cerrar/${cajaId}`, { efectivoContado });
+    return response.data;
+  },
+
+  async reabrirCaja(cajaId: number): Promise<AperturaCaja> {
+    const response = await http.post(`/api/caja/reabrir/${cajaId}`);
+    return response.data;
+  },
+
+  async listarCierres(cajaId: number, page: number = 0, size: number = 50): Promise<{ content: AperturaCaja[]; totalElements: number }> {
+    const response = await http.get(`/api/caja/cierres/${cajaId}?page=${page}&size=${size}`);
     return response.data;
   }
 };

@@ -13,8 +13,11 @@ import StatCard from "../components/StatCard";
 import StatusBadge from "../components/StatusBadge";
 import { authService } from "../services/authService";
 import { formaPagoService, type FormaPago } from "../services/formaPagoService";
-import { cajaService, type CajaResumen, type MovimientoCajaResponse } from "../services/cajaService";
+import { cajaService, type AperturaCaja, type CajaResumen, type MovimientoCajaResponse } from "../services/cajaService";
+import AperturaCajaControl from "../components/AperturaCajaControl";
+import { useEstadoCaja } from "../hooks/useEstadoCaja";
 import { useAccionRapida } from "../hooks/useAccionRapida";
+import { formatoMoneda } from "../utils/montoCaja";
 import "./CajaPage.css";
 
 type CashFormState = {
@@ -65,6 +68,8 @@ export default function CajaPage() {
     const [cajas, setCajas] = useState<CajaResumen[]>([]);
     const [cajaId, setCajaId] = useState<number | null>(null);
     const [movimientos, setMovimientos] = useState<MovimientoCajaResponse[]>([]);
+    const [cierres, setCierres] = useState<AperturaCaja[]>([]);
+    const { estados: estadosCaja } = useEstadoCaja(empresaId);
 
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<ErrorPagina | null>(null);
@@ -118,9 +123,28 @@ export default function CajaPage() {
         }
     }, [cajaId]);
 
+    const loadCierres = useCallback(async () => {
+        if (!cajaId) {
+            setCierres([]);
+            return;
+        }
+
+        try {
+            const data = await cajaService.listarCierres(cajaId);
+            setCierres(Array.isArray(data?.content) ? data.content : []);
+        } catch (err) {
+            console.error("Error al cargar cierres:", err);
+            setCierres([]);
+        }
+    }, [cajaId]);
+
     useEffect(() => {
         loadCajas();
     }, [loadCajas]);
+
+    useEffect(() => {
+        loadCierres();
+    }, [loadCierres]);
 
     useEffect(() => {
         loadMovimientos();
@@ -135,6 +159,7 @@ export default function CajaPage() {
     }, [empresaId]);
 
     const cajaActual = useMemo(() => cajas.find((c) => c.cajaId === cajaId) ?? null, [cajas, cajaId]);
+    const estadoCajaActual = useMemo(() => estadosCaja.find((e) => e.cajaId === cajaId) ?? null, [estadosCaja, cajaId]);
 
     const openModal = useCallback(() => {
         setForm(defaultFormState);
@@ -222,6 +247,22 @@ export default function CajaPage() {
         etiquetas: (r) => (r.formaPagoNombre ? <span className="ui-list__chip">{r.formaPagoNombre}</span> : null),
         estado: (r) => <StatusBadge status={r.tipo === "INGRESO" ? "Ingreso" : "Egreso"} />,
         valor: (r) => `${r.tipo === "INGRESO" ? "+" : "−"} ${formatCurrency(r.monto)}`
+    };
+
+    const cierresLayout: DataTableLayout<AperturaCaja> = {
+        principal: (r) => (r.fechaCierre ? formatDateShort(r.fechaCierre) : "Sin fecha"),
+        secundario: (r) =>
+            r.tipoCierre === "AUTOMATICO"
+                ? `Cierre automático · Esperado ${formatoMoneda(r.efectivoEsperado)}`
+                : `${r.usuarioCierreNombre ?? "Usuario"} · Esperado ${formatoMoneda(r.efectivoEsperado)} · Contado ${formatoMoneda(r.efectivoContado)}`,
+        etiquetas: (r) => <span className="ui-list__chip">{r.tipoCierre === "AUTOMATICO" ? "Sin conteo" : "Manual"}</span>,
+        estado: (r) =>
+            r.resultado ? (
+                <span className={`apc__chip apc__chip--${r.resultado.toLowerCase()}`}>
+                    {r.resultado === "CUADRADA" ? "Cuadrada" : r.resultado === "FALTANTE" ? "Faltante" : "Sobrante"}
+                </span>
+            ) : null,
+        valor: (r) => (r.diferencia === null ? "—" : `${r.diferencia > 0 ? "+" : r.diferencia < 0 ? "−" : ""} ${formatoMoneda(Math.abs(r.diferencia))}`)
     };
 
     if (loading) {
@@ -318,11 +359,12 @@ export default function CajaPage() {
                 subtitle="Registra ingresos y egresos y consulta el saldo de tus cajas."
                 actions={
                     <>
+                        <AperturaCajaControl estado={estadoCajaActual} ultimoCierre={cierres[0] ?? null} onChange={loadCierres} />
                         <SecondaryButton type="button" onClick={openNewCajaModal}>
                             <Wallet size={14} strokeWidth={2} />
                             <span>Nueva caja</span>
                         </SecondaryButton>
-                        <PrimaryButton type="button" onClick={openModal}>
+                        <PrimaryButton type="button" onClick={openModal} disabled={estadoCajaActual !== null && !estadoCajaActual.abierta}>
                             <Plus size={14} strokeWidth={2.2} />
                             <span>Nuevo movimiento</span>
                         </PrimaryButton>
@@ -390,6 +432,21 @@ export default function CajaPage() {
                         <div className="cash__empty">
                             <div className="cash__emptyTitle">No existen movimientos registrados.</div>
                             <div className="cash__emptySubtitle">Registra el primer movimiento para comenzar el control de caja.</div>
+                        </div>
+                    }
+                />
+            </div>
+
+            <div className="cash__table">
+                <DataTable
+                    title="Historial de cierres"
+                    layout={cierresLayout}
+                    data={cierres}
+                    pageSize={10}
+                    emptyState={
+                        <div className="cash__empty">
+                            <div className="cash__emptyTitle">Aún no hay cierres registrados.</div>
+                            <div className="cash__emptySubtitle">Cada vez que cierres la caja quedará aquí con su resultado.</div>
                         </div>
                     }
                 />

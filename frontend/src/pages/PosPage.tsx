@@ -7,6 +7,7 @@ import ErrorState from "../components/ErrorState";
 import { describirError, errorSesion, mensajeVentaNoConfirmada, type ErrorPagina } from "../utils/erroresPagina";
 import Modal from "../components/Modal";
 import PageHeader from "../components/PageHeader";
+import { useEstadoCaja } from "../hooks/useEstadoCaja";
 import PrimaryButton from "../components/PrimaryButton";
 import SearchBar from "../components/SearchBar";
 import SecondaryButton from "../components/SecondaryButton";
@@ -140,6 +141,8 @@ function extractErrorMessage(err: unknown, fallback: string): string {
 
 export default function PosPage() {
 	const empresaId = authService.getUsuario()?.empresaId;
+	const { estados: estadosCaja, cargado: estadosCargados } = useEstadoCaja(empresaId);
+	const sinCajaAbierta = estadosCargados && estadosCaja.length > 0 && !estadosCaja.some((e) => e.abierta);
 
 	const [products, setProducts] = useState<Producto[]>([]);
 	const [formasPago, setFormasPago] = useState<FormaPago[]>([]);
@@ -259,6 +262,7 @@ export default function PosPage() {
 		Boolean(formaPagoId) &&
 		!saving &&
 		hasCaja !== false &&
+		!sinCajaAbierta &&
 		!hasInvalidQuantity &&
 		!insufficientCash &&
 		!missingClientForCredit;
@@ -414,6 +418,15 @@ export default function PosPage() {
 				title="Registro de ventas"
 				subtitle="Selecciona los productos, elige el cliente y emite el recibo."
 			/>
+
+			{sinCajaAbierta ? (
+				<div className="pos__alert" role="alert">
+					<AlertTriangle size={16} strokeWidth={2} />
+					<span>
+						La caja está cerrada y no se pueden registrar ventas. <Link to="/caja?accion=abrir">Abrir caja</Link>.
+					</span>
+				</div>
+			) : null}
 
 			{hasCaja === false ? (
 				<div className="pos__alert" role="alert">
