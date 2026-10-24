@@ -3,6 +3,8 @@ import { Pencil, User, UserCheck, UserPlus, UserX } from "lucide-react";
 import Avatar from "../components/Avatar";
 import ConfirmDialog from "../components/ConfirmDialog";
 import LoadingState from "../components/LoadingState";
+import ErrorState from "../components/ErrorState";
+import { describirError, errorSesion, type ErrorPagina } from "../utils/erroresPagina";
 import Modal from "../components/Modal";
 import PageHeader from "../components/PageHeader";
 import SummaryPanel from "../components/SummaryPanel";
@@ -56,7 +58,7 @@ export default function UsuariosPage() {
 	const currentUserId = authService.getUsuario()?.id;
 
 	const [loading, setLoading] = useState(true);
-	const [error, setError] = useState<string | null>(null);
+	const [error, setError] = useState<ErrorPagina | null>(null);
 
 	const [users, setUsers] = useState<Usuario[]>([]);
 	const [roles, setRoles] = useState<Rol[]>([]);
@@ -75,7 +77,7 @@ export default function UsuariosPage() {
 
 	const loadData = useCallback(async () => {
 		if (!empresaId) {
-			setError("No se encontró la empresa del usuario. Inicia sesión nuevamente.");
+			setError(errorSesion("usuarios"));
 			setLoading(false);
 			return;
 		}
@@ -94,8 +96,8 @@ export default function UsuariosPage() {
 			setEmpresaNombre(nombreEmpresa);
 			setUsers(usuariosData.content);
 			setRoles(rolesData.content.filter((r) => r.active));
-		} catch {
-			setError("No se pudo cargar la información de usuarios. Verifica tu conexión con el servidor.");
+		} catch (err) {
+			setError(describirError("usuarios", err));
 		} finally {
 			setLoading(false);
 		}
@@ -230,7 +232,7 @@ export default function UsuariosPage() {
 	if (error) {
 		return (
 			<div className="usr">
-				<div className="usr__state usr__state--error">{error}</div>
+				<ErrorState pagina="usuarios" error={error} onRetry={loadData} />
 			</div>
 		);
 	}

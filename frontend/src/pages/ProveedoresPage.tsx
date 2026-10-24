@@ -3,6 +3,8 @@ import { Plus, Pencil, Trash2, Truck } from "lucide-react";
 import ConfirmDialog from "../components/ConfirmDialog";
 import DataTable, { DataTableLayout } from "../components/DataTable";
 import LoadingState from "../components/LoadingState";
+import ErrorState from "../components/ErrorState";
+import { describirError, errorSesion, type ErrorPagina } from "../utils/erroresPagina";
 import Modal from "../components/Modal";
 import PageHeader from "../components/PageHeader";
 import PrimaryButton from "../components/PrimaryButton";
@@ -35,7 +37,7 @@ export default function ProveedoresPage() {
 
 	const [proveedores, setProveedores] = useState<Proveedor[]>([]);
 	const [loading, setLoading] = useState(true);
-	const [error, setError] = useState<string | null>(null);
+	const [error, setError] = useState<ErrorPagina | null>(null);
 
 	const [searchQuery, setSearchQuery] = useState("");
 
@@ -51,7 +53,7 @@ export default function ProveedoresPage() {
 
 	const loadProveedores = useCallback(async () => {
 		if (!empresaId) {
-			setError("No se encontró la empresa del usuario. Inicia sesión nuevamente.");
+			setError(errorSesion("proveedores"));
 			setLoading(false);
 			return;
 		}
@@ -61,8 +63,8 @@ export default function ProveedoresPage() {
 		try {
 			const data = await proveedorService.listarPorEmpresa(empresaId);
 			setProveedores(data);
-		} catch {
-			setError("No se pudo cargar los proveedores. Verifica tu conexión con el servidor.");
+		} catch (err) {
+			setError(describirError("proveedores", err));
 		} finally {
 			setLoading(false);
 		}
@@ -225,7 +227,7 @@ export default function ProveedoresPage() {
 	if (error) {
 		return (
 			<div className="prov">
-				<div className="prov__state prov__state--error">{error}</div>
+				<ErrorState pagina="proveedores" error={error} onRetry={loadProveedores} />
 			</div>
 		);
 	}

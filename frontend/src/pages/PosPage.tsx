@@ -3,6 +3,8 @@ import type { KeyboardEvent } from "react";
 import { Link } from "react-router-dom";
 import { AlertTriangle, Check, ChevronDown, Minus, Package, Plus, Printer, Receipt, Trash2 } from "lucide-react";
 import LoadingState from "../components/LoadingState";
+import ErrorState from "../components/ErrorState";
+import { describirError, errorSesion, mensajeVentaNoConfirmada, type ErrorPagina } from "../utils/erroresPagina";
 import Modal from "../components/Modal";
 import PageHeader from "../components/PageHeader";
 import PrimaryButton from "../components/PrimaryButton";
@@ -144,7 +146,7 @@ export default function PosPage() {
 	const [clientes, setClientes] = useState<Cliente[]>([]);
 	const [hasCaja, setHasCaja] = useState<boolean | null>(null);
 	const [loading, setLoading] = useState(true);
-	const [error, setError] = useState<string | null>(null);
+	const [error, setError] = useState<ErrorPagina | null>(null);
 
 	const [lines, setLines] = useState<CartLine[]>([]);
 	const [quantityDrafts, setQuantityDrafts] = useState<Record<number, string>>({});
@@ -166,7 +168,7 @@ export default function PosPage() {
 
 	const loadData = useCallback(async () => {
         if (!empresaId) {
-            setError("No se encontró la empresa del usuario. Inicia sesión nuevamente.");
+            setError(errorSesion("pos"));
             setLoading(false);
             return;
         }
@@ -188,8 +190,8 @@ export default function PosPage() {
             setHasCaja(cajas === null ? null : cajas.some((c) => c.active));
 
             setFormaPagoId((prev) => prev || String(formasPagoData.content.find((f) => f.active)?.id ?? ""));
-        } catch {
-            setError("No se pudo cargar el punto de venta. Verifica tu conexión con el servidor.");
+        } catch (err) {
+            setError(describirError("pos", err));
         } finally {
             setLoading(false);
         }
@@ -375,7 +377,7 @@ export default function PosPage() {
 				.then((data) => setProducts(data.content))
 				.catch(() => {});
 		} catch (err) {
-			setSaleError(extractErrorMessage(err, "No se pudo registrar la venta. Intenta nuevamente."));
+			setSaleError(mensajeVentaNoConfirmada(err) ?? extractErrorMessage(err, "No se pudo registrar la venta. Intenta nuevamente."));
 		} finally {
 			setSaving(false);
 		}
@@ -401,7 +403,7 @@ export default function PosPage() {
 	if (error) {
 		return (
 			<div className="pos">
-				<div className="pos__state pos__state--error">{error}</div>
+				<ErrorState pagina="pos" error={error} onRetry={loadData} />
 			</div>
 		);
 	}

@@ -3,6 +3,8 @@ import { Plus, ShoppingCart } from "lucide-react";
 import ConfirmDialog from "../components/ConfirmDialog";
 import DataTable, { DataTableLayout } from "../components/DataTable";
 import LoadingState from "../components/LoadingState";
+import ErrorState from "../components/ErrorState";
+import { describirError, errorSesion, type ErrorPagina } from "../utils/erroresPagina";
 import Modal from "../components/Modal";
 import PageHeader from "../components/PageHeader";
 import PrimaryButton from "../components/PrimaryButton";
@@ -67,7 +69,7 @@ export default function ComprasPage() {
 
 	const [compras, setCompras] = useState<CompraResponse[]>([]);
 	const [loading, setLoading] = useState(true);
-	const [error, setError] = useState<string | null>(null);
+	const [error, setError] = useState<ErrorPagina | null>(null);
 
 	const [productos, setProductos] = useState<Producto[]>([]);
 	const [proveedores, setProveedores] = useState<Proveedor[]>([]);
@@ -84,7 +86,7 @@ export default function ComprasPage() {
 
 	const loadCompras = useCallback(async () => {
 		if (!empresaId) {
-			setError("No se encontró la empresa del usuario. Inicia sesión nuevamente.");
+			setError(errorSesion("compras"));
 			setLoading(false);
 			return;
 		}
@@ -102,8 +104,8 @@ export default function ComprasPage() {
 			setProductos(productosData.content);
 			setProveedores(proveedoresData);
 			setFormasPago(formasPagoData.content);
-		} catch {
-			setError("No se pudo cargar las compras. Verifica tu conexión con el servidor.");
+		} catch (err) {
+			setError(describirError("compras", err));
 		} finally {
 			setLoading(false);
 		}
@@ -288,7 +290,7 @@ export default function ComprasPage() {
 	if (error) {
 		return (
 			<div className="pur">
-				<div className="pur__state pur__state--error">{error}</div>
+				<ErrorState pagina="compras" error={error} onRetry={loadCompras} />
 			</div>
 		);
 	}

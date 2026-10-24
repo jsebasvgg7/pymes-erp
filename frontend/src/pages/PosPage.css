@@ -660,12 +660,6 @@
 	border: 1px solid var(--surface);
 }
 
-.pos__state--error {
-	color: var(--pos-danger);
-	background: color-mix(in srgb, var(--pos-danger) 6%, transparent);
-	border-color: color-mix(in srgb, var(--pos-danger) 18%, transparent);
-}
-
 .pos__modalHead {
 	display: grid;
 	gap: 4px;

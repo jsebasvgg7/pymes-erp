@@ -191,14 +191,6 @@
 	color: var(--ink);
 }
 
-.usr__state--error {
-	padding: 48px 24px;
-	text-align: center;
-	color: var(--usr-danger);
-	background: color-mix(in srgb, var(--usr-danger) 6%, transparent);
-	border-color: color-mix(in srgb, var(--usr-danger) 18%, transparent);
-}
-
 .usr__modalActions {
 	display: flex;
 	gap: 10px;

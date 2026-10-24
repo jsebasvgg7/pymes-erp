@@ -78,7 +78,10 @@ function getRoleLabel(roles?: Array<{ nombre: string }>) {
 
 export default function Sidebar() {
 	const [sidebarOpen, setSidebarOpen] = useState(false);
-	const [nombreEmpresa, setNombreEmpresa] = useState<string | null>(null);
+	const [nombreEmpresa, setNombreEmpresa] = useState<string | null>(() => {
+		const id = authService.getUsuario()?.empresaId;
+		return id ? localStorage.getItem(`empresaNombre:${id}`) : null;
+	});
 	const [accountMenuOpen, setAccountMenuOpen] = useState(false);
 	const [paletteOpen, setPaletteOpen] = useState(false);
 	const accountMenuRef = useRef<HTMLDivElement>(null);
@@ -93,11 +96,11 @@ export default function Sidebar() {
 		empresaService
 			.obtenerPorId(usuario.empresaId)
 			.then((empresa) => {
-				if (activo) setNombreEmpresa(empresa.nombre);
+				if (!activo || !empresa.nombre) return;
+				setNombreEmpresa(empresa.nombre);
+				localStorage.setItem(`empresaNombre:${usuario.empresaId}`, empresa.nombre);
 			})
-			.catch(() => {
-				if (activo) setNombreEmpresa(null);
-			});
+			.catch(() => {});
 		return () => {
 			activo = false;
 		};

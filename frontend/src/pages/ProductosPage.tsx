@@ -4,6 +4,8 @@ import { useNavigate } from "react-router-dom";
 import ConfirmDialog from "../components/ConfirmDialog";
 import DataTable, { DataTableLayout } from "../components/DataTable";
 import LoadingState from "../components/LoadingState";
+import ErrorState from "../components/ErrorState";
+import { describirError, errorSesion, type ErrorPagina } from "../utils/erroresPagina";
 import Modal from "../components/Modal";
 import PageHeader from "../components/PageHeader";
 import PrimaryButton from "../components/PrimaryButton";
@@ -59,7 +61,7 @@ export default function ProductosPage() {
 	const [products, setProducts] = useState<Producto[]>([]);
 	const [categories, setCategories] = useState<CategoriaProducto[]>([]);
 	const [loading, setLoading] = useState(true);
-	const [error, setError] = useState<string | null>(null);
+	const [error, setError] = useState<ErrorPagina | null>(null);
 
 	const [searchQuery, setSearchQuery] = useState("");
 	const [selectedCategory, setSelectedCategory] = useState<string>("Todos");
@@ -76,7 +78,7 @@ export default function ProductosPage() {
 
 	const loadData = useCallback(async () => {
 		if (!empresaId) {
-			setError("No se encontró la empresa del usuario. Inicia sesión nuevamente.");
+			setError(errorSesion("productos"));
 			setLoading(false);
 			return;
 		}
@@ -90,8 +92,8 @@ export default function ProductosPage() {
 			]);
 			setProducts(productosRes);
 			setCategories(categoriasRes);
-		} catch {
-			setError("No se pudo cargar los productos. Verifica tu conexión con el servidor.");
+		} catch (err) {
+			setError(describirError("productos", err));
 		} finally {
 			setLoading(false);
 		}
@@ -292,7 +294,7 @@ export default function ProductosPage() {
 	if (error) {
 		return (
 			<div className="prod">
-				<div className="prod__state prod__state--error">{error}</div>
+				<ErrorState pagina="productos" error={error} onRetry={loadData} />
 			</div>
 		);
 	}

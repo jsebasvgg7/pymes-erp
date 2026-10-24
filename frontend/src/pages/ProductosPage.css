@@ -202,12 +202,6 @@
 	border: 1px solid var(--surface);
 }
 
-.prod__state--error {
-	color: #b91c1c;
-	background: rgba(220,38,38,0.06);
-	border-color: rgba(220,38,38,0.18);
-}
-
 .prod__formError {
 	font-size: 13px;
 	color: #b91c1c;

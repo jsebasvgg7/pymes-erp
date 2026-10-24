@@ -2,6 +2,8 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { CreditCard, Download, Package, Receipt, Wallet } from "lucide-react";
 import DataTable, { DataTableLayout } from "../components/DataTable";
 import LoadingState from "../components/LoadingState";
+import ErrorState from "../components/ErrorState";
+import { describirError, errorSesion, type ErrorPagina } from "../utils/erroresPagina";
 import PageHeader from "../components/PageHeader";
 import StatCard from "../components/StatCard";
 import { formatDateShort } from "../utils/formatDate";
@@ -57,7 +59,7 @@ export default function ReportesPage() {
 	const [periodo, setPeriodo] = useState(periodoMesActual);
 
 	const [loading, setLoading] = useState(true);
-	const [error, setError] = useState<string | null>(null);
+	const [error, setError] = useState<ErrorPagina | null>(null);
 	const [loadingPeriodo, setLoadingPeriodo] = useState(true);
 	const [errorPeriodo, setErrorPeriodo] = useState<string | null>(null);
 
@@ -72,7 +74,7 @@ export default function ReportesPage() {
 
 	const loadData = useCallback(async () => {
 		if (!empresaId) {
-			setError("No se encontró la empresa del usuario. Inicia sesión nuevamente.");
+			setError(errorSesion("reportes"));
 			setLoading(false);
 			return;
 		}
@@ -100,8 +102,8 @@ export default function ReportesPage() {
 				productos: productosData.totalElements
 			});
 			setVentasDia(ventasDiaData);
-		} catch {
-			setError("No se pudo cargar la información de reportes. Verifica tu conexión con el servidor.");
+		} catch (err) {
+			setError(describirError("reportes", err));
 		} finally {
 			setLoading(false);
 		}
@@ -312,7 +314,7 @@ export default function ReportesPage() {
 	if (error) {
 		return (
 			<div className="rep">
-				<div className="rep__state rep__state--error">{error}</div>
+				<ErrorState pagina="reportes" error={error} onRetry={loadData} />
 			</div>
 		);
 	}

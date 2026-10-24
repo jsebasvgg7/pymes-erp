@@ -39,12 +39,6 @@
 	border: 1px solid var(--surface);
 }
 
-.pur__state--error {
-	color: #b91c1c;
-	background: rgba(220,38,38,0.06);
-	border-color: rgba(220,38,38,0.18);
-}
-
 .pur__modalActions {
 	display: flex;
 	gap: 10px;

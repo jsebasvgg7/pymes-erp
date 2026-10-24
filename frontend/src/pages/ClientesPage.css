@@ -254,12 +254,6 @@
 	border: 1px solid var(--surface);
 }
 
-.cli__state--error {
-	color: var(--cli-danger);
-	background: rgba(220,38,38,0.06);
-	border-color: rgba(220,38,38,0.18);
-}
-
 .cli__formError {
 	font-size: 13px;
 	color: var(--cli-danger);

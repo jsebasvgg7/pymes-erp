@@ -1,0 +1,146 @@
+.errorState {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	box-sizing: border-box;
+	width: 100%;
+	min-height: var(--loading-min, calc(100vh - 96px));
+	padding: 24px 16px;
+}
+
+.errorState__card {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 10px;
+	box-sizing: border-box;
+	width: 100%;
+	max-width: 460px;
+	padding: 36px 28px 24px;
+	text-align: center;
+	background: var(--paper);
+	border: 1px solid var(--line);
+	border-radius: 20px;
+	animation: errorState-in 260ms ease-out both;
+}
+
+.errorState__icon {
+	display: grid;
+	place-items: center;
+	width: 56px;
+	height: 56px;
+	border-radius: 16px;
+	border: 1px solid var(--line);
+	background: var(--surface);
+	color: var(--ink);
+}
+
+.errorState__title {
+	margin: 8px 0 0;
+	font-size: 19px;
+	font-weight: 600;
+	line-height: 1.3;
+	color: var(--ink);
+}
+
+.errorState__text {
+	margin: 0;
+	max-width: 360px;
+	font-size: 14px;
+	line-height: 1.6;
+	color: var(--muted);
+}
+
+.errorState__tip {
+	margin: 4px 0 0;
+	max-width: 360px;
+	padding: 10px 14px;
+	border-radius: 12px;
+	background: var(--surface);
+	font-size: 13px;
+	line-height: 1.5;
+	color: var(--ink);
+}
+
+.errorState__actions {
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: center;
+	gap: 8px;
+	margin-top: 12px;
+}
+
+.errorState__actions .ui-btnPrimary,
+.errorState__actions .ui-btnSecondary {
+	height: 40px;
+	padding: 0 20px;
+	font-size: 14px;
+}
+
+.errorState__mail,
+.errorState__code {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	font-family: inherit;
+	font-size: 13px;
+	line-height: 1.4;
+	color: var(--muted);
+}
+
+.errorState__mail {
+	margin-top: 4px;
+	text-decoration: underline;
+	text-underline-offset: 3px;
+}
+
+.errorState__mail:hover,
+.errorState__code:hover {
+	color: var(--ink);
+}
+
+.errorState__code {
+	margin-top: 8px;
+	padding: 8px 0 0;
+	width: 100%;
+	justify-content: center;
+	border: 0;
+	border-top: 1px solid var(--line);
+	border-radius: 0;
+	background: transparent;
+	font-size: 12px;
+	cursor: pointer;
+}
+
+@keyframes errorState-in {
+	from {
+		opacity: 0;
+		transform: translateY(8px);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+
+@media (max-width: 480px) {
+	.errorState__card {
+		padding: 28px 20px 20px;
+	}
+
+	.errorState__actions {
+		flex-direction: column;
+		align-self: stretch;
+	}
+
+	.errorState__actions .ui-btnPrimary,
+	.errorState__actions .ui-btnSecondary {
+		width: 100%;
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.errorState__card {
+		animation: none;
+	}
+}

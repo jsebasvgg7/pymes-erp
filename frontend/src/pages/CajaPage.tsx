@@ -3,6 +3,8 @@ import { Receipt, TrendingDown, TrendingUp, Wallet, Plus, ArrowLeftRight } from 
 import DataTable, { DataTableLayout } from "../components/DataTable";
 import { formatDateShort } from "../utils/formatDate";
 import LoadingState from "../components/LoadingState";
+import ErrorState from "../components/ErrorState";
+import { describirError, errorSesion, type ErrorPagina } from "../utils/erroresPagina";
 import Modal from "../components/Modal";
 import PageHeader from "../components/PageHeader";
 import PrimaryButton from "../components/PrimaryButton";
@@ -65,7 +67,7 @@ export default function CajaPage() {
     const [movimientos, setMovimientos] = useState<MovimientoCajaResponse[]>([]);
 
     const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
+    const [error, setError] = useState<ErrorPagina | null>(null);
 
     const [modalOpen, setModalOpen] = useState(false);
     const [form, setForm] = useState<CashFormState>(defaultFormState);
@@ -80,7 +82,7 @@ export default function CajaPage() {
 
     const loadCajas = useCallback(async (isSilent = false) => {
         if (!empresaId) {
-            setError("No se encontró la empresa del usuario. Inicia sesión nuevamente.");
+            setError(errorSesion("caja"));
             setLoading(false);
             return;
         }
@@ -94,7 +96,7 @@ export default function CajaPage() {
             setCajaId((prev) => prev ?? safeData[0]?.cajaId ?? null);
         } catch (err) {
             console.error("Error al cargar cajas:", err);
-            setError("No se pudo cargar la información de caja. Verifica tu conexión con el servidor.");
+            setError(describirError("caja", err));
         } finally {
             setLoading(false);
         }
@@ -112,7 +114,7 @@ export default function CajaPage() {
             setMovimientos(safeData);
         } catch (err) {
             console.error("Error al cargar movimientos:", err);
-            setError("No se pudo cargar los movimientos de la caja seleccionada.");
+            setError(describirError("caja", err));
         }
     }, [cajaId]);
 
@@ -233,7 +235,7 @@ export default function CajaPage() {
     if (error) {
         return (
             <div className="cash">
-                <div className="cash__state cash__state--error">{error}</div>
+                <ErrorState pagina="caja" error={error} onRetry={() => loadCajas()} />
             </div>
         );
     }

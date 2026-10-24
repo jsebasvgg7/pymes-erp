@@ -2,6 +2,8 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { SlidersHorizontal, History, Boxes } from "lucide-react";
 import DataTable, { DataTableLayout } from "../components/DataTable";
 import LoadingState from "../components/LoadingState";
+import ErrorState from "../components/ErrorState";
+import { describirError, errorSesion, type ErrorPagina } from "../utils/erroresPagina";
 import Modal from "../components/Modal";
 import PageHeader from "../components/PageHeader";
 import PrimaryButton from "../components/PrimaryButton";
@@ -77,7 +79,7 @@ export default function InventarioPage() {
 
   const [inventarios, setInventarios] = useState<Inventario[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<ErrorPagina | null>(null);
 
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("Todos");
@@ -98,7 +100,7 @@ export default function InventarioPage() {
 
   const loadInventario = useCallback(async () => {
     if (!empresaId) {
-      setError("No se encontró la empresa del usuario. Inicia sesión nuevamente.");
+      setError(errorSesion("inventario"));
       setLoading(false);
       return;
     }
@@ -108,8 +110,8 @@ export default function InventarioPage() {
     try {
       const data = await inventarioService.listarPorEmpresa(empresaId);
       setInventarios(data);
-    } catch {
-      setError("No se pudo cargar el inventario. Verifica tu conexión con el servidor.");
+    } catch (err) {
+      setError(describirError("inventario", err));
     } finally {
       setLoading(false);
     }
@@ -280,7 +282,7 @@ export default function InventarioPage() {
   if (error) {
     return (
       <div className="inv">
-        <div className="inv__state inv__state--error">{error}</div>
+        <ErrorState pagina="inventario" error={error} onRetry={loadInventario} />
       </div>
     );
   }

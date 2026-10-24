@@ -3,6 +3,8 @@ import { Plus, Pencil, Trash2, RotateCcw, Tag } from "lucide-react";
 import ConfirmDialog from "../components/ConfirmDialog";
 import DataTable, { DataTableLayout } from "../components/DataTable";
 import LoadingState from "../components/LoadingState";
+import ErrorState from "../components/ErrorState";
+import { describirError, errorSesion, type ErrorPagina } from "../utils/erroresPagina";
 import Modal from "../components/Modal";
 import PageHeader from "../components/PageHeader";
 import PrimaryButton from "../components/PrimaryButton";
@@ -27,7 +29,7 @@ export default function CategoriasPage() {
 
 	const [categories, setCategories] = useState<CategoriaProducto[]>([]);
 	const [loading, setLoading] = useState(true);
-	const [error, setError] = useState<string | null>(null);
+	const [error, setError] = useState<ErrorPagina | null>(null);
 
 	const [searchQuery, setSearchQuery] = useState("");
 
@@ -45,7 +47,7 @@ export default function CategoriasPage() {
 
 	const loadCategories = useCallback(async () => {
 		if (!empresaId) {
-			setError("No se encontró la empresa del usuario. Inicia sesión nuevamente.");
+			setError(errorSesion("categorias"));
 			setLoading(false);
 			return;
 		}
@@ -58,8 +60,8 @@ export default function CategoriasPage() {
 				categoriaProductoService.listarInactivasPorEmpresa(empresaId)
 			]);
 			setCategories([...activas, ...inactivas]);
-		} catch {
-			setError("No se pudo cargar las categorías. Verifica tu conexión con el servidor.");
+		} catch (err) {
+			setError(describirError("categorias", err));
 		} finally {
 			setLoading(false);
 		}
@@ -230,7 +232,7 @@ export default function CategoriasPage() {
 	if (error) {
 		return (
 			<div className="cat">
-				<div className="cat__state cat__state--error">{error}</div>
+				<ErrorState pagina="categorias" error={error} onRetry={loadCategories} />
 			</div>
 		);
 	}

@@ -2,6 +2,8 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Pencil, Trash2, User, UserPlus } from "lucide-react";
 import ConfirmDialog from "../components/ConfirmDialog";
 import LoadingState from "../components/LoadingState";
+import ErrorState from "../components/ErrorState";
+import { describirError, errorSesion, type ErrorPagina } from "../utils/erroresPagina";
 import Modal from "../components/Modal";
 import PageHeader from "../components/PageHeader";
 import SummaryPanel from "../components/SummaryPanel";
@@ -51,7 +53,7 @@ export default function ClientesPage() {
 
 	const [clientes, setClientes] = useState<Cliente[]>([]);
 	const [loading, setLoading] = useState(true);
-	const [error, setError] = useState<string | null>(null);
+	const [error, setError] = useState<ErrorPagina | null>(null);
 
 	const [searchQuery, setSearchQuery] = useState("");
 
@@ -74,7 +76,7 @@ export default function ClientesPage() {
 
 	const loadClientes = useCallback(async () => {
 		if (!empresaId) {
-			setError("No se encontró la empresa del usuario. Inicia sesión nuevamente.");
+			setError(errorSesion("clientes"));
 			setLoading(false);
 			return;
 		}
@@ -84,8 +86,8 @@ export default function ClientesPage() {
 		try {
 			const data = await clienteService.listarPorEmpresa(empresaId, 0, 200);
 			setClientes(data.content);
-		} catch {
-			setError("No se pudo cargar los clientes. Verifica tu conexión con el servidor.");
+		} catch (err) {
+			setError(describirError("clientes", err));
 		} finally {
 			setLoading(false);
 		}
@@ -276,7 +278,7 @@ export default function ClientesPage() {
 	if (error) {
 		return (
 			<div className="cli">
-				<div className="cli__state cli__state--error">{error}</div>
+				<ErrorState pagina="clientes" error={error} onRetry={loadClientes} />
 			</div>
 		);
 	}

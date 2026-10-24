@@ -7,6 +7,8 @@ import SecondaryButton from "../components/SecondaryButton";
 import StatusBadge from "../components/StatusBadge";
 import { formatDateShort } from "../utils/formatDate";
 import LoadingState from "../components/LoadingState";
+import ErrorState from "../components/ErrorState";
+import { describirError, errorSesion, type ErrorPagina } from "../utils/erroresPagina";
 import StatCard from "../components/StatCard";
 import CashFlowChart from "../components/dashboard/CashFlowChart";
 import CategoryBreakdownChart from "../components/dashboard/CategoryBreakdownChart";
@@ -63,7 +65,8 @@ export default function DashboardPage() {
 
 	const [loading, setLoading] = useState(true);
 	const [reloading, setReloading] = useState(false);
-	const [error, setError] = useState<string | null>(null);
+	const [error, setError] = useState<ErrorPagina | null>(null);
+	const [intento, setIntento] = useState(0);
 	const [resumen, setResumen] = useState<DashboardResumen | null>(null);
 	const [movimientosCaja, setMovimientosCaja] = useState<MovimientoCajaResponse[]>([]);
 
@@ -127,7 +130,7 @@ export default function DashboardPage() {
 
 	useEffect(() => {
 		if (!empresaId) {
-			setError("No se encontró la empresa del usuario. Inicia sesión nuevamente.");
+			setError(errorSesion("dashboard"));
 			setLoading(false);
 			return;
 		}
@@ -146,7 +149,7 @@ export default function DashboardPage() {
 			} catch (err) {
 				console.error("Error cargando dashboard:", err);
 				if (!cancelled) {
-					setError("No se pudo cargar la información del dashboard. Verifica tu conexión con el servidor.");
+					setError(describirError("dashboard", err));
 				}
 			} finally {
 				if (!cancelled) setLoading(false);
@@ -157,7 +160,7 @@ export default function DashboardPage() {
 		return () => {
 			cancelled = true;
 		};
-	}, [empresaId]);
+	}, [empresaId, intento]);
 
 	const esPrimerRenderRango = useRef(true);
 
@@ -170,7 +173,7 @@ export default function DashboardPage() {
 		let cancelled = false;
 		cargarVentasPorCategoria(empresaId, fechaInicio, fechaFin, () => cancelled).catch((err) => {
 			console.error("Error cargando ventas del período:", err);
-			if (!cancelled) setError("No se pudieron cargar las ventas del período seleccionado.");
+			if (!cancelled) setError(describirError("dashboard", err));
 		});
 		return () => {
 			cancelled = true;
@@ -187,8 +190,8 @@ export default function DashboardPage() {
 				cargarDashboard(empresaId, () => cancelled),
 				cargarVentasPorCategoria(empresaId, fechaInicio, fechaFin, () => cancelled)
 			]);
-		} catch {
-			setError("No se pudo actualizar la información. Intenta de nuevo.");
+		} catch (err) {
+			setError(describirError("dashboard", err));
 		} finally {
 			setReloading(false);
 		}
@@ -252,7 +255,7 @@ export default function DashboardPage() {
 	if (error) {
 		return (
 			<div className="db">
-				<div className="db__state db__state--error">{error}</div>
+				<ErrorState pagina="dashboard" error={error} onRetry={() => setIntento((n) => n + 1)} />
 			</div>
 		);
 	}

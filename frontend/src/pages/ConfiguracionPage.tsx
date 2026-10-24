@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import LoadingState from "../components/LoadingState";
+import ErrorState from "../components/ErrorState";
+import { describirError, errorSesion, type ErrorPagina } from "../utils/erroresPagina";
 import PageHeader from "../components/PageHeader";
 import PrimaryButton from "../components/PrimaryButton";
 import SecondaryButton from "../components/SecondaryButton";
@@ -38,7 +40,7 @@ export default function ConfiguracionPage() {
 	const empresaId = authService.getUsuario()?.empresaId;
 
 	const [loading, setLoading] = useState(true);
-	const [error, setError] = useState<string | null>(null);
+	const [error, setError] = useState<ErrorPagina | null>(null);
 	const [saving, setSaving] = useState(false);
 	const [saveError, setSaveError] = useState<string | null>(null);
 	const [saveSuccess, setSaveSuccess] = useState(false);
@@ -48,7 +50,7 @@ export default function ConfiguracionPage() {
 
 	const loadData = useCallback(async () => {
 		if (!empresaId) {
-			setError("No se encontró la empresa del usuario. Inicia sesión nuevamente.");
+			setError(errorSesion("configuracion"));
 			setLoading(false);
 			return;
 		}
@@ -60,8 +62,8 @@ export default function ConfiguracionPage() {
 			const state = toFormState(empresa);
 			initialRef.current = state;
 			setForm(state);
-		} catch {
-			setError("No se pudo cargar la información de la empresa. Verifica tu conexión con el servidor.");
+		} catch (err) {
+			setError(describirError("configuracion", err));
 		} finally {
 			setLoading(false);
 		}
@@ -120,7 +122,7 @@ export default function ConfiguracionPage() {
 	if (error) {
 		return (
 			<div className="set">
-				<div className="set__state set__state--error">{error}</div>
+				<ErrorState pagina="configuracion" error={error} onRetry={loadData} />
 			</div>
 		);
 	}
