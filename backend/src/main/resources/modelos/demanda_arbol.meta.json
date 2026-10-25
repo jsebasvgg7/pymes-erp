@@ -1,0 +1,18 @@
+{
+  "version": "1.0",
+  "fecha_calculo": "2026-10-23",
+  "variables": [
+    "ventas_sem_1",
+    "ventas_sem_2",
+    "ventas_sem_3",
+    "ventas_sem_4",
+    "promedio_4sem",
+    "es_quincena",
+    "categoria_id",
+    "stock_actual"
+  ],
+  "metricas_validacion": {
+    "mae": 6.832704774540748,
+    "rmse": 9.282043948480124
+  }
+}
