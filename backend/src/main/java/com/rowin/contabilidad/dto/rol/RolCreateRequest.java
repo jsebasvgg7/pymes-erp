@@ -2,12 +2,14 @@ package com.rowin.contabilidad.dto.rol;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Size;
+import java.util.Set;
 
 public record RolCreateRequest(
-	@NotNull Long empresaId,
-	@NotBlank @Size(max = 80) String nombre,
-	@Size(max = 255) String descripcion
-) {
-}
+		@NotNull(message = "La empresa es obligatoria") Long empresaId,
 
+		@NotBlank(message = "El nombre es obligatorio") String nombre,
+
+		String descripcion,
+
+		Set<String> modulos) {
+}

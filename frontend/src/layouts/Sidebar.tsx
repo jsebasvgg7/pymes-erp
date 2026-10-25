@@ -13,6 +13,7 @@ import {
 	Wallet,
 	FileBarChart,
 	UserCog,
+	Shield, // AÑADIDO: Icono para Roles
 	Settings,
 	LogOut,
 	ChevronDown,
@@ -68,6 +69,7 @@ const menuGroups: MenuGroup[] = [
 		items: [
 			{ label: "Reportes", path: "/reportes", icon: FileBarChart },
 			{ label: "Usuarios", path: "/usuarios", icon: UserCog },
+			{ label: "Roles y Permisos", path: "/roles", icon: Shield }, // AÑADIDO: Enlace a RolesPage
 			{ label: "Configuración", path: "/configuracion", icon: Settings }
 		]
 	}
@@ -104,7 +106,7 @@ export default function Sidebar() {
 				setNombreEmpresa(empresa.nombre);
 				localStorage.setItem(`empresaNombre:${usuario.empresaId}`, empresa.nombre);
 			})
-			.catch(() => {});
+			.catch(() => { });
 		return () => {
 			activo = false;
 		};

@@ -42,7 +42,7 @@ export type UsuarioResponse = {
   empresaId: number;
   username: string;
   email: string;
-  roles: Array<{ id: number; nombre: string }>;
+  roles: Array<{ id: number; nombre: string; modulos?: string[] }>;
 };
 
 export type LoginResponse = {
@@ -112,7 +112,7 @@ export const authService = {
   },
 
   async registrarNuevaEmpresa(data: { empresaNombre: string; username: string; email: string; password: string }) {
-      const response = await http.post('/api/auth/registro-cliente', data);
-      return response.data;
+    const response = await http.post('/api/auth/registro-cliente', data);
+    return response.data;
   }
 };

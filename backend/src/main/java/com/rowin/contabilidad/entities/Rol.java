@@ -1,12 +1,6 @@
 package com.rowin.contabilidad.entities;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToMany;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import java.util.HashSet;
 import java.util.Set;
 import lombok.Getter;
@@ -26,6 +20,12 @@ public class Rol extends BaseEntity {
 
 	@Column(length = 255)
 	private String descripcion;
+
+	// Guardar los paneles permitidos
+	@ElementCollection(fetch = FetchType.EAGER)
+	@CollectionTable(name = "rol_modulos", joinColumns = @JoinColumn(name = "rol_id"))
+	@Column(name = "modulo")
+	private Set<String> modulos = new HashSet<>();
 
 	@ManyToMany(mappedBy = "roles")
 	private Set<Usuario> usuarios = new HashSet<>();
