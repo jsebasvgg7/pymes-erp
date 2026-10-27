@@ -3,27 +3,43 @@ package com.rowin.contabilidad.services.ml;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.annotation.PostConstruct;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Component;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.Map;
 
 @Component
 public class ArbolDemanda {
 
+    private static final Logger log = LoggerFactory.getLogger(ArbolDemanda.class);
+    private static final String RUTA_ARBOL = "modelos/demanda_arbol.json";
+    private static final String RUTA_META = "modelos/demanda_arbol.meta.json";
+
     private JsonNode raiz;
+    private String version;
 
     @PostConstruct
     public void inicializar() {
-        try {
-            ObjectMapper mapper = new ObjectMapper();
-            InputStream is = new ClassPathResource("modelos/demanda_arbol.json").getInputStream();
-            this.raiz = mapper.readTree(is);
-            System.out.println("Modelo predictivo de demanda cargado exitosamente en memoria.");
-        } catch (Exception e) {
-            throw new RuntimeException("Error al cargar el modelo predictivo de demanda: " + e.getMessage(), e);
+        ObjectMapper mapper = new ObjectMapper();
+        try (InputStream arbol = new ClassPathResource(RUTA_ARBOL).getInputStream();
+             InputStream meta = new ClassPathResource(RUTA_META).getInputStream()) {
+            this.raiz = mapper.readTree(arbol);
+            this.version = mapper.readTree(meta).path("version").asText();
+        } catch (IOException e) {
+            throw new IllegalStateException("Error al cargar el modelo predictivo de demanda: " + e.getMessage(), e);
         }
+        if (version.isBlank()) {
+            throw new IllegalStateException("El modelo predictivo de demanda no declara su versión");
+        }
+        log.info("Modelo predictivo de demanda {} cargado en memoria", version);
+    }
+
+    public String getVersion() {
+        return version;
     }
 
     public double predecir(Map<String, Double> variables) {
@@ -34,23 +50,14 @@ public class ArbolDemanda {
     }
 
     private double evaluarNodo(JsonNode nodo, Map<String, Double> variables) {
-        // Si el nodo es una hoja, retorna la predicción final
         if (nodo.has("prediccion")) {
             return nodo.get("prediccion").asDouble();
         }
-
-        // Si es un nodo de decisión, extrae la regla
         String variable = nodo.get("variable").asText();
         double umbral = nodo.get("umbral").asDouble();
-
-        // Obtiene el valor actual de esa variable para el producto analizado
         double valor = variables.getOrDefault(variable, 0.0);
-
-        // Desciende por la rama correspondiente de forma recursiva
-        if (valor <= umbral) {
-            return evaluarNodo(nodo.get("izq"), variables);
-        } else {
-            return evaluarNodo(nodo.get("der"), variables);
-        }
+        return valor <= umbral
+            ? evaluarNodo(nodo.get("izq"), variables)
+            : evaluarNodo(nodo.get("der"), variables);
     }
 }

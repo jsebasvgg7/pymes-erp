@@ -7,6 +7,7 @@ backend/.mvn/wrapper/maven-wrapper.jar
 !.mvn/wrapper/maven-wrapper.jar
 HELP.md
 doc
+patch
 
 # === Frontend (Node / Vite / React) ===
 frontend/node_modules/
@@ -48,6 +49,4 @@ frontend/tsconfig.tsbuildinfo
 repomix-output.xml
 
 # === Planes de trabajo ===
-ERP_PLAN.md
-MODELO_PREDICTIVO_MAESTRO.md
-digest.txt
+plan

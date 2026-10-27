@@ -26,6 +26,11 @@ class ArbolDemandaTest {
     }
 
     @Test
+    void laVersionDelModeloSeLeeDelArchivoMeta() {
+        assertEquals("1.0", arbolDemanda.getVersion());
+    }
+
+    @Test
     void validarPrediccionesContraPython() throws Exception {
         ObjectMapper mapper = new ObjectMapper();
         InputStream is = new ClassPathResource("modelos/casos_prueba.json").getInputStream();

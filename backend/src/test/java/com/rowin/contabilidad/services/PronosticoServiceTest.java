@@ -1,31 +1,53 @@
 package com.rowin.contabilidad.services;
 
+import com.rowin.contabilidad.dto.factura.VentaSemanalProductoResponse;
+import com.rowin.contabilidad.dto.pronostico.PronosticoDemandaResponse;
 import com.rowin.contabilidad.entities.CategoriaProducto;
 import com.rowin.contabilidad.entities.Empresa;
 import com.rowin.contabilidad.entities.Inventario;
 import com.rowin.contabilidad.entities.Producto;
+import com.rowin.contabilidad.entities.PronosticoDemanda;
+import com.rowin.contabilidad.entities.Usuario;
 import com.rowin.contabilidad.repositories.EmpresaRepository;
 import com.rowin.contabilidad.repositories.ProductoRepository;
 import com.rowin.contabilidad.repositories.PronosticoDemandaRepository;
+import com.rowin.contabilidad.repositories.UsuarioRepository;
 import com.rowin.contabilidad.services.ml.ArbolDemanda;
-import org.junit.jupiter.api.BeforeEach;
+import com.rowin.contabilidad.utils.HistorialSemanal;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.when;
 
+@ExtendWith(MockitoExtension.class)
 class PronosticoServiceTest {
+
+    private static final Long EMPRESA_ID = 1L;
+    private static final Long PRODUCTO_ID = 10L;
+    private static final String EMAIL = "admin@vegashop.com";
+    private static final LocalDate SEMANA = HistorialSemanal.inicioSemana(LocalDate.now());
 
     @Mock
     private PronosticoDemandaRepository pronosticoDemandaRepository;
@@ -34,24 +56,216 @@ class PronosticoServiceTest {
     @Mock
     private EmpresaRepository empresaRepository;
     @Mock
+    private UsuarioRepository usuarioRepository;
+    @Mock
+    private FacturaVentaService facturaVentaService;
+    @Mock
     private ArbolDemanda arbolDemanda;
 
     @InjectMocks
-    private PronosticoServiceImpl pronosticoService;
+    private PronosticoServiceImpl servicio;
 
-    @BeforeEach
-    void setUp() {
-        MockitoAnnotations.openMocks(this);
+    @Test
+    void alimentaElArbolConLasVentasRealesYSemUnoEsLaMasReciente() {
+        prepararRecalculo(List.of(
+                fila(SEMANA, "99", false),
+                fila(SEMANA.minusWeeks(1), "4", false),
+                fila(SEMANA.minusWeeks(2), "6", false),
+                fila(SEMANA.minusWeeks(3), "8", false),
+                fila(SEMANA.minusWeeks(4), "10", false)));
+        when(arbolDemanda.predecir(any())).thenReturn(25.0);
+        when(arbolDemanda.getVersion()).thenReturn("1.0");
+
+        servicio.recalcularPronosticos(EMPRESA_ID);
+
+        @SuppressWarnings("unchecked")
+        ArgumentCaptor<Map<String, Double>> captor = ArgumentCaptor.forClass(Map.class);
+        verify(arbolDemanda).predecir(captor.capture());
+        Map<String, Double> vector = captor.getValue();
+
+        assertEquals(4.0, vector.get("ventas_sem_1"));
+        assertEquals(6.0, vector.get("ventas_sem_2"));
+        assertEquals(8.0, vector.get("ventas_sem_3"));
+        assertEquals(10.0, vector.get("ventas_sem_4"));
+        assertEquals(7.0, vector.get("promedio_4sem"));
+        assertEquals(3.0, vector.get("categoria_id"));
+        assertEquals(15.5, vector.get("stock_actual"));
+        assertTrue(vector.containsKey("es_quincena"));
     }
 
     @Test
-    void validarConstruccionVectorVariables() {
-        // 1. Preparar datos simulados
-        Long empresaId = 1L;
-        Empresa empresa = new Empresa();
-        empresa.setId(empresaId);
-        empresa.setActive(true);
+    void completaConCeroLasSemanasSinVentas() {
+        prepararRecalculo(List.of(
+                fila(SEMANA.minusWeeks(1), "0", false),
+                fila(SEMANA.minusWeeks(4), "12", false)));
+        when(arbolDemanda.predecir(any())).thenReturn(5.0);
+        when(arbolDemanda.getVersion()).thenReturn("1.0");
 
+        servicio.recalcularPronosticos(EMPRESA_ID);
+
+        @SuppressWarnings("unchecked")
+        ArgumentCaptor<Map<String, Double>> captor = ArgumentCaptor.forClass(Map.class);
+        verify(arbolDemanda).predecir(captor.capture());
+        Map<String, Double> vector = captor.getValue();
+
+        assertEquals(0.0, vector.get("ventas_sem_2"));
+        assertEquals(0.0, vector.get("ventas_sem_3"));
+        assertEquals(12.0, vector.get("ventas_sem_4"));
+        assertEquals(3.0, vector.get("promedio_4sem"));
+    }
+
+    @Test
+    void guardaLaSemanaLaVersionDelModeloYDosDecimales() {
+        prepararRecalculo(List.of(fila(SEMANA.minusWeeks(1), "4", false)));
+        when(arbolDemanda.predecir(any())).thenReturn(25.456);
+        when(arbolDemanda.getVersion()).thenReturn("2.3");
+
+        servicio.recalcularPronosticos(EMPRESA_ID);
+
+        List<PronosticoDemanda> guardados = capturarGuardados();
+        assertEquals(1, guardados.size());
+        PronosticoDemanda guardado = guardados.get(0);
+        assertEquals(SEMANA, guardado.getSemanaPronosticada());
+        assertEquals("2.3", guardado.getVersionModelo());
+        assertEquals(new BigDecimal("25.46"), guardado.getUnidadesProyectadas());
+        assertTrue(guardado.isActive());
+    }
+
+    @Test
+    void sinDatosSuficientesNoCalculaYDesactivaElPronosticoExistente() {
+        prepararRecalculo(List.of(fila(SEMANA.minusWeeks(1), "4", true)), List.of(pronosticoExistente()));
+
+        servicio.recalcularPronosticos(EMPRESA_ID);
+
+        verify(arbolDemanda, never()).predecir(any());
+        List<PronosticoDemanda> guardados = capturarGuardados();
+        assertEquals(1, guardados.size());
+        assertFalse(guardados.get(0).isActive());
+    }
+
+    @Test
+    void productoSinVentasEnLaVentanaNoRecibePronostico() {
+        prepararRecalculo(List.of());
+
+        servicio.recalcularPronosticos(EMPRESA_ID);
+
+        verify(arbolDemanda, never()).predecir(any());
+        assertTrue(capturarGuardados().isEmpty());
+    }
+
+    @Test
+    void recalcularConOtraEmpresaResponde403() {
+        when(usuarioRepository.findByEmailAndActiveTrue(EMAIL)).thenReturn(Optional.of(usuarioDeEmpresa(2L)));
+
+        ResponseStatusException ex = assertThrows(ResponseStatusException.class,
+                () -> servicio.recalcularPronosticos(EMPRESA_ID, EMAIL));
+
+        assertEquals(HttpStatus.FORBIDDEN, ex.getStatusCode());
+        verifyNoInteractions(empresaRepository, facturaVentaService, pronosticoDemandaRepository);
+    }
+
+    @Test
+    void recalcularConUsuarioInexistenteResponde403() {
+        when(usuarioRepository.findByEmailAndActiveTrue(EMAIL)).thenReturn(Optional.empty());
+
+        ResponseStatusException ex = assertThrows(ResponseStatusException.class,
+                () -> servicio.recalcularPronosticos(EMPRESA_ID, EMAIL));
+
+        assertEquals(HttpStatus.FORBIDDEN, ex.getStatusCode());
+    }
+
+    @Test
+    void consultarConOtraEmpresaResponde403() {
+        when(usuarioRepository.findByEmailAndActiveTrue(EMAIL)).thenReturn(Optional.of(usuarioDeEmpresa(2L)));
+
+        ResponseStatusException ex = assertThrows(ResponseStatusException.class,
+                () -> servicio.obtenerPronosticosPorEmpresa(EMPRESA_ID, EMAIL));
+
+        assertEquals(HttpStatus.FORBIDDEN, ex.getStatusCode());
+        verifyNoInteractions(pronosticoDemandaRepository, facturaVentaService);
+    }
+
+    @Test
+    void consultarCalculaVentasDeLaSemanaPasadaYLaVariacion() {
+        when(usuarioRepository.findByEmailAndActiveTrue(EMAIL)).thenReturn(Optional.of(usuarioDeEmpresa(EMPRESA_ID)));
+        when(pronosticoDemandaRepository.findByEmpresaIdAndActiveTrue(EMPRESA_ID)).thenReturn(List.of(pronosticoExistente()));
+        when(facturaVentaService.obtenerHistorialSemanal(EMPRESA_ID, 2))
+                .thenReturn(List.of(fila(SEMANA.minusWeeks(1), "40", false)));
+
+        List<PronosticoDemandaResponse> respuesta = servicio.obtenerPronosticosPorEmpresa(EMPRESA_ID, EMAIL);
+
+        assertEquals(1, respuesta.size());
+        PronosticoDemandaResponse r = respuesta.get(0);
+        assertEquals(PRODUCTO_ID, r.producto().id());
+        assertEquals("Arroz Diana 500 g", r.producto().nombre());
+        assertEquals("P-0012", r.producto().codigo());
+        assertEquals(new BigDecimal("40"), r.ventasSemanaAnterior());
+        assertEquals(new BigDecimal("25.0"), r.variacionPorcentual());
+    }
+
+    @Test
+    void consultarDejaLaVariacionVaciaCuandoLaSemanaPasadaFueCero() {
+        when(usuarioRepository.findByEmailAndActiveTrue(EMAIL)).thenReturn(Optional.of(usuarioDeEmpresa(EMPRESA_ID)));
+        when(pronosticoDemandaRepository.findByEmpresaIdAndActiveTrue(EMPRESA_ID)).thenReturn(List.of(pronosticoExistente()));
+        when(facturaVentaService.obtenerHistorialSemanal(EMPRESA_ID, 2)).thenReturn(List.of());
+
+        PronosticoDemandaResponse r = servicio.obtenerPronosticosPorEmpresa(EMPRESA_ID, EMAIL).get(0);
+
+        assertEquals(BigDecimal.ZERO, r.ventasSemanaAnterior());
+        assertNull(r.variacionPorcentual());
+    }
+
+    @Test
+    void consultarSinPronosticosNoCargaElHistorial() {
+        when(usuarioRepository.findByEmailAndActiveTrue(EMAIL)).thenReturn(Optional.of(usuarioDeEmpresa(EMPRESA_ID)));
+        when(pronosticoDemandaRepository.findByEmpresaIdAndActiveTrue(EMPRESA_ID)).thenReturn(List.of());
+
+        assertTrue(servicio.obtenerPronosticosPorEmpresa(EMPRESA_ID, EMAIL).isEmpty());
+        verifyNoInteractions(facturaVentaService);
+    }
+
+    @Test
+    void laSemanaConQuincenaSeDetectaDeLunesADomingo() {
+        assertTrue(PronosticoServiceImpl.semanaIncluyeQuincena(LocalDate.of(2026, 10, 12)));
+        assertFalse(PronosticoServiceImpl.semanaIncluyeQuincena(LocalDate.of(2026, 10, 19)));
+        assertTrue(PronosticoServiceImpl.semanaIncluyeQuincena(LocalDate.of(2026, 10, 26)));
+        assertFalse(PronosticoServiceImpl.semanaIncluyeQuincena(LocalDate.of(2026, 11, 2)));
+        assertTrue(PronosticoServiceImpl.semanaIncluyeQuincena(LocalDate.of(2026, 11, 9)));
+    }
+
+    private void prepararRecalculo(List<VentaSemanalProductoResponse> historial) {
+        prepararRecalculo(historial, List.of());
+    }
+
+    private void prepararRecalculo(List<VentaSemanalProductoResponse> historial, List<PronosticoDemanda> existentes) {
+        when(empresaRepository.findById(EMPRESA_ID)).thenReturn(Optional.of(empresa(EMPRESA_ID)));
+        when(facturaVentaService.obtenerHistorialSemanal(EMPRESA_ID, 5)).thenReturn(historial);
+        when(pronosticoDemandaRepository.findByEmpresaIdAndActiveTrue(EMPRESA_ID)).thenReturn(existentes);
+        when(productoRepository.findByEmpresaIdAndActiveTrue(EMPRESA_ID)).thenReturn(List.of(producto()));
+    }
+
+    @SuppressWarnings("unchecked")
+    private List<PronosticoDemanda> capturarGuardados() {
+        ArgumentCaptor<List<PronosticoDemanda>> captor = ArgumentCaptor.forClass(List.class);
+        verify(pronosticoDemandaRepository).saveAll(captor.capture());
+        return captor.getValue();
+    }
+
+    private Empresa empresa(Long id) {
+        Empresa empresa = new Empresa();
+        empresa.setId(id);
+        empresa.setActive(true);
+        return empresa;
+    }
+
+    private Usuario usuarioDeEmpresa(Long empresaId) {
+        Usuario usuario = new Usuario();
+        usuario.setEmail(EMAIL);
+        usuario.setEmpresa(empresa(empresaId));
+        return usuario;
+    }
+
+    private Producto producto() {
         CategoriaProducto categoria = new CategoriaProducto();
         categoria.setId(3L);
 
@@ -59,34 +273,29 @@ class PronosticoServiceTest {
         inventario.setCantidadActual(new BigDecimal("15.5"));
 
         Producto producto = new Producto();
-        producto.setId(10L);
+        producto.setId(PRODUCTO_ID);
+        producto.setNombre("Arroz Diana 500 g");
+        producto.setSku("P-0012");
         producto.setCategoria(categoria);
         producto.setInventario(inventario);
+        return producto;
+    }
 
-        // 2. Configurar mocks para coincidir con BaseCrudService.getByIdOrThrow
-        when(empresaRepository.findById(empresaId)).thenReturn(Optional.of(empresa));
+    private PronosticoDemanda pronosticoExistente() {
+        PronosticoDemanda pronostico = new PronosticoDemanda();
+        pronostico.setEmpresa(empresa(EMPRESA_ID));
+        pronostico.setProducto(producto());
+        pronostico.setSemanaPronosticada(SEMANA);
+        pronostico.setUnidadesProyectadas(new BigDecimal("50.00"));
+        pronostico.setVersionModelo("1.0");
+        pronostico.setFechaCalculo(LocalDateTime.now());
+        pronostico.setActive(true);
+        return pronostico;
+    }
 
-        // Simular la obtención de productos
-        when(productoRepository.findByEmpresaIdAndActiveTrue(empresaId)).thenReturn(List.of(producto));
-
-        // Simular el árbol
-        when(arbolDemanda.predecir(any())).thenReturn(25.0);
-
-        // 3. Ejecutar el servicio
-        pronosticoService.recalcularPronosticos(empresaId);
-
-        // 4. Capturar el vector de variables
-        @SuppressWarnings("unchecked")
-        ArgumentCaptor<Map<String, Double>> captor = ArgumentCaptor.forClass(Map.class);
-        verify(arbolDemanda).predecir(captor.capture());
-
-        Map<String, Double> vector = captor.getValue();
-
-        // 5. Validar que las llaves y valores son exactamente los que espera Python
-        assertTrue(vector.containsKey("es_quincena"), "Falta la variable es_quincena");
-        assertEquals(3.0, vector.get("categoria_id"), "El ID de categoría no se mapeó correctamente");
-        assertEquals(15.5, vector.get("stock_actual"), "El stock actual no se mapeó correctamente");
-        assertEquals(0.0, vector.get("ventas_sem_1"), "Falta la variable ventas_sem_1");
-        assertEquals(0.0, vector.get("promedio_4sem"), "Falta la variable promedio_4sem");
+    private VentaSemanalProductoResponse fila(LocalDate semanaInicio, String unidades, boolean sinDatos) {
+        return new VentaSemanalProductoResponse(
+                semanaInicio, semanaInicio.plusDays(6), PRODUCTO_ID, "Arroz Diana 500 g",
+                new BigDecimal(unidades), BigDecimal.ZERO, sinDatos ? 5 : 12, sinDatos);
     }
 }
