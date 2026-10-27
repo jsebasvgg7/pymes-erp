@@ -7,13 +7,14 @@ backend/.mvn/wrapper/maven-wrapper.jar
 !.mvn/wrapper/maven-wrapper.jar
 HELP.md
 doc
+patch
+
 # === Frontend (Node / Vite / React) ===
 frontend/node_modules/
 frontend/dist/
 frontend/dist-ssr/
 frontend/*.local
-digest.txt
-ERP_PLAN.md
+
 # === Variables de entorno / secretos ===
 .env
 .env.local
@@ -46,3 +47,6 @@ frontend/tsconfig.tsbuildinfo
 
 # === Salidas generadas ===
 repomix-output.xml
+
+# === Planes de trabajo ===
+plan
