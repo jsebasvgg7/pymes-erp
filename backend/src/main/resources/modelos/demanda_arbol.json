@@ -1,219 +1,51 @@
 {
-  "variable": "promedio_4sem",
-  "umbral": 67.0,
+  "variable": "es_quincena",
+  "umbral": 0.5,
   "izq": {
-    "variable": "promedio_4sem",
-    "umbral": 31.125,
+    "variable": "ventas_sem_3",
+    "umbral": 0.5,
     "izq": {
-      "variable": "promedio_4sem",
-      "umbral": 11.625,
+      "variable": "ventas_sem_4",
+      "umbral": 4.5,
       "izq": {
-        "variable": "promedio_4sem",
-        "umbral": 7.875,
-        "izq": {
-          "variable": "categoria_id",
-          "umbral": 2.5,
-          "izq": {
-            "prediccion": 3.2320185614849186
-          },
-          "der": {
-            "prediccion": 5.6084788029925186
-          }
-        },
-        "der": {
-          "variable": "ventas_sem_4",
-          "umbral": 2.0,
-          "izq": {
-            "prediccion": 12.966666666666667
-          },
-          "der": {
-            "prediccion": 8.153374233128835
-          }
-        }
+        "prediccion": 1.8365527488855868
       },
       "der": {
-        "variable": "promedio_4sem",
-        "umbral": 21.375,
-        "izq": {
-          "variable": "es_quincena",
-          "umbral": 0.5,
-          "izq": {
-            "prediccion": 14.43720930232558
-          },
-          "der": {
-            "prediccion": 20.00383141762452
-          }
-        },
-        "der": {
-          "variable": "es_quincena",
-          "umbral": 0.5,
-          "izq": {
-            "prediccion": 20.814432989690722
-          },
-          "der": {
-            "prediccion": 27.94713656387665
-          }
-        }
+        "prediccion": 0.9895724713242962
       }
     },
     "der": {
-      "variable": "es_quincena",
-      "umbral": 0.5,
+      "variable": "ventas_sem_2",
+      "umbral": 1.5,
       "izq": {
-        "variable": "promedio_4sem",
-        "umbral": 46.625,
-        "izq": {
-          "variable": "ventas_sem_3",
-          "umbral": 50.5,
-          "izq": {
-            "prediccion": 27.317460317460316
-          },
-          "der": {
-            "prediccion": 37.81818181818182
-          }
-        },
-        "der": {
-          "variable": "ventas_sem_3",
-          "umbral": 66.5,
-          "izq": {
-            "prediccion": 43.10606060606061
-          },
-          "der": {
-            "prediccion": 49.4
-          }
-        }
+        "prediccion": 0.9723320158102767
       },
       "der": {
-        "variable": "promedio_4sem",
-        "umbral": 45.625,
-        "izq": {
-          "variable": "stock_actual",
-          "umbral": 10.0,
-          "izq": {
-            "prediccion": 34.833333333333336
-          },
-          "der": {
-            "prediccion": 46.183098591549296
-          }
-        },
-        "der": {
-          "variable": "promedio_4sem",
-          "umbral": 58.875,
-          "izq": {
-            "prediccion": 61.56976744186046
-          },
-          "der": {
-            "prediccion": 71.75
-          }
-        }
+        "prediccion": 0.8052153843504022
       }
     }
   },
   "der": {
-    "variable": "es_quincena",
-    "umbral": 0.5,
+    "variable": "promedio_4sem",
+    "umbral": 2.875,
     "izq": {
-      "variable": "promedio_4sem",
-      "umbral": 104.875,
+      "variable": "stock_actual",
+      "umbral": 2.5,
       "izq": {
-        "variable": "ventas_sem_1",
-        "umbral": 110.5,
-        "izq": {
-          "variable": "promedio_4sem",
-          "umbral": 89.25,
-          "izq": {
-            "prediccion": 66.0
-          },
-          "der": {
-            "prediccion": 75.61904761904762
-          }
-        },
-        "der": {
-          "variable": "ventas_sem_3",
-          "umbral": 104.5,
-          "izq": {
-            "prediccion": 73.8
-          },
-          "der": {
-            "prediccion": 88.28571428571429
-          }
-        }
+        "prediccion": 1.4570135746606334
       },
       "der": {
-        "variable": "promedio_4sem",
-        "umbral": 120.625,
-        "izq": {
-          "variable": "ventas_sem_1",
-          "umbral": 135.5,
-          "izq": {
-            "prediccion": 92.08888888888889
-          },
-          "der": {
-            "prediccion": 100.06060606060606
-          }
-        },
-        "der": {
-          "variable": "promedio_4sem",
-          "umbral": 134.625,
-          "izq": {
-            "prediccion": 101.58558558558559
-          },
-          "der": {
-            "prediccion": 109.9375
-          }
-        }
+        "prediccion": 2.454810495626822
       }
     },
     "der": {
-      "variable": "promedio_4sem",
-      "umbral": 104.375,
+      "variable": "ventas_sem_2",
+      "umbral": 0.5,
       "izq": {
-        "variable": "promedio_4sem",
-        "umbral": 84.25,
-        "izq": {
-          "variable": "promedio_4sem",
-          "umbral": 79.375,
-          "izq": {
-            "prediccion": 90.08333333333333
-          },
-          "der": {
-            "prediccion": 100.25
-          }
-        },
-        "der": {
-          "variable": "promedio_4sem",
-          "umbral": 96.125,
-          "izq": {
-            "prediccion": 110.28571428571429
-          },
-          "der": {
-            "prediccion": 122.02173913043478
-          }
-        }
+        "prediccion": 1.472996734488822
       },
       "der": {
-        "variable": "promedio_4sem",
-        "umbral": 118.375,
-        "izq": {
-          "variable": "categoria_id",
-          "umbral": 2.5,
-          "izq": {
-            "prediccion": 129.98901098901098
-          },
-          "der": {
-            "prediccion": 136.48979591836735
-          }
-        },
-        "der": {
-          "variable": "ventas_sem_4",
-          "umbral": 145.5,
-          "izq": {
-            "prediccion": 144.94642857142858
-          },
-          "der": {
-            "prediccion": 150.4655172413793
-          }
-        }
+        "prediccion": 1.1653409345292283
       }
     }
   }

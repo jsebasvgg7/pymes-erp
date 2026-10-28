@@ -1,6 +1,7 @@
 {
-  "version": "1.0",
-  "fecha_calculo": "2026-10-23",
+  "version": "1.1",
+  "fecha_calculo": "2026-10-28",
+  "tipo_objetivo": "razon_promedio_4sem",
   "variables": [
     "ventas_sem_1",
     "ventas_sem_2",
@@ -8,11 +9,25 @@
     "ventas_sem_4",
     "promedio_4sem",
     "es_quincena",
-    "categoria_id",
     "stock_actual"
   ],
+  "hiperparametros": {
+    "max_depth": 3,
+    "min_samples_leaf": 20,
+    "ponderacion": "promedio_4sem"
+  },
   "metricas_validacion": {
-    "mae": 6.832704774540748,
-    "rmse": 9.282043948480124
-  }
+    "mae": 6.368047733615284,
+    "rmse": 8.772532103326908
+  },
+  "metricas_linea_base": {
+    "mae": 10.514447236180905,
+    "rmse": 14.8635069192872
+  },
+  "metricas_arbol_final_entrenamiento": {
+    "mae": 6.0431361721622485,
+    "rmse": 8.53735519182705
+  },
+  "filas_entrenamiento_final": 3031,
+  "fecha_corte_validacion": "2026-08-10"
 }
