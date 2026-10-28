@@ -36,6 +36,7 @@ public class CompraServiceImpl extends BaseCrudService implements CompraService 
     private final CajaRepository cajaRepository;
     private final CompraMapper compraMapper;
     private final AperturaCajaService aperturaCajaService;
+    private final EmpresaAccesoService empresaAccesoService;
 
     public CompraServiceImpl(
         CompraRepository compraRepository,
@@ -49,7 +50,8 @@ public class CompraServiceImpl extends BaseCrudService implements CompraService 
         MovimientoCajaRepository movimientoCajaRepository,
         CajaRepository cajaRepository,
         CompraMapper compraMapper,
-        AperturaCajaService aperturaCajaService
+        AperturaCajaService aperturaCajaService,
+        EmpresaAccesoService empresaAccesoService
     ) {
         this.compraRepository = compraRepository;
         this.detalleCompraRepository = detalleCompraRepository;
@@ -63,6 +65,7 @@ public class CompraServiceImpl extends BaseCrudService implements CompraService 
         this.cajaRepository = cajaRepository;
         this.compraMapper = compraMapper;
         this.aperturaCajaService = aperturaCajaService;
+        this.empresaAccesoService = empresaAccesoService;
     }
 
     @Override
@@ -106,11 +109,14 @@ public class CompraServiceImpl extends BaseCrudService implements CompraService 
     public CompraResponse obtenerPorId(Long id) {
         Compra entity = compraRepository.findByIdAndActiveTrue(id)
             .orElseThrow(() -> new ResourceNotFoundException("Compra no encontrada: " + id));
+        empresaAccesoService.exigir(entity.getEmpresa().getId());
         return compraMapper.toResponse(entity);
     }
 
     @Override
     public CompraResponse crear(CompraCreateRequest request) {
+        empresaAccesoService.exigir(request.empresaId());
+
         // 1. Validar empresa
         Empresa empresa = getByIdOrThrow(empresaRepository, request.empresaId(), "Empresa");
         if (!isActive(empresa)) {
@@ -122,11 +128,17 @@ public class CompraServiceImpl extends BaseCrudService implements CompraService 
         if (!isActive(proveedor)) {
             throw new ResourceNotFoundException("Proveedor no encontrado: " + request.proveedorId());
         }
+        if (!proveedor.getEmpresa().getId().equals(empresa.getId())) {
+            throw new IllegalArgumentException("El proveedor no pertenece a la empresa de la compra.");
+        }
 
         // 3. Validar forma de pago (obligatoria)
         FormaPago formaPago = getByIdOrThrow(formaPagoRepository, request.formaPagoId(), "FormaPago");
         if (!isActive(formaPago)) {
             throw new ResourceNotFoundException("Forma de pago no encontrada: " + request.formaPagoId());
+        }
+        if (!formaPago.getEmpresa().getId().equals(empresa.getId())) {
+            throw new IllegalArgumentException("La forma de pago no pertenece a la empresa de la compra.");
         }
         if (formaPago.getTipo() == TipoFormaPago.CREDITO) {
             throw new IllegalArgumentException("Las compras a crédito aún no están soportadas: elige otra forma de pago.");
@@ -182,6 +194,9 @@ public class CompraServiceImpl extends BaseCrudService implements CompraService 
                 if (!isActive(producto)) {
                     throw new ResourceNotFoundException("Producto no encontrado: " + detalleReq.productoId());
                 }
+                if (!producto.getEmpresa().getId().equals(empresa.getId())) {
+                    throw new IllegalArgumentException("El producto no pertenece a la empresa de la compra.");
+                }
 
                 detalle.setProducto(producto);
 
@@ -206,6 +221,9 @@ public class CompraServiceImpl extends BaseCrudService implements CompraService 
                         Impuesto impuesto = getByIdOrThrow(impuestoRepository, impuestoId, "Impuesto");
                         if (!isActive(impuesto)) {
                             throw new ResourceNotFoundException("Impuesto no encontrado: " + impuestoId);
+                        }
+                        if (!impuesto.getEmpresa().getId().equals(empresa.getId())) {
+                            throw new IllegalArgumentException("El impuesto no pertenece a la empresa de la compra.");
                         }
                         impuestos.add(impuesto);
                         // Calcular impuesto
@@ -265,6 +283,7 @@ public class CompraServiceImpl extends BaseCrudService implements CompraService 
     public CompraResponse actualizar(Long id, CompraUpdateRequest request) {
         Compra entity = compraRepository.findByIdAndActiveTrue(id)
             .orElseThrow(() -> new ResourceNotFoundException("Compra no encontrada: " + id));
+        empresaAccesoService.exigir(entity.getEmpresa().getId());
 
         if (request.estado() != null) {
             entity.setEstado(request.estado());
@@ -281,6 +300,7 @@ public class CompraServiceImpl extends BaseCrudService implements CompraService 
     public void eliminar(Long id) {
         Compra entity = compraRepository.findByIdAndActiveTrue(id)
             .orElseThrow(() -> new ResourceNotFoundException("Compra no encontrada: " + id));
+        empresaAccesoService.exigir(entity.getEmpresa().getId());
         softDelete(entity);
         compraRepository.save(entity);
     }
