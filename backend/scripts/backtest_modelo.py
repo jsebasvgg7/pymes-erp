@@ -10,6 +10,13 @@ SEMANAS_ENTRADA = 4
 SEMANAS_MIN_HISTORIAL = 8
 PRIMERA_SEMANA_EVALUABLE = 5
 RUTA_ARBOL = "backend/src/main/resources/modelos/demanda_arbol.json"
+OBJETIVO_RAZON = "razon_promedio_4sem"
+VARIANTES = (
+    ("a", "A. v10.8 (ventas en 0)"),
+    ("b", "B. Promedio 4 semanas"),
+    ("c", "C. Arbol nuevo"),
+    ("d", "D. Arbol v10.8 corregido"),
+)
 
 
 def leer_csv(ruta):
@@ -20,6 +27,13 @@ def leer_csv(ruta):
 def cargar_arbol(ruta):
     with open(ruta, encoding="utf-8") as f:
         return json.load(f)
+
+
+def cargar_meta(ruta):
+    if ruta.exists():
+        with open(ruta, encoding="utf-8") as f:
+            return json.load(f)
+    return {}
 
 
 def numerar_hojas(nodo, hojas=None):
@@ -39,6 +53,13 @@ def evaluar(nodo, variables):
         valor = variables.get(nodo["variable"], 0.0)
         nodo = nodo["izq"] if valor <= nodo["umbral"] else nodo["der"]
     return nodo["prediccion"], nodo["_hoja"]
+
+
+def predecir(arbol, variables, razon):
+    valor, hoja = evaluar(arbol, variables)
+    if razon:
+        valor *= variables["promedio_4sem"]
+    return valor, hoja
 
 
 def semana_incluye_quincena(lunes):
@@ -94,19 +115,19 @@ def imprimir_resumen(titulo, filas):
     if not filas:
         return None
     resultado = {}
-    print(f"  {'variante':<26}{'MAE':>10}{'RMSE':>10}{'sesgo':>10}")
-    for clave, nombre in (("a", "A. Actual (ventas en 0)"), ("b", "B. Promedio 4 semanas"), ("c", "C. Arbol corregido")):
+    print(f"  {'variante':<28}{'MAE':>10}{'RMSE':>10}{'sesgo':>10}")
+    for clave, nombre in VARIANTES:
         errores = [f[f"pred_{clave}"] - f["real"] for f in filas]
         m = metricas(errores)
         resultado[clave] = m
-        print(f"  {nombre:<26}{formato(m[0]):>10}{formato(m[1]):>10}{formato(m[2]):>10}")
+        print(f"  {nombre:<28}{formato(m[0]):>10}{formato(m[1]):>10}{formato(m[2]):>10}")
     return resultado
 
 
 def imprimir_por_producto(titulo, filas, catalogo):
     print()
     print(titulo)
-    print(f"  {'sku':<9}{'producto':<30}{'n':>3}{'real':>9}{'MAE A':>9}{'MAE B':>9}{'MAE C':>9}")
+    print(f"  {'sku':<9}{'producto':<30}{'n':>3}{'real':>9}{'MAE A':>9}{'MAE B':>9}{'MAE C':>9}{'MAE D':>9}")
     por_sku = {}
     for f in filas:
         por_sku.setdefault(f["sku"], []).append(f)
@@ -114,23 +135,23 @@ def imprimir_por_producto(titulo, filas, catalogo):
         grupo = por_sku[sku]
         n = len(grupo)
         real = sum(g["real"] for g in grupo) / n
-        maes = [sum(abs(g[f"pred_{k}"] - g["real"]) for g in grupo) / n for k in ("a", "b", "c")]
+        maes = [sum(abs(g[f"pred_{k}"] - g["real"]) for g in grupo) / n for k in ("a", "b", "c", "d")]
         nombre = catalogo[sku]["nombre"][:28]
-        print(f"  {sku:<9}{nombre:<30}{n:>3}{real:>9.1f}{maes[0]:>9.2f}{maes[1]:>9.2f}{maes[2]:>9.2f}")
+        print(f"  {sku:<9}{nombre:<30}{n:>3}{real:>9.1f}{maes[0]:>9.2f}{maes[1]:>9.2f}{maes[2]:>9.2f}{maes[3]:>9.2f}")
 
 
 def imprimir_por_semana(titulo, filas):
     print()
     print(titulo)
-    print(f"  {'semana':<12}{'n':>4}{'MAE A':>10}{'MAE B':>10}{'MAE C':>10}")
+    print(f"  {'semana':<12}{'n':>4}{'MAE A':>10}{'MAE B':>10}{'MAE C':>10}{'MAE D':>10}")
     por_semana = {}
     for f in filas:
         por_semana.setdefault(f["semana_inicio"], []).append(f)
     for semana in sorted(por_semana):
         grupo = por_semana[semana]
         n = len(grupo)
-        maes = [sum(abs(g[f"pred_{k}"] - g["real"]) for g in grupo) / n for k in ("a", "b", "c")]
-        print(f"  {semana.isoformat():<12}{n:>4}{maes[0]:>10.2f}{maes[1]:>10.2f}{maes[2]:>10.2f}")
+        maes = [sum(abs(g[f"pred_{k}"] - g["real"]) for g in grupo) / n for k in ("a", "b", "c", "d")]
+        print(f"  {semana.isoformat():<12}{n:>4}{maes[0]:>10.2f}{maes[1]:>10.2f}{maes[2]:>10.2f}{maes[3]:>10.2f}")
 
 
 def imprimir_hojas(filas, total_hojas, valores_hojas):
@@ -138,10 +159,16 @@ def imprimir_hojas(filas, total_hojas, valores_hojas):
     for f in filas:
         usos[f["hoja"]] = usos.get(f["hoja"], 0) + 1
     print()
-    print(f"Hojas del arbol usadas: {len(usos)} de {total_hojas}")
-    print(f"  {'hoja':<6}{'prediccion':>12}{'casos':>8}")
+    print(f"Hojas del arbol nuevo usadas: {len(usos)} de {total_hojas}")
+    print(f"  {'hoja':<6}{'valor':>12}{'casos':>8}")
     for hoja in sorted(usos, key=lambda h: -usos[h]):
         print(f"  {hoja:<6}{valores_hojas[hoja]:>12.2f}{usos[hoja]:>8}")
+
+
+def porcentaje(valor, referencia):
+    if referencia == 0:
+        return "-"
+    return f"{(valor - referencia) / referencia * 100:+.1f} %"
 
 
 def veredicto(resultado):
@@ -153,12 +180,17 @@ def veredicto(resultado):
     no_pierde_b = mae_c <= mae_b and rmse_c <= rmse_b
     print(f"  C mejora claramente a A: {'SI' if mejora_a else 'NO'} (MAE {mae_c:.2f} frente a {mae_a:.2f})")
     print(f"  C no pierde contra B:    {'SI' if no_pierde_b else 'NO'} (MAE {mae_c:.2f} frente a {mae_b:.2f})")
+    print(f"  Diferencia de C frente a B: MAE {porcentaje(mae_c, mae_b)}, RMSE {porcentaje(rmse_c, rmse_b)}")
+    mae_d, rmse_d = resultado["d"][0], resultado["d"][1]
+    print(f"  Diferencia de C frente a D: MAE {porcentaje(mae_c, mae_d)}, RMSE {porcentaje(rmse_c, rmse_d)}")
 
 
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--simulacion", default="plan/simulacion")
     parser.add_argument("--arbol", default=RUTA_ARBOL)
+    parser.add_argument("--meta", default=None)
+    parser.add_argument("--arbol-actual", default=RUTA_ARBOL)
     parser.add_argument("--categorias", default=None)
     parser.add_argument("--salida", default=None)
     args = parser.parse_args()
@@ -166,6 +198,15 @@ def main():
     carpeta = Path(args.simulacion)
     arbol = cargar_arbol(args.arbol)
     valores_hojas = numerar_hojas(arbol)
+    arbol_actual = cargar_arbol(args.arbol_actual)
+    numerar_hojas(arbol_actual)
+    ruta_meta = Path(args.meta) if args.meta else Path(args.arbol).with_name(Path(args.arbol).stem + ".meta.json")
+    meta = cargar_meta(ruta_meta)
+    tipo_objetivo = meta.get("tipo_objetivo")
+    if tipo_objetivo not in (None, "unidades", OBJETIVO_RAZON):
+        print(f"tipo_objetivo no soportado: {tipo_objetivo}")
+        return 1
+    razon = tipo_objetivo == OBJETIVO_RAZON
 
     ventas = cargar_ventas(carpeta / "ventas_semanales.csv")
     stock = cargar_stock(carpeta / "stock_lunes.csv")
@@ -181,7 +222,8 @@ def main():
         primera_venta[sku] = min(con_ventas) if con_ventas else None
 
     print(f"Semanas en los datos: {len(semanas)} ({semanas[0]} a {semanas[-1]})")
-    print(f"Arbol: {len(valores_hojas)} hojas")
+    print(f"Arbol nuevo: {args.arbol} ({len(valores_hojas)} hojas, version {meta.get('version', 'sin meta')}, objetivo {tipo_objetivo or 'unidades'})")
+    print(f"Arbol v10.8: {args.arbol_actual}")
     print(f"categoria_id: {origen_categorias} ({sorted(set(categorias.values()))})")
 
     filas = []
@@ -212,8 +254,9 @@ def main():
             variables_a = dict(base)
             for nombre in ("ventas_sem_1", "ventas_sem_2", "ventas_sem_3", "ventas_sem_4", "promedio_4sem"):
                 variables_a[nombre] = 0.0
-            pred_a, _ = evaluar(arbol, variables_a)
-            pred_c, hoja = evaluar(arbol, variables_c)
+            pred_a, _ = evaluar(arbol_actual, variables_a)
+            pred_d, _ = evaluar(arbol_actual, variables_c)
+            pred_c, hoja = predecir(arbol, variables_c, razon)
             primera = primera_venta[sku]
             historial = (semana - primera).days // 7 + 1 if primera is not None and primera <= semana else 0
             filas.append(
@@ -225,6 +268,7 @@ def main():
                     "pred_a": pred_a,
                     "pred_b": promedio,
                     "pred_c": pred_c,
+                    "pred_d": pred_d,
                     "hoja": hoja,
                     "semanas_historial": historial,
                     "apto_backend": historial >= SEMANAS_MIN_HISTORIAL,
@@ -253,7 +297,9 @@ def main():
     )
 
     print()
-    print("Referencia del entrenamiento: MAE 6.83, RMSE 9.28")
+    validacion = meta.get("metricas_validacion")
+    if validacion:
+        print(f"Referencia del entrenamiento (meta): MAE {validacion['mae']:.2f}, RMSE {validacion['rmse']:.2f}")
 
     print()
     print("Condiciones de aceptacion (tabla principal)")
@@ -270,7 +316,7 @@ def main():
     with open(salida, "w", newline="", encoding="utf-8") as f:
         escritor = csv.writer(f, lineterminator="\n")
         escritor.writerow(
-            ["sku", "semana_inicio", "semana_n", "real", "pred_a", "pred_b", "pred_c", "hoja", "semanas_historial", "apto_backend"]
+            ["sku", "semana_inicio", "semana_n", "real", "pred_a", "pred_b", "pred_c", "pred_d", "hoja", "semanas_historial", "apto_backend"]
         )
         for fila in principal:
             escritor.writerow(
@@ -282,6 +328,7 @@ def main():
                     f"{fila['pred_a']:.2f}",
                     f"{fila['pred_b']:.2f}",
                     f"{fila['pred_c']:.2f}",
+                    f"{fila['pred_d']:.2f}",
                     fila["hoja"],
                     fila["semanas_historial"],
                     "SI" if fila["apto_backend"] else "NO",
