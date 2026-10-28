@@ -20,15 +20,18 @@ public class CategoriaProductoServiceImpl extends BaseCrudService implements Cat
 	private final CategoriaProductoRepository categoriaProductoRepository;
 	private final EmpresaRepository empresaRepository;
 	private final CategoriaProductoMapper categoriaProductoMapper;
+	private final EmpresaAccesoService empresaAccesoService;
 
 	public CategoriaProductoServiceImpl(
 		CategoriaProductoRepository categoriaProductoRepository,
 		EmpresaRepository empresaRepository,
-		CategoriaProductoMapper categoriaProductoMapper
+		CategoriaProductoMapper categoriaProductoMapper,
+		EmpresaAccesoService empresaAccesoService
 	) {
 		this.categoriaProductoRepository = categoriaProductoRepository;
 		this.empresaRepository = empresaRepository;
 		this.categoriaProductoMapper = categoriaProductoMapper;
+		this.empresaAccesoService = empresaAccesoService;
 	}
 
 	@Override
@@ -68,11 +71,13 @@ public class CategoriaProductoServiceImpl extends BaseCrudService implements Cat
 		if (!isActive(entity)) {
 			throw new ResourceNotFoundException("Categoría no encontrada: " + id);
 		}
+		empresaAccesoService.exigir(entity.getEmpresa().getId());
 		return categoriaProductoMapper.toResponse(entity);
 	}
 
 	@Override
 	public CategoriaProductoResponse crear(CategoriaProductoCreateRequest request) {
+		empresaAccesoService.exigir(request.empresaId());
 		Empresa empresa = getByIdOrThrow(empresaRepository, request.empresaId(), "Empresa");
 		if (!isActive(empresa)) {
 			throw new ResourceNotFoundException("Empresa no encontrada: " + request.empresaId());
@@ -88,6 +93,7 @@ public class CategoriaProductoServiceImpl extends BaseCrudService implements Cat
 		if (!isActive(entity)) {
 			throw new ResourceNotFoundException("Categoría no encontrada: " + id);
 		}
+		empresaAccesoService.exigir(entity.getEmpresa().getId());
 
 		// Actualizar nombre
 		entity.setNombre(request.nombre());
@@ -104,6 +110,7 @@ public class CategoriaProductoServiceImpl extends BaseCrudService implements Cat
 	@Override
 	public CategoriaProductoResponse reactivar(Long id) {
 		CategoriaProducto entity = getByIdOrThrow(categoriaProductoRepository, id, "CategoriaProducto");
+		empresaAccesoService.exigir(entity.getEmpresa().getId());
 		if (!isActive(entity)) {
 			entity.setActive(true);
 			categoriaProductoRepository.save(entity);
@@ -114,6 +121,7 @@ public class CategoriaProductoServiceImpl extends BaseCrudService implements Cat
 	@Override
 	public void eliminar(Long id) {
 		CategoriaProducto entity = getByIdOrThrow(categoriaProductoRepository, id, "CategoriaProducto");
+		empresaAccesoService.exigir(entity.getEmpresa().getId());
 		if (!isActive(entity)) {
 			return;
 		}
