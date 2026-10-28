@@ -29,6 +29,7 @@ public class ProductoServiceImpl extends BaseCrudService implements ProductoServ
     private final InventarioRepository inventarioRepository;
     private final ImpuestoRepository impuestoRepository;
     private final ProductoMapper productoMapper;
+    private final EmpresaAccesoService empresaAccesoService;
 
     public ProductoServiceImpl(
         ProductoRepository productoRepository,
@@ -36,7 +37,8 @@ public class ProductoServiceImpl extends BaseCrudService implements ProductoServ
         CategoriaProductoRepository categoriaProductoRepository,
         InventarioRepository inventarioRepository,
         ImpuestoRepository impuestoRepository,
-        ProductoMapper productoMapper
+        ProductoMapper productoMapper,
+        EmpresaAccesoService empresaAccesoService
     ) {
         this.productoRepository = productoRepository;
         this.empresaRepository = empresaRepository;
@@ -44,12 +46,13 @@ public class ProductoServiceImpl extends BaseCrudService implements ProductoServ
         this.inventarioRepository = inventarioRepository;
         this.impuestoRepository = impuestoRepository;
         this.productoMapper = productoMapper;
+        this.empresaAccesoService = empresaAccesoService;
     }
 
     @Override
     @Transactional(readOnly = true)
     public Page<ProductoResponse> listar(Pageable pageable) {
-        return productoRepository.findByActiveTrue(pageable)
+        return productoRepository.findByActiveTrueAndEmpresaId(pageable, empresaAccesoService.empresaIdActual())
             .map(productoMapper::toResponse);
     }
 
@@ -93,11 +96,14 @@ public class ProductoServiceImpl extends BaseCrudService implements ProductoServ
     public ProductoResponse obtenerPorId(Long id) {
         Producto entity = productoRepository.findByIdAndActiveTrue(id)
             .orElseThrow(() -> new ResourceNotFoundException("Producto no encontrado: " + id));
+        empresaAccesoService.exigir(entity.getEmpresa().getId());
         return productoMapper.toResponse(entity);
     }
 
     @Override
     public ProductoResponse crear(ProductoCreateRequest request) {
+        empresaAccesoService.exigir(request.empresaId());
+
         // 1. Validar empresa
         Empresa empresa = getByIdOrThrow(empresaRepository, request.empresaId(), "Empresa");
         if (!isActive(empresa)) {
@@ -110,6 +116,9 @@ public class ProductoServiceImpl extends BaseCrudService implements ProductoServ
             categoria = getByIdOrThrow(categoriaProductoRepository, request.categoriaId(), "CategoriaProducto");
             if (!isActive(categoria)) {
                 throw new ResourceNotFoundException("Categoría no encontrada: " + request.categoriaId());
+            }
+            if (!categoria.getEmpresa().getId().equals(empresa.getId())) {
+                throw new IllegalArgumentException("La categoría no pertenece a la empresa del producto.");
             }
         }
 
@@ -130,6 +139,9 @@ public class ProductoServiceImpl extends BaseCrudService implements ProductoServ
                 Impuesto impuesto = getByIdOrThrow(impuestoRepository, impuestoId, "Impuesto");
                 if (!isActive(impuesto)) {
                     throw new ResourceNotFoundException("Impuesto no encontrado: " + impuestoId);
+                }
+                if (!impuesto.getEmpresa().getId().equals(empresa.getId())) {
+                    throw new IllegalArgumentException("El impuesto no pertenece a la empresa del producto.");
                 }
                 impuestos.add(impuesto);
             }
@@ -161,6 +173,7 @@ public class ProductoServiceImpl extends BaseCrudService implements ProductoServ
     public void eliminar(Long id) {
         Producto entity = productoRepository.findByIdAndActiveTrue(id)
             .orElseThrow(() -> new ResourceNotFoundException("Producto no encontrado: " + id));
+        empresaAccesoService.exigir(entity.getEmpresa().getId());
 
         // Soft delete del producto
         softDelete(entity);
@@ -189,6 +202,7 @@ public class ProductoServiceImpl extends BaseCrudService implements ProductoServ
         // 1. Validar producto existe
         Producto entity = productoRepository.findByIdAndActiveTrue(id)
             .orElseThrow(() -> new ResourceNotFoundException("Producto no encontrado: " + id));
+        empresaAccesoService.exigir(entity.getEmpresa().getId());
 
         // 2. Actualizar campos básicos (nombre, descripción, unidad, precios, etc.)
         productoMapper.updateEntity(request, entity);
@@ -198,6 +212,9 @@ public class ProductoServiceImpl extends BaseCrudService implements ProductoServ
             CategoriaProducto categoria = getByIdOrThrow(categoriaProductoRepository, request.categoriaId(), "CategoriaProducto");
             if (!isActive(categoria)) {
                 throw new ResourceNotFoundException("Categoría no encontrada: " + request.categoriaId());
+            }
+            if (!categoria.getEmpresa().getId().equals(entity.getEmpresa().getId())) {
+                throw new IllegalArgumentException("La categoría no pertenece a la empresa del producto.");
             }
             entity.setCategoria(categoria);
         }
@@ -209,6 +226,9 @@ public class ProductoServiceImpl extends BaseCrudService implements ProductoServ
                 Impuesto impuesto = getByIdOrThrow(impuestoRepository, impuestoId, "Impuesto");
                 if (!isActive(impuesto)) {
                     throw new ResourceNotFoundException("Impuesto no encontrado: " + impuestoId);
+                }
+                if (!impuesto.getEmpresa().getId().equals(entity.getEmpresa().getId())) {
+                    throw new IllegalArgumentException("El impuesto no pertenece a la empresa del producto.");
                 }
                 impuestos.add(impuesto);
             }

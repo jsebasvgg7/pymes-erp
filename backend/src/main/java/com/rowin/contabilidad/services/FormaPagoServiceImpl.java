@@ -20,21 +20,24 @@ public class FormaPagoServiceImpl extends BaseCrudService implements FormaPagoSe
 	private final FormaPagoRepository formaPagoRepository;
 	private final EmpresaRepository empresaRepository;
 	private final FormaPagoMapper formaPagoMapper;
+	private final EmpresaAccesoService empresaAccesoService;
 
 	public FormaPagoServiceImpl(
 		FormaPagoRepository formaPagoRepository,
 		EmpresaRepository empresaRepository,
-		FormaPagoMapper formaPagoMapper
+		FormaPagoMapper formaPagoMapper,
+		EmpresaAccesoService empresaAccesoService
 	) {
 		this.formaPagoRepository = formaPagoRepository;
 		this.empresaRepository = empresaRepository;
 		this.formaPagoMapper = formaPagoMapper;
+		this.empresaAccesoService = empresaAccesoService;
 	}
 
 	@Override
 	@Transactional(readOnly = true)
 	public Page<FormaPagoResponse> listar(Pageable pageable) {
-		return formaPagoRepository.findByActiveTrue(pageable).map(formaPagoMapper::toResponse);
+		return formaPagoRepository.findByActiveTrueAndEmpresaId(pageable, empresaAccesoService.empresaIdActual()).map(formaPagoMapper::toResponse);
 	}
 
 	@Override
@@ -56,11 +59,13 @@ public class FormaPagoServiceImpl extends BaseCrudService implements FormaPagoSe
 		if (!isActive(entity)) {
 			throw new ResourceNotFoundException("Forma de pago no encontrada: " + id);
 		}
+		empresaAccesoService.exigir(entity.getEmpresa().getId());
 		return formaPagoMapper.toResponse(entity);
 	}
 
 	@Override
 	public FormaPagoResponse crear(FormaPagoCreateRequest request) {
+		empresaAccesoService.exigir(request.empresaId());
 		Empresa empresa = getByIdOrThrow(empresaRepository, request.empresaId(), "Empresa");
 		if (!isActive(empresa)) {
 			throw new ResourceNotFoundException("Empresa no encontrada: " + request.empresaId());
@@ -76,6 +81,7 @@ public class FormaPagoServiceImpl extends BaseCrudService implements FormaPagoSe
 		if (!isActive(entity)) {
 			throw new ResourceNotFoundException("Forma de pago no encontrada: " + id);
 		}
+		empresaAccesoService.exigir(entity.getEmpresa().getId());
 		formaPagoMapper.updateEntity(request, entity);
 		FormaPago saved = formaPagoRepository.save(entity);
 		return formaPagoMapper.toResponse(saved);
@@ -84,6 +90,7 @@ public class FormaPagoServiceImpl extends BaseCrudService implements FormaPagoSe
 	@Override
 	public void eliminar(Long id) {
 		FormaPago entity = getByIdOrThrow(formaPagoRepository, id, "Forma de pago");
+		empresaAccesoService.exigir(entity.getEmpresa().getId());
 		if (!isActive(entity)) {
 			return;
 		}

@@ -16,7 +16,7 @@ const OFFSETS_SECCION: Record<string, number> = {
   "#beneficios": 145,
   "#tecnologia": 135,
   "#precios": 140,
-  "#contacto": 115,
+  "#contacto": 100,
 };
 
 export default function LandingPage() {

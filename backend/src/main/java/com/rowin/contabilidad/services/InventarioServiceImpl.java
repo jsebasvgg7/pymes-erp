@@ -26,6 +26,7 @@ public class InventarioServiceImpl extends BaseCrudService implements Inventario
     private final ProductoRepository productoRepository;
     private final UsuarioRepository usuarioRepository;
     private final MovimientoInventarioMapper movimientoInventarioMapper;
+    private final EmpresaAccesoService empresaAccesoService;
 
     public InventarioServiceImpl(
         InventarioRepository inventarioRepository,
@@ -33,7 +34,8 @@ public class InventarioServiceImpl extends BaseCrudService implements Inventario
         EmpresaRepository empresaRepository,
         ProductoRepository productoRepository,
         UsuarioRepository usuarioRepository,
-        MovimientoInventarioMapper movimientoInventarioMapper
+        MovimientoInventarioMapper movimientoInventarioMapper,
+        EmpresaAccesoService empresaAccesoService
     ) {
         this.inventarioRepository = inventarioRepository;
         this.movimientoInventarioRepository = movimientoInventarioRepository;
@@ -41,6 +43,7 @@ public class InventarioServiceImpl extends BaseCrudService implements Inventario
         this.productoRepository = productoRepository;
         this.usuarioRepository = usuarioRepository;
         this.movimientoInventarioMapper = movimientoInventarioMapper;
+        this.empresaAccesoService = empresaAccesoService;
     }
 
     @Override
@@ -66,6 +69,7 @@ public class InventarioServiceImpl extends BaseCrudService implements Inventario
         if (!isActive(producto)) {
             throw new ResourceNotFoundException("Producto no encontrado: " + productoId);
         }
+        empresaAccesoService.exigir(producto.getEmpresa().getId());
 
         Inventario inventario = inventarioRepository.findByProductoIdAndActiveTrue(productoId)
             .orElseThrow(() -> new ResourceNotFoundException("Inventario no encontrado para el producto: " + productoId));
@@ -75,6 +79,8 @@ public class InventarioServiceImpl extends BaseCrudService implements Inventario
 
     @Override
     public InventarioResponse ajustarStock(AjusteStockRequest request) {
+        empresaAccesoService.exigir(request.empresaId());
+
         // 1. Validar empresa
         Empresa empresa = getByIdOrThrow(empresaRepository, request.empresaId(), "Empresa");
         if (!isActive(empresa)) {
@@ -86,6 +92,9 @@ public class InventarioServiceImpl extends BaseCrudService implements Inventario
         if (!isActive(producto)) {
             throw new ResourceNotFoundException("Producto no encontrado: " + request.productoId());
         }
+        if (!producto.getEmpresa().getId().equals(empresa.getId())) {
+            throw new IllegalArgumentException("El producto no pertenece a la empresa del ajuste.");
+        }
 
         // 3. Validar inventario
         Inventario inventario = inventarioRepository.findByProductoIdAndActiveTrue(producto.getId())
@@ -95,6 +104,9 @@ public class InventarioServiceImpl extends BaseCrudService implements Inventario
         Usuario usuario = null;
         if (request.usuarioId() != null) {
             usuario = getByIdOrThrow(usuarioRepository, request.usuarioId(), "Usuario");
+            if (!usuario.getEmpresa().getId().equals(empresa.getId())) {
+                throw new IllegalArgumentException("El usuario no pertenece a la empresa del ajuste.");
+            }
         }
 
         // 5. Calcular la nueva cantidad según el tipo
@@ -148,6 +160,7 @@ public class InventarioServiceImpl extends BaseCrudService implements Inventario
         if (!isActive(producto)) {
             throw new ResourceNotFoundException("Producto no encontrado: " + productoId);
         }
+        empresaAccesoService.exigir(producto.getEmpresa().getId());
 
         return movimientoInventarioRepository.findByProductoIdAndActiveTrue(productoId)
             .stream()

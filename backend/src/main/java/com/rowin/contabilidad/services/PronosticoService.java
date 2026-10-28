@@ -8,7 +8,5 @@ public interface PronosticoService {
 
     void recalcularPronosticos(Long empresaId);
 
-    void recalcularPronosticos(Long empresaId, String email);
-
-    List<PronosticoDemandaResponse> obtenerPronosticosPorEmpresa(Long empresaId, String email);
+    List<PronosticoDemandaResponse> obtenerPronosticosPorEmpresa(Long empresaId);
 }

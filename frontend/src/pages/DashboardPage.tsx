@@ -7,6 +7,7 @@ import { useEstadoCaja } from "../hooks/useEstadoCaja";
 import PrimaryButton from "../components/PrimaryButton";
 import SecondaryButton from "../components/SecondaryButton";
 import StatusBadge from "../components/StatusBadge";
+import { etiquetaMovimiento } from "../utils/etiquetaMovimiento";
 import { formatDateShort } from "../utils/formatDate";
 import LoadingState from "../components/LoadingState";
 import ErrorState from "../components/ErrorState";
@@ -244,7 +245,7 @@ export default function DashboardPage() {
 		principal: (r) => r.concepto,
 		secundario: (r) => formatDateShort(r.fecha),
 		etiquetas: (r) => (r.formaPago ? <span className="ui-list__chip">{r.formaPago}</span> : null),
-		estado: (r) => <StatusBadge status={r.tipo === "INGRESO" ? "Ingreso" : "Egreso"} />,
+		estado: (r) => <StatusBadge status={etiquetaMovimiento(r.tipo, r.referencia)} />,
 		valor: (r) => `${r.tipo === "INGRESO" ? "+" : "−"} ${formatCurrency(r.valor)}`
 	};
 
