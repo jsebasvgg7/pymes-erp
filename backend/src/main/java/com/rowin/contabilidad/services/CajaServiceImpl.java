@@ -41,6 +41,7 @@ public class CajaServiceImpl extends BaseCrudService implements CajaService {
     private final FormaPagoRepository formaPagoRepository;
     private final AperturaCajaService aperturaCajaService;
     private final CajaMapper cajaMapper;
+    private final EmpresaAccesoService empresaAccesoService;
 
     public CajaServiceImpl(
         MovimientoCajaRepository movimientoCajaRepository,
@@ -48,7 +49,8 @@ public class CajaServiceImpl extends BaseCrudService implements CajaService {
         EmpresaRepository empresaRepository,
         FormaPagoRepository formaPagoRepository,
         AperturaCajaService aperturaCajaService,
-        CajaMapper cajaMapper
+        CajaMapper cajaMapper,
+        EmpresaAccesoService empresaAccesoService
     ) {
         this.movimientoCajaRepository = movimientoCajaRepository;
         this.cajaRepository = cajaRepository;
@@ -56,10 +58,12 @@ public class CajaServiceImpl extends BaseCrudService implements CajaService {
         this.formaPagoRepository = formaPagoRepository;
         this.aperturaCajaService = aperturaCajaService;
         this.cajaMapper = cajaMapper;
+        this.empresaAccesoService = empresaAccesoService;
     }
 
     @Override
     public CajaResponse crear(CajaCreateRequest request) {
+        empresaAccesoService.exigir(request.empresaId());
         Empresa empresa = getByIdOrThrow(empresaRepository, request.empresaId(), "Empresa");
         if (!isActive(empresa)) {
             throw new ResourceNotFoundException("Empresa no encontrada: " + request.empresaId());
@@ -99,6 +103,7 @@ public class CajaServiceImpl extends BaseCrudService implements CajaService {
     @Transactional(readOnly = true)
     public Page<MovimientoCajaResponse> listarMovimientosPorCaja(Long cajaId, Pageable pageable) {
         Caja caja = getByIdOrThrow(cajaRepository, cajaId, "Caja");
+        empresaAccesoService.exigir(caja.getEmpresa().getId());
         if (!isActive(caja)) {
             throw new ResourceNotFoundException("Caja no encontrada: " + cajaId);
         }
@@ -121,12 +126,14 @@ public class CajaServiceImpl extends BaseCrudService implements CajaService {
 
     @Override
     public MovimientoCajaResponse registrarMovimiento(MovimientoCajaRequest request) {
+        empresaAccesoService.exigir(request.empresaId());
         Empresa empresa = getByIdOrThrow(empresaRepository, request.empresaId(), "Empresa");
         if (!isActive(empresa)) {
             throw new ResourceNotFoundException("Empresa no encontrada: " + request.empresaId());
         }
 
         Caja caja = getByIdOrThrow(cajaRepository, request.cajaId(), "Caja");
+        empresaAccesoService.exigir(caja.getEmpresa().getId());
         if (!isActive(caja)) {
             throw new ResourceNotFoundException("Caja no encontrada: " + request.cajaId());
         }
@@ -136,6 +143,7 @@ public class CajaServiceImpl extends BaseCrudService implements CajaService {
         FormaPago formaPago = null;
         if (request.formaPagoId() != null) {
             formaPago = getByIdOrThrow(formaPagoRepository, request.formaPagoId(), "FormaPago");
+            empresaAccesoService.exigir(formaPago.getEmpresa().getId());
             if (!isActive(formaPago)) {
                 throw new ResourceNotFoundException("Forma de pago no encontrada: " + request.formaPagoId());
             }
@@ -166,6 +174,7 @@ public class CajaServiceImpl extends BaseCrudService implements CajaService {
     @Transactional(readOnly = true)
     public CajaResumenResponse obtenerResumenCaja(Long cajaId) {
         Caja caja = getByIdOrThrow(cajaRepository, cajaId, "Caja");
+        empresaAccesoService.exigir(caja.getEmpresa().getId());
         if (!isActive(caja)) {
             throw new ResourceNotFoundException("Caja no encontrada: " + cajaId);
         }
@@ -219,6 +228,7 @@ public class CajaServiceImpl extends BaseCrudService implements CajaService {
     @Transactional(readOnly = true)
     public BigDecimal obtenerSaldoActual(Long cajaId) {
         Caja caja = getByIdOrThrow(cajaRepository, cajaId, "Caja");
+        empresaAccesoService.exigir(caja.getEmpresa().getId());
         if (!isActive(caja)) {
             throw new ResourceNotFoundException("Caja no encontrada: " + cajaId);
         }
