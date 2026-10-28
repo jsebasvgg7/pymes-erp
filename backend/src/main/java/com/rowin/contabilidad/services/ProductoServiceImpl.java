@@ -52,7 +52,7 @@ public class ProductoServiceImpl extends BaseCrudService implements ProductoServ
     @Override
     @Transactional(readOnly = true)
     public Page<ProductoResponse> listar(Pageable pageable) {
-        return productoRepository.findByActiveTrue(pageable)
+        return productoRepository.findByActiveTrueAndEmpresaId(pageable, empresaAccesoService.empresaIdActual())
             .map(productoMapper::toResponse);
     }
 

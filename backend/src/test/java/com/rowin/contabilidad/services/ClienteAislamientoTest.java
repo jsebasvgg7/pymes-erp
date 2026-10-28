@@ -154,4 +154,16 @@ class ClienteAislamientoTest {
         verifyNoInteractions(formaPagoRepository, aperturaCajaService, cajaRepository,
             movimientoCajaRepository, cuentaPorCobrarRepository, facturaVentaRepository);
     }
+
+    @Test
+    void listarFiltraPorLaEmpresaDelUsuario() {
+        org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest.of(0, 20);
+        when(empresaAccesoService.empresaIdActual()).thenReturn(EMPRESA_PROPIA);
+        when(clienteRepository.findByActiveTrueAndEmpresaId(pageable, EMPRESA_PROPIA)).thenReturn(org.springframework.data.domain.Page.empty());
+
+        service.listar(pageable);
+
+        verify(clienteRepository).findByActiveTrueAndEmpresaId(pageable, EMPRESA_PROPIA);
+        verify(clienteRepository, never()).findByActiveTrue(pageable);
+    }
 }

@@ -37,7 +37,7 @@ public class RolServiceImpl extends BaseCrudService implements RolService {
 	@Override
 	@Transactional(readOnly = true)
 	public Page<RolResponse> listar(Pageable pageable) {
-		return rolRepository.findByActiveTrue(pageable).map(rolMapper::toResponse);
+		return rolRepository.findByActiveTrueAndEmpresaId(pageable, empresaAccesoService.empresaIdActual()).map(rolMapper::toResponse);
 	}
 
 	@Override

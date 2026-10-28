@@ -71,7 +71,7 @@ public class CompraServiceImpl extends BaseCrudService implements CompraService 
     @Override
     @Transactional(readOnly = true)
     public Page<CompraResponse> listar(Pageable pageable) {
-        return compraRepository.findByActiveTrue(pageable)
+        return compraRepository.findByActiveTrueAndEmpresaId(pageable, empresaAccesoService.empresaIdActual())
             .map(compraMapper::toResponse);
     }
 

@@ -95,7 +95,7 @@ public class CajaServiceImpl extends BaseCrudService implements CajaService {
     @Override
     @Transactional(readOnly = true)
     public Page<MovimientoCajaResponse> listarMovimientos(Pageable pageable) {
-        return movimientoCajaRepository.findByActiveTrue(pageable)
+        return movimientoCajaRepository.findByEmpresaIdAndActiveTrue(empresaAccesoService.empresaIdActual(), pageable)
             .map(cajaMapper::toResponse);
     }
 

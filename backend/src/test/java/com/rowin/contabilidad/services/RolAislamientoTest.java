@@ -124,4 +124,16 @@ class RolAislamientoTest {
         assertTrue(!rol.isActive());
         verify(rolRepository).save(rol);
     }
+
+    @Test
+    void listarFiltraPorLaEmpresaDelUsuario() {
+        org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest.of(0, 20);
+        when(empresaAccesoService.empresaIdActual()).thenReturn(EMPRESA_PROPIA);
+        when(rolRepository.findByActiveTrueAndEmpresaId(pageable, EMPRESA_PROPIA)).thenReturn(org.springframework.data.domain.Page.empty());
+
+        service.listar(pageable);
+
+        verify(rolRepository).findByActiveTrueAndEmpresaId(pageable, EMPRESA_PROPIA);
+        verify(rolRepository, never()).findByActiveTrue(pageable);
+    }
 }

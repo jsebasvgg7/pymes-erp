@@ -50,7 +50,7 @@ public class UsuarioServiceImpl extends BaseCrudService implements UsuarioServic
     @Override
     @Transactional(readOnly = true)
     public Page<UsuarioResponse> listar(Pageable pageable) {
-        return usuarioRepository.findByActiveTrue(pageable)
+        return usuarioRepository.findByActiveTrueAndEmpresaId(pageable, empresaAccesoService.empresaIdActual())
             .map(usuarioMapper::toResponse);
     }
 

@@ -218,4 +218,16 @@ class UsuarioAislamientoTest {
         assertTrue(!usuario.isActive());
         verify(usuarioRepository).save(usuario);
     }
+
+    @Test
+    void listarFiltraPorLaEmpresaDelUsuario() {
+        org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest.of(0, 20);
+        when(empresaAccesoService.empresaIdActual()).thenReturn(EMPRESA_PROPIA);
+        when(usuarioRepository.findByActiveTrueAndEmpresaId(pageable, EMPRESA_PROPIA)).thenReturn(org.springframework.data.domain.Page.empty());
+
+        service.listar(pageable);
+
+        verify(usuarioRepository).findByActiveTrueAndEmpresaId(pageable, EMPRESA_PROPIA);
+        verify(usuarioRepository, never()).findByActiveTrue(pageable);
+    }
 }

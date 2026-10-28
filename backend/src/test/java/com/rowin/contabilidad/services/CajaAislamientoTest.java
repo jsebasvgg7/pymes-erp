@@ -172,4 +172,16 @@ class CajaAislamientoTest {
         verifyNoInteractions(movimientoCajaRepository);
         verify(cajaRepository, never()).save(any());
     }
+
+    @Test
+    void listarMovimientosFiltraPorLaEmpresaDelUsuario() {
+        org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest.of(0, 20);
+        when(empresaAccesoService.empresaIdActual()).thenReturn(EMPRESA_PROPIA);
+        when(movimientoCajaRepository.findByEmpresaIdAndActiveTrue(EMPRESA_PROPIA, pageable)).thenReturn(org.springframework.data.domain.Page.empty());
+
+        service.listarMovimientos(pageable);
+
+        verify(movimientoCajaRepository).findByEmpresaIdAndActiveTrue(EMPRESA_PROPIA, pageable);
+        verify(movimientoCajaRepository, never()).findByActiveTrue(pageable);
+    }
 }

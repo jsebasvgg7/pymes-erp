@@ -38,7 +38,7 @@ public class ProveedorServiceImpl extends BaseCrudService implements ProveedorSe
     @Override
     @Transactional(readOnly = true)
     public Page<ProveedorResponse> listar(Pageable pageable) {
-        return proveedorRepository.findByActiveTrue(pageable)
+        return proveedorRepository.findByActiveTrueAndEmpresaId(pageable, empresaAccesoService.empresaIdActual())
             .map(proveedorMapper::toResponse);
     }
 

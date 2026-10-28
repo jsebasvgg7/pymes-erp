@@ -123,4 +123,16 @@ class ProveedorAislamientoTest {
 
         verify(proveedorRepository, never()).delete(any());
     }
+
+    @Test
+    void listarFiltraPorLaEmpresaDelUsuario() {
+        org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest.of(0, 20);
+        when(empresaAccesoService.empresaIdActual()).thenReturn(EMPRESA_PROPIA);
+        when(proveedorRepository.findByActiveTrueAndEmpresaId(pageable, EMPRESA_PROPIA)).thenReturn(org.springframework.data.domain.Page.empty());
+
+        service.listar(pageable);
+
+        verify(proveedorRepository).findByActiveTrueAndEmpresaId(pageable, EMPRESA_PROPIA);
+        verify(proveedorRepository, never()).findByActiveTrue(pageable);
+    }
 }

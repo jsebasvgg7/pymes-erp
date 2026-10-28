@@ -82,7 +82,7 @@ public class FacturaVentaServiceImpl extends BaseCrudService implements FacturaV
     @Override
     @Transactional(readOnly = true)
     public Page<FacturaVentaResponse> listar(Pageable pageable) {
-        return facturaVentaRepository.findByActiveTrue(pageable)
+        return facturaVentaRepository.findByActiveTrueAndEmpresaId(pageable, empresaAccesoService.empresaIdActual())
             .map(facturaVentaMapper::toResponse);
     }
 

@@ -37,7 +37,7 @@ public class CategoriaProductoServiceImpl extends BaseCrudService implements Cat
 	@Override
 	@Transactional(readOnly = true)
 	public Page<CategoriaProductoResponse> listar(Pageable pageable) {
-		return categoriaProductoRepository.findByActiveTrue(pageable).map(categoriaProductoMapper::toResponse);
+		return categoriaProductoRepository.findByActiveTrueAndEmpresaId(pageable, empresaAccesoService.empresaIdActual()).map(categoriaProductoMapper::toResponse);
 	}
 
 	@Override

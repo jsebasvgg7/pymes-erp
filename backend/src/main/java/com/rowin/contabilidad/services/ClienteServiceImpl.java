@@ -65,7 +65,7 @@ public class ClienteServiceImpl extends BaseCrudService implements ClienteServic
     @Override
     @Transactional(readOnly = true)
     public Page<ClienteResponse> listar(Pageable pageable) {
-        return clienteRepository.findByActiveTrue(pageable)
+        return clienteRepository.findByActiveTrueAndEmpresaId(pageable, empresaAccesoService.empresaIdActual())
             .map(clienteMapper::toResponse);
     }
 

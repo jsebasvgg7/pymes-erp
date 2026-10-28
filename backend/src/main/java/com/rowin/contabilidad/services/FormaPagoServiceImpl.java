@@ -37,7 +37,7 @@ public class FormaPagoServiceImpl extends BaseCrudService implements FormaPagoSe
 	@Override
 	@Transactional(readOnly = true)
 	public Page<FormaPagoResponse> listar(Pageable pageable) {
-		return formaPagoRepository.findByActiveTrue(pageable).map(formaPagoMapper::toResponse);
+		return formaPagoRepository.findByActiveTrueAndEmpresaId(pageable, empresaAccesoService.empresaIdActual()).map(formaPagoMapper::toResponse);
 	}
 
 	@Override
