@@ -1,7 +1,7 @@
 import "./StatusBadge.css";
 
 type StatusBadgeProps = {
-	status: "Activo" | "Inactivo" | "Pendiente" | "Pagado" | "Anulado" | "Ingreso" | "Egreso" | "Gasto";
+	status: "Activo" | "Inactivo" | "Pendiente" | "Pagado" | "Anulado" | "Ingreso" | "Egreso" | "Gasto" | "Crítico" | "Atención" | "OK";
 };
 
 const statusClass: Record<StatusBadgeProps["status"], string> = {
@@ -12,7 +12,10 @@ const statusClass: Record<StatusBadgeProps["status"], string> = {
 	Anulado: "ui-badge--void",
 	Ingreso: "ui-badge--active",
 	Egreso: "ui-badge--paid",
-	Gasto: "ui-badge--expense"
+	Gasto: "ui-badge--expense",
+	Crítico: "ui-badge--critical",
+	Atención: "ui-badge--warning",
+	OK: "ui-badge--ok"
 };
 
 export default function StatusBadge({ status }: StatusBadgeProps) {

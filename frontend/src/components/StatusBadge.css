@@ -43,3 +43,40 @@
 	background: color-mix(in srgb, var(--ink) 8%, transparent);
 	border-color: color-mix(in srgb, var(--ink) 22%, transparent);
 }
+
+.ui-badge--critical,
+.ui-badge--warning,
+.ui-badge--ok {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	font-weight: 600;
+}
+
+.ui-badge--critical::before,
+.ui-badge--warning::before,
+.ui-badge--ok::before {
+	content: "";
+	width: 6px;
+	height: 6px;
+	border-radius: 50%;
+	background: currentColor;
+}
+
+.ui-badge--critical {
+	color: rgba(185, 28, 28, 0.95);
+	background: rgba(220, 38, 38, 0.1);
+	border-color: rgba(220, 38, 38, 0.2);
+}
+
+.ui-badge--warning {
+	color: rgba(180, 105, 8, 0.95);
+	background: rgba(245, 158, 11, 0.14);
+	border-color: rgba(245, 158, 11, 0.24);
+}
+
+.ui-badge--ok {
+	color: rgba(26, 163, 98, 0.95);
+	background: rgba(26, 163, 98, 0.1);
+	border-color: rgba(26, 163, 98, 0.18);
+}
