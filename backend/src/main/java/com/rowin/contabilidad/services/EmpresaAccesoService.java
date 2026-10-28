@@ -26,6 +26,14 @@ public class EmpresaAccesoService {
         }
     }
 
+    public Long empresaIdActual() {
+        Long empresaDelUsuario = empresaDelUsuarioAutenticado();
+        if (empresaDelUsuario == null) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "No tienes acceso a los datos de esta empresa");
+        }
+        return empresaDelUsuario;
+    }
+
     private Long empresaDelUsuarioAutenticado() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication == null

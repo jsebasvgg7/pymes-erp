@@ -97,6 +97,32 @@ class EmpresaAccesoServiceTest {
     }
 
     @Test
+    void empresaIdActualDevuelveLaEmpresaDelUsuario() {
+        autenticar();
+        when(usuarioRepository.findByEmailAndActiveTrue(EMAIL)).thenReturn(Optional.of(usuarioDeEmpresa(7L)));
+
+        assertEquals(7L, service.empresaIdActual());
+    }
+
+    @Test
+    void empresaIdActualRechazaSinSesion() {
+        ResponseStatusException ex = assertThrows(ResponseStatusException.class, () -> service.empresaIdActual());
+
+        assertEquals(HttpStatus.FORBIDDEN.value(), ex.getStatusCode().value());
+        verifyNoInteractions(usuarioRepository);
+    }
+
+    @Test
+    void empresaIdActualRechazaUsuarioInexistenteOInactivo() {
+        autenticar();
+        when(usuarioRepository.findByEmailAndActiveTrue(EMAIL)).thenReturn(Optional.empty());
+
+        ResponseStatusException ex = assertThrows(ResponseStatusException.class, () -> service.empresaIdActual());
+
+        assertEquals(HttpStatus.FORBIDDEN.value(), ex.getStatusCode().value());
+    }
+
+    @Test
     void rechazaSinSesion() {
         assertEquals(HttpStatus.FORBIDDEN, estadoDelRechazo(7L));
         verifyNoInteractions(usuarioRepository);
