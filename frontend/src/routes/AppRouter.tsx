@@ -16,6 +16,7 @@ const CategoriasPage = lazy(() => import("../pages/CategoriasPage"));
 const ComprasPage = lazy(() => import("../pages/ComprasPage"));
 const CajaPage = lazy(() => import("../pages/CajaPage"));
 const InventarioPage = lazy(() => import("../pages/InventarioPage"));
+const PronosticosPage = lazy(() => import("../pages/PronosticosPage"));
 const PosPage = lazy(() => import("../pages/PosPage"));
 const ReportesPage = lazy(() => import("../pages/ReportesPage"));
 const ConfiguracionPage = lazy(() => import("../pages/ConfiguracionPage"));
@@ -71,6 +72,7 @@ export default function AppRouter() {
           <Route path="categorias" element={<ModuleGuard modulo="CATEGORIAS"><CategoriasPage /></ModuleGuard>} />
           <Route path="compras" element={<ModuleGuard modulo="COMPRAS"><ComprasPage /></ModuleGuard>} />
           <Route path="inventario" element={<ModuleGuard modulo="INVENTARIO"><InventarioPage /></ModuleGuard>} />
+          <Route path="pronosticos" element={<ModuleGuard modulo="INVENTARIO"><PronosticosPage /></ModuleGuard>} />
           <Route path="pos" element={<ModuleGuard modulo="POS"><PosPage /></ModuleGuard>} />
           <Route path="caja" element={<ModuleGuard modulo="CAJA"><CajaPage /></ModuleGuard>} />
           <Route path="reportes" element={<ModuleGuard modulo="REPORTES"><ReportesPage /></ModuleGuard>} />

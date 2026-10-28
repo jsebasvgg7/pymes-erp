@@ -8,6 +8,7 @@ import {
 	Package,
 	FolderTree,
 	Warehouse,
+	TrendingUp,
 	ShoppingCart,
 	Monitor,
 	Wallet,
@@ -52,6 +53,7 @@ const menuGroups: MenuGroup[] = [
 			{ label: "Ventas (POS)", path: "/pos", icon: Monitor },
 			{ label: "Caja", path: "/caja", icon: Wallet },
 			{ label: "Inventario", path: "/inventario", icon: Warehouse },
+			{ label: "Pronósticos", path: "/pronosticos", icon: TrendingUp },
 			{ label: "Compras", path: "/compras", icon: ShoppingCart }
 		]
 	},

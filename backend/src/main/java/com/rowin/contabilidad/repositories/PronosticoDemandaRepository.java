@@ -8,6 +8,6 @@ import java.util.List;
 
 public interface PronosticoDemandaRepository extends JpaRepository<PronosticoDemanda, Long> {
 
-    @EntityGraph(attributePaths = "producto")
+    @EntityGraph(attributePaths = {"producto", "producto.inventario"})
     List<PronosticoDemanda> findByEmpresaIdAndActiveTrue(Long empresaId);
 }

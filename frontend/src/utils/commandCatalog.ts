@@ -8,6 +8,7 @@ import {
 	Plus,
 	Settings,
 	ShoppingCart,
+	TrendingUp,
 	Truck,
 	UserCog,
 	Users,
@@ -158,6 +159,15 @@ const COMANDOS: CommandEntry[] = [
 		keywords: "stock existencias ajuste entrada salida conteo historial bajo stock",
 		hint: "Operación",
 		path: "/inventario"
+	},
+	{
+		id: "pagina-pronosticos",
+		label: "Pronósticos",
+		group: "Páginas",
+		icon: TrendingUp,
+		keywords: "pronostico demanda proyeccion reponer reposicion cobertura riesgo semana prediccion",
+		hint: "Operación",
+		path: "/pronosticos"
 	},
 	{
 		id: "pagina-compras",

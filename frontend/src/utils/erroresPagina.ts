@@ -6,6 +6,7 @@ export type PaginaClave =
     | "reportes"
     | "caja"
     | "inventario"
+    | "pronosticos"
     | "compras"
     | "pos"
     | "productos"
@@ -47,6 +48,7 @@ const PAGINAS: Record<PaginaClave, DatosPagina> = {
         consejo: "Si ibas a registrar un movimiento, anótalo y regístralo cuando el sistema vuelva."
     },
     inventario: { abrev: "INV", nombre: "Inventario", que: "el inventario" },
+    pronosticos: { abrev: "PRN", nombre: "Pronósticos", que: "los pronósticos" },
     compras: {
         abrev: "COM",
         nombre: "Compras",
