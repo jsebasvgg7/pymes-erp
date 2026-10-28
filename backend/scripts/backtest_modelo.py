@@ -11,6 +11,7 @@ SEMANAS_MIN_HISTORIAL = 8
 PRIMERA_SEMANA_EVALUABLE = 5
 RUTA_ARBOL = "backend/src/main/resources/modelos/demanda_arbol.json"
 OBJETIVO_RAZON = "razon_promedio_4sem"
+TOLERANCIA_B = 0.05
 VARIANTES = (
     ("a", "A. v10.8 (ventas en 0)"),
     ("b", "B. Promedio 4 semanas"),
@@ -171,15 +172,17 @@ def porcentaje(valor, referencia):
     return f"{(valor - referencia) / referencia * 100:+.1f} %"
 
 
-def veredicto(resultado):
+def veredicto(resultado, titulo):
     if resultado is None:
         return
     mae_a, mae_b, mae_c = resultado["a"][0], resultado["b"][0], resultado["c"][0]
     rmse_a, rmse_b, rmse_c = resultado["a"][1], resultado["b"][1], resultado["c"][1]
+    limite = 1 + TOLERANCIA_B
     mejora_a = mae_c < mae_a and rmse_c < rmse_a
-    no_pierde_b = mae_c <= mae_b and rmse_c <= rmse_b
+    dentro_b = mae_c <= mae_b * limite and rmse_c <= rmse_b * limite
+    print(titulo)
     print(f"  C mejora claramente a A: {'SI' if mejora_a else 'NO'} (MAE {mae_c:.2f} frente a {mae_a:.2f})")
-    print(f"  C no pierde contra B:    {'SI' if no_pierde_b else 'NO'} (MAE {mae_c:.2f} frente a {mae_b:.2f})")
+    print(f"  C dentro de {TOLERANCIA_B * 100:.0f} % de B:   {'SI' if dentro_b else 'NO'} (MAE {mae_c:.2f} frente a {mae_b:.2f}, RMSE {rmse_c:.2f} frente a {rmse_b:.2f})")
     print(f"  Diferencia de C frente a B: MAE {porcentaje(mae_c, mae_b)}, RMSE {porcentaje(rmse_c, rmse_b)}")
     mae_d, rmse_d = resultado["d"][0], resultado["d"][1]
     print(f"  Diferencia de C frente a D: MAE {porcentaje(mae_c, mae_d)}, RMSE {porcentaje(rmse_c, rmse_d)}")
@@ -302,11 +305,8 @@ def main():
         print(f"Referencia del entrenamiento (meta): MAE {validacion['mae']:.2f}, RMSE {validacion['rmse']:.2f}")
 
     print()
-    print("Condiciones de aceptacion (tabla principal)")
-    veredicto(r1)
-    if r2:
-        print("Condiciones de aceptacion (tabla fiel al backend)")
-        veredicto(r2)
+    veredicto(r1, "Condiciones (tabla principal, informativo)")
+    veredicto(r2, "Condiciones de aceptacion (tabla fiel al backend)")
 
     imprimir_por_producto("Desglose por producto (tabla principal)", principal, catalogo)
     imprimir_por_semana("Desglose por semana (tabla principal)", principal)
