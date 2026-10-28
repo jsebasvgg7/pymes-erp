@@ -3,7 +3,6 @@ package com.rowin.contabilidad.controllers;
 import com.rowin.contabilidad.dto.pronostico.PronosticoDemandaResponse;
 import com.rowin.contabilidad.services.PronosticoService;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -24,18 +23,16 @@ public class PronosticoController {
 
     @GetMapping("/empresa/{empresaId}")
     public ResponseEntity<List<PronosticoDemandaResponse>> obtenerPronosticos(
-        @PathVariable Long empresaId,
-        Authentication authentication
+        @PathVariable Long empresaId
     ) {
-        return ResponseEntity.ok(pronosticoService.obtenerPronosticosPorEmpresa(empresaId, authentication.getName()));
+        return ResponseEntity.ok(pronosticoService.obtenerPronosticosPorEmpresa(empresaId));
     }
 
     @PostMapping("/empresa/{empresaId}/recalcular")
     public ResponseEntity<Void> recalcularPronosticos(
-        @PathVariable Long empresaId,
-        Authentication authentication
+        @PathVariable Long empresaId
     ) {
-        pronosticoService.recalcularPronosticos(empresaId, authentication.getName());
+        pronosticoService.recalcularPronosticos(empresaId);
         return ResponseEntity.ok().build();
     }
 }

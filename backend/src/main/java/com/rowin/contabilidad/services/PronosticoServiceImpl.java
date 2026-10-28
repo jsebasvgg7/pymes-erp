@@ -5,19 +5,15 @@ import com.rowin.contabilidad.dto.pronostico.PronosticoDemandaResponse;
 import com.rowin.contabilidad.entities.Empresa;
 import com.rowin.contabilidad.entities.Producto;
 import com.rowin.contabilidad.entities.PronosticoDemanda;
-import com.rowin.contabilidad.entities.Usuario;
 import com.rowin.contabilidad.repositories.EmpresaRepository;
 import com.rowin.contabilidad.repositories.ProductoRepository;
 import com.rowin.contabilidad.repositories.PronosticoDemandaRepository;
-import com.rowin.contabilidad.repositories.UsuarioRepository;
 import com.rowin.contabilidad.services.ml.ArbolDemanda;
 import com.rowin.contabilidad.utils.HistorialSemanal;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -41,7 +37,6 @@ public class PronosticoServiceImpl extends BaseCrudService implements Pronostico
     private final PronosticoDemandaRepository pronosticoDemandaRepository;
     private final ProductoRepository productoRepository;
     private final EmpresaRepository empresaRepository;
-    private final UsuarioRepository usuarioRepository;
     private final FacturaVentaService facturaVentaService;
     private final ArbolDemanda arbolDemanda;
 
@@ -49,21 +44,13 @@ public class PronosticoServiceImpl extends BaseCrudService implements Pronostico
             PronosticoDemandaRepository pronosticoDemandaRepository,
             ProductoRepository productoRepository,
             EmpresaRepository empresaRepository,
-            UsuarioRepository usuarioRepository,
             FacturaVentaService facturaVentaService,
             ArbolDemanda arbolDemanda) {
         this.pronosticoDemandaRepository = pronosticoDemandaRepository;
         this.productoRepository = productoRepository;
         this.empresaRepository = empresaRepository;
-        this.usuarioRepository = usuarioRepository;
         this.facturaVentaService = facturaVentaService;
         this.arbolDemanda = arbolDemanda;
-    }
-
-    @Override
-    public void recalcularPronosticos(Long empresaId, String email) {
-        verificarEmpresa(empresaId, email);
-        recalcularPronosticos(empresaId);
     }
 
     @Override
@@ -98,7 +85,7 @@ public class PronosticoServiceImpl extends BaseCrudService implements Pronostico
             }
 
             Map<String, Double> variables = construirVectorVariables(producto, semanaPronosticada, ventas);
-            BigDecimal prediccion = BigDecimal.valueOf(arbolDemanda.predecir(variables)).setScale(2, RoundingMode.HALF_UP);
+            BigDecimal prediccion = BigDecimal.valueOf(arbolDemanda.proyectar(variables)).setScale(2, RoundingMode.HALF_UP);
 
             PronosticoDemanda pronostico = existente != null ? existente : new PronosticoDemanda();
             pronostico.setEmpresa(empresa);
@@ -118,9 +105,7 @@ public class PronosticoServiceImpl extends BaseCrudService implements Pronostico
 
     @Override
     @Transactional(readOnly = true)
-    public List<PronosticoDemandaResponse> obtenerPronosticosPorEmpresa(Long empresaId, String email) {
-        verificarEmpresa(empresaId, email);
-
+    public List<PronosticoDemandaResponse> obtenerPronosticosPorEmpresa(Long empresaId) {
         List<PronosticoDemanda> pronosticos = pronosticoDemandaRepository.findByEmpresaIdAndActiveTrue(empresaId);
         if (pronosticos.isEmpty()) {
             return List.of();
@@ -185,7 +170,6 @@ public class PronosticoServiceImpl extends BaseCrudService implements Pronostico
         vars.put("ventas_sem_4", ventasSem4);
         vars.put("promedio_4sem", (ventasSem1 + ventasSem2 + ventasSem3 + ventasSem4) / SEMANAS_DE_ENTRADA);
         vars.put("es_quincena", semanaIncluyeQuincena(semanaPronosticada) ? 1.0 : 0.0);
-        vars.put("categoria_id", producto.getCategoria() != null ? producto.getCategoria().getId() : 0.0);
         vars.put("stock_actual", producto.getInventario() != null
                 ? producto.getInventario().getCantidadActual().doubleValue()
                 : 0.0);
@@ -201,16 +185,6 @@ public class PronosticoServiceImpl extends BaseCrudService implements Pronostico
                     .put(fila.semanaInicio(), fila.unidades());
         }
         return porProducto;
-    }
-
-    private void verificarEmpresa(Long empresaId, String email) {
-        Usuario usuario = email == null ? null : usuarioRepository.findByEmailAndActiveTrue(email).orElse(null);
-        boolean autorizado = usuario != null
-                && usuario.getEmpresa() != null
-                && empresaId.equals(usuario.getEmpresa().getId());
-        if (!autorizado) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "No tienes acceso a los pronósticos de esta empresa");
-        }
     }
 
     private record VentasProducto(Map<LocalDate, BigDecimal> unidades, boolean sinDatosSuficientes) {

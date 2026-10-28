@@ -18,9 +18,12 @@ public class ArbolDemanda {
     private static final Logger log = LoggerFactory.getLogger(ArbolDemanda.class);
     private static final String RUTA_ARBOL = "modelos/demanda_arbol.json";
     private static final String RUTA_META = "modelos/demanda_arbol.meta.json";
+    public static final String OBJETIVO_VALOR_ABSOLUTO = "valor_absoluto";
+    public static final String OBJETIVO_RAZON_PROMEDIO = "razon_promedio_4sem";
 
     private JsonNode raiz;
     private String version;
+    private String tipoObjetivo;
 
     @PostConstruct
     public void inicializar() {
@@ -28,18 +31,35 @@ public class ArbolDemanda {
         try (InputStream arbol = new ClassPathResource(RUTA_ARBOL).getInputStream();
              InputStream meta = new ClassPathResource(RUTA_META).getInputStream()) {
             this.raiz = mapper.readTree(arbol);
-            this.version = mapper.readTree(meta).path("version").asText();
+            JsonNode metaRaiz = mapper.readTree(meta);
+            this.version = metaRaiz.path("version").asText();
+            this.tipoObjetivo = metaRaiz.path("tipo_objetivo").asText(OBJETIVO_VALOR_ABSOLUTO);
         } catch (IOException e) {
             throw new IllegalStateException("Error al cargar el modelo predictivo de demanda: " + e.getMessage(), e);
         }
         if (version.isBlank()) {
             throw new IllegalStateException("El modelo predictivo de demanda no declara su versión");
         }
-        log.info("Modelo predictivo de demanda {} cargado en memoria", version);
+        if (!OBJETIVO_VALOR_ABSOLUTO.equals(tipoObjetivo) && !OBJETIVO_RAZON_PROMEDIO.equals(tipoObjetivo)) {
+            throw new IllegalStateException("El modelo predictivo de demanda declara un tipo de objetivo no soportado: " + tipoObjetivo);
+        }
+        log.info("Modelo predictivo de demanda {} ({}) cargado en memoria", version, tipoObjetivo);
     }
 
     public String getVersion() {
         return version;
+    }
+
+    public String getTipoObjetivo() {
+        return tipoObjetivo;
+    }
+
+    public double proyectar(Map<String, Double> variables) {
+        double hoja = predecir(variables);
+        if (OBJETIVO_RAZON_PROMEDIO.equals(tipoObjetivo)) {
+            return hoja * variables.getOrDefault("promedio_4sem", 0.0);
+        }
+        return hoja;
     }
 
     public double predecir(Map<String, Double> variables) {
