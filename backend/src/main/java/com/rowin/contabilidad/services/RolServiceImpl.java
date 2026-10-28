@@ -20,17 +20,24 @@ public class RolServiceImpl extends BaseCrudService implements RolService {
 	private final RolRepository rolRepository;
 	private final EmpresaRepository empresaRepository;
 	private final RolMapper rolMapper;
+	private final EmpresaAccesoService empresaAccesoService;
 
-	public RolServiceImpl(RolRepository rolRepository, EmpresaRepository empresaRepository, RolMapper rolMapper) {
+	public RolServiceImpl(
+		RolRepository rolRepository,
+		EmpresaRepository empresaRepository,
+		RolMapper rolMapper,
+		EmpresaAccesoService empresaAccesoService
+	) {
 		this.rolRepository = rolRepository;
 		this.empresaRepository = empresaRepository;
 		this.rolMapper = rolMapper;
+		this.empresaAccesoService = empresaAccesoService;
 	}
 
 	@Override
 	@Transactional(readOnly = true)
 	public Page<RolResponse> listar(Pageable pageable) {
-		return rolRepository.findByActiveTrue(pageable).map(rolMapper::toResponse);
+		return rolRepository.findByActiveTrueAndEmpresaId(pageable, empresaAccesoService.empresaIdActual()).map(rolMapper::toResponse);
 	}
 
 	@Override
@@ -52,11 +59,13 @@ public class RolServiceImpl extends BaseCrudService implements RolService {
 		if (!isActive(entity)) {
 			throw new ResourceNotFoundException("Rol no encontrado: " + id);
 		}
+		empresaAccesoService.exigir(entity.getEmpresa().getId());
 		return rolMapper.toResponse(entity);
 	}
 
 	@Override
 	public RolResponse crear(RolCreateRequest request) {
+		empresaAccesoService.exigir(request.empresaId());
 		Empresa empresa = getByIdOrThrow(empresaRepository, request.empresaId(), "Empresa");
 		if (!isActive(empresa)) {
 			throw new ResourceNotFoundException("Empresa no encontrada: " + request.empresaId());
@@ -72,6 +81,7 @@ public class RolServiceImpl extends BaseCrudService implements RolService {
 		if (!isActive(entity)) {
 			throw new ResourceNotFoundException("Rol no encontrado: " + id);
 		}
+		empresaAccesoService.exigir(entity.getEmpresa().getId());
 		rolMapper.updateEntity(request, entity);
 		Rol saved = rolRepository.save(entity);
 		return rolMapper.toResponse(saved);
@@ -80,6 +90,7 @@ public class RolServiceImpl extends BaseCrudService implements RolService {
 	@Override
 	public void eliminar(Long id) {
 		Rol entity = getByIdOrThrow(rolRepository, id, "Rol");
+		empresaAccesoService.exigir(entity.getEmpresa().getId());
 		if (!isActive(entity)) {
 			return;
 		}

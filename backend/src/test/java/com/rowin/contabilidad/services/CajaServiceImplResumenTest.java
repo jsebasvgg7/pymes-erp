@@ -39,6 +39,7 @@ class CajaServiceImplResumenTest {
     @Mock private EmpresaRepository empresaRepository;
     @Mock private FormaPagoRepository formaPagoRepository;
     @Mock private CajaMapper cajaMapper;
+    @Mock private EmpresaAccesoService empresaAccesoService;
 
     @InjectMocks private CajaServiceImpl service;
 

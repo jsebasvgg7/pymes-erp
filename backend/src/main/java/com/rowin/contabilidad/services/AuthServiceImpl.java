@@ -306,43 +306,39 @@ public class AuthServiceImpl implements AuthService {
     @Transactional
     public LoginResponse registrarClienteSaaS(RegistroClienteRequest request) {
         if (usuarioRepository.existsByEmail(request.email())) {
-               throw new IllegalArgumentException("El correo electrónico ya está registrado.");
+            throw new IllegalArgumentException("El correo electrónico ya está registrado.");
         }
 
-        // 2. Crear nueva Empresa
         Empresa nuevaEmpresa = new Empresa();
         nuevaEmpresa.setNombre(request.empresaNombre());
         nuevaEmpresa.setNit("PENDIENTE");
         nuevaEmpresa = empresaRepository.save(nuevaEmpresa);
         configuracionEmpresaSeeder.sembrar(nuevaEmpresa);
 
-        // 3. Crear Rol ADMIN para la empresa
         Rol rolAdmin = new Rol();
         rolAdmin.setNombre("ADMIN");
         rolAdmin.setEmpresa(nuevaEmpresa);
         rolAdmin = rolRepository.save(rolAdmin);
 
-        // 4. Crear Usuario administrador vinculado
         Usuario nuevoAdmin = new Usuario();
         nuevoAdmin.setUsername(request.username());
         nuevoAdmin.setEmail(request.email());
-        nuevoAdmin.setPasswordHash(passwordEncoder.encode(request.password())); // OJO: en tu entidad es setPasswordHash
+        nuevoAdmin.setPasswordHash(passwordEncoder.encode(request.password()));
         nuevoAdmin.setEmpresa(nuevaEmpresa);
         nuevoAdmin.setRoles(Set.of(rolAdmin));
-        nuevoAdmin.setActive(true); // Importante activarlo
+        nuevoAdmin.setActive(true);
         nuevoAdmin = usuarioRepository.save(nuevoAdmin);
 
-        // 5. Sembrar formas de pago básicas
-            List<String> formasBasicas = List.of("Efectivo", "Tarjeta", "Transferencia");
-            for (String nombreForma : formasBasicas) {
-                FormaPago fp = new FormaPago();
-                fp.setNombre(nombreForma);
-                fp.setTipo(TipoFormaPago.valueOf(nombreForma.toUpperCase())); // <-- CAMBIO AQUÍ
-                fp.setEmpresa(nuevaEmpresa);
-                formaPagoRepository.save(fp);
-            }
+        List<String> formasBasicas = List.of("Efectivo", "Tarjeta", "Transferencia");
+        for (String nombreForma : formasBasicas) {
+            FormaPago formaPago = new FormaPago();
+            formaPago.setNombre(nombreForma);
+            formaPago.setTipo(TipoFormaPago.valueOf(nombreForma.toUpperCase()));
+            formaPago.setEmpresa(nuevaEmpresa);
+            formaPagoRepository.save(formaPago);
+        }
+        formaPagoCreditoSeeder.sembrar(nuevaEmpresa);
 
-        // 6. Crear Caja inicial
         Caja cajaInicial = new Caja();
         cajaInicial.setNombre("Caja Principal");
         cajaInicial.setSaldoInicial(BigDecimal.ZERO);
@@ -351,7 +347,6 @@ public class AuthServiceImpl implements AuthService {
         Caja cajaGuardada = cajaRepository.save(cajaInicial);
         aperturaCajaService.abrirInicial(cajaGuardada, nuevoAdmin);
 
-        // 7. Generar y devolver la sesión activa (LoginResponse)
         Authentication authentication = authenticationManager.authenticate(
             new UsernamePasswordAuthenticationToken(request.email(), request.password())
         );

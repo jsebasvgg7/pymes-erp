@@ -4,11 +4,17 @@ import com.rowin.contabilidad.config.JwtTokenProvider;
 import com.rowin.contabilidad.dto.auth.AdminRecoveryRequest;
 import com.rowin.contabilidad.dto.auth.BootstrapRequest;
 import com.rowin.contabilidad.dto.auth.LoginResponse;
+import com.rowin.contabilidad.dto.auth.RegistroClienteRequest;
 import com.rowin.contabilidad.dto.usuario.UsuarioResponse;
+import com.rowin.contabilidad.entities.Caja;
 import com.rowin.contabilidad.entities.Empresa;
+import com.rowin.contabilidad.entities.FormaPago;
 import com.rowin.contabilidad.entities.Rol;
+import com.rowin.contabilidad.entities.TipoFormaPago;
 import com.rowin.contabilidad.entities.Usuario;
+import com.rowin.contabilidad.repositories.CajaRepository;
 import com.rowin.contabilidad.repositories.EmpresaRepository;
+import com.rowin.contabilidad.repositories.FormaPagoRepository;
 import com.rowin.contabilidad.repositories.RolRepository;
 import com.rowin.contabilidad.repositories.UsuarioRepository;
 import com.rowin.contabilidad.utils.mappers.UsuarioMapper;
@@ -32,6 +38,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.when;
@@ -47,6 +54,8 @@ class AuthServiceImplTest {
     @Mock private JwtTokenProvider jwtTokenProvider;
     @Mock private FormaPagoCreditoSeeder formaPagoCreditoSeeder;
     @Mock private ConfiguracionEmpresaSeeder configuracionEmpresaSeeder;
+    @Mock private CajaRepository cajaRepository;
+    @Mock private FormaPagoRepository formaPagoRepository;
     @Mock private AperturaCajaService aperturaCajaService;
     @Mock private EntityManager entityManager;
     @Mock private Query lockQuery;
@@ -205,5 +214,59 @@ class AuthServiceImplTest {
 
         assertEquals(HttpStatus.UNAUTHORIZED, exception.getStatusCode());
         verify(empresaRepository, never()).findByActiveTrue();
+    }
+
+    @Test
+    void registrarClienteSaaSSeedsBasicPaymentMethodsAndCredit() {
+        RegistroClienteRequest request = new RegistroClienteRequest("Tienda Nueva", "dueno", "dueno@example.com", "ClaveSegura123");
+
+        when(usuarioRepository.existsByEmail("dueno@example.com")).thenReturn(false);
+        when(empresaRepository.save(any(Empresa.class))).thenAnswer(invocation -> {
+            Empresa empresa = invocation.getArgument(0);
+            empresa.setId(9L);
+            return empresa;
+        });
+        when(rolRepository.save(any(Rol.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(passwordEncoder.encode("ClaveSegura123")).thenReturn("encoded-password");
+        when(usuarioRepository.save(any(Usuario.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(cajaRepository.save(any(Caja.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(authenticationManager.authenticate(any())).thenReturn(authentication);
+        when(jwtTokenProvider.generateToken(authentication)).thenReturn("jwt-token");
+        when(usuarioMapper.toResponse(any(Usuario.class))).thenReturn(
+            new UsuarioResponse(1L, null, null, true, 9L, "dueno", "dueno@example.com", java.util.Set.of())
+        );
+
+        LoginResponse response = authService.registrarClienteSaaS(request);
+
+        assertEquals("jwt-token", response.token());
+        ArgumentCaptor<Empresa> empresaCaptor = ArgumentCaptor.forClass(Empresa.class);
+        verify(empresaRepository).save(empresaCaptor.capture());
+        assertEquals("Tienda Nueva", empresaCaptor.getValue().getNombre());
+        verify(configuracionEmpresaSeeder).sembrar(empresaCaptor.getValue());
+        verify(formaPagoCreditoSeeder).sembrar(empresaCaptor.getValue());
+
+        ArgumentCaptor<FormaPago> formaPagoCaptor = ArgumentCaptor.forClass(FormaPago.class);
+        verify(formaPagoRepository, times(3)).save(formaPagoCaptor.capture());
+        assertEquals(
+            java.util.List.of(TipoFormaPago.EFECTIVO, TipoFormaPago.TARJETA, TipoFormaPago.TRANSFERENCIA),
+            formaPagoCaptor.getAllValues().stream().map(FormaPago::getTipo).toList()
+        );
+
+        ArgumentCaptor<Caja> cajaCaptor = ArgumentCaptor.forClass(Caja.class);
+        verify(cajaRepository).save(cajaCaptor.capture());
+        assertEquals("Caja Principal", cajaCaptor.getValue().getNombre());
+        verify(aperturaCajaService).abrirInicial(any(Caja.class), any(Usuario.class));
+    }
+
+    @Test
+    void registrarClienteSaaSRejectsAnExistingEmailWithoutSeedingAnything() {
+        RegistroClienteRequest request = new RegistroClienteRequest("Tienda Nueva", "dueno", "dueno@example.com", "ClaveSegura123");
+        when(usuarioRepository.existsByEmail("dueno@example.com")).thenReturn(true);
+
+        assertThrows(IllegalArgumentException.class, () -> authService.registrarClienteSaaS(request));
+
+        verify(empresaRepository, never()).save(any(Empresa.class));
+        verify(formaPagoCreditoSeeder, never()).sembrar(any(Empresa.class));
+        verify(formaPagoRepository, never()).save(any(FormaPago.class));
     }
 }

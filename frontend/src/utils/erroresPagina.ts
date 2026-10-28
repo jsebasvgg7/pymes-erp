@@ -107,7 +107,7 @@ export function describirError(pagina: PaginaClave, err: unknown): ErrorInfo {
         });
     }
 
-    if (estado === 401 || estado === 403) {
+    if (estado === 401) {
         return crearError(pagina, "sesion", estado);
     }
 

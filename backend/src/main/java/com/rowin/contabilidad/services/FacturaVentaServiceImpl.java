@@ -43,6 +43,7 @@ public class FacturaVentaServiceImpl extends BaseCrudService implements FacturaV
     private final CuentaPorCobrarRepository cuentaPorCobrarRepository;
     private final AperturaCajaService aperturaCajaService;
     private final ConfiguracionEmpresaRepository configuracionEmpresaRepository;
+    private final EmpresaAccesoService empresaAccesoService;
 
     public FacturaVentaServiceImpl(
         FacturaVentaRepository facturaVentaRepository,
@@ -58,7 +59,8 @@ public class FacturaVentaServiceImpl extends BaseCrudService implements FacturaV
         FacturaVentaMapper facturaVentaMapper,
         CuentaPorCobrarRepository cuentaPorCobrarRepository,
         AperturaCajaService aperturaCajaService,
-        ConfiguracionEmpresaRepository configuracionEmpresaRepository
+        ConfiguracionEmpresaRepository configuracionEmpresaRepository,
+        EmpresaAccesoService empresaAccesoService
     ) {
         this.facturaVentaRepository = facturaVentaRepository;
         this.detalleFacturaRepository = detalleFacturaRepository;
@@ -74,12 +76,13 @@ public class FacturaVentaServiceImpl extends BaseCrudService implements FacturaV
         this.cuentaPorCobrarRepository = cuentaPorCobrarRepository;
         this.aperturaCajaService = aperturaCajaService;
         this.configuracionEmpresaRepository = configuracionEmpresaRepository;
+        this.empresaAccesoService = empresaAccesoService;
     }
 
     @Override
     @Transactional(readOnly = true)
     public Page<FacturaVentaResponse> listar(Pageable pageable) {
-        return facturaVentaRepository.findByActiveTrue(pageable)
+        return facturaVentaRepository.findByActiveTrueAndEmpresaId(pageable, empresaAccesoService.empresaIdActual())
             .map(facturaVentaMapper::toResponse);
     }
 
@@ -117,11 +120,13 @@ public class FacturaVentaServiceImpl extends BaseCrudService implements FacturaV
     public FacturaVentaResponse obtenerPorId(Long id) {
         FacturaVenta entity = facturaVentaRepository.findByIdAndActiveTrue(id)
             .orElseThrow(() -> new ResourceNotFoundException("Factura no encontrada: " + id));
+        empresaAccesoService.exigir(entity.getEmpresa().getId());
         return facturaVentaMapper.toResponse(entity);
     }
 
     @Override
     public FacturaVentaResponse crear(FacturaVentaCreateRequest request) {
+        empresaAccesoService.exigir(request.empresaId());
         // 1. Validar empresa
         Empresa empresa = getByIdOrThrow(empresaRepository, request.empresaId(), "Empresa");
         if (!isActive(empresa)) {
@@ -320,6 +325,7 @@ public class FacturaVentaServiceImpl extends BaseCrudService implements FacturaV
     public FacturaVentaResponse actualizarEstado(Long id, FacturaVentaUpdateRequest request) {
         FacturaVenta entity = facturaVentaRepository.findByIdAndActiveTrue(id)
             .orElseThrow(() -> new ResourceNotFoundException("Factura no encontrada: " + id));
+        empresaAccesoService.exigir(entity.getEmpresa().getId());
 
         if (request.estado() == FacturaEstado.PAGADA && entity.getEstado() != FacturaEstado.PAGADA) {
             Optional<CuentaPorCobrar> cuentaOpt = cuentaPorCobrarRepository.findByFacturaVentaIdAndActiveTrue(entity.getId());
@@ -347,6 +353,7 @@ public class FacturaVentaServiceImpl extends BaseCrudService implements FacturaV
     public void eliminar(Long id) {
         FacturaVenta entity = facturaVentaRepository.findByIdAndActiveTrue(id)
             .orElseThrow(() -> new ResourceNotFoundException("Factura no encontrada: " + id));
+        empresaAccesoService.exigir(entity.getEmpresa().getId());
         softDelete(entity);
         facturaVentaRepository.save(entity);
     }

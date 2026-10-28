@@ -51,6 +51,7 @@ class ClienteServiceImplAbonoTest {
     @Mock private MovimientoCajaRepository movimientoCajaRepository;
     @Mock private FacturaVentaRepository facturaVentaRepository;
     @Mock private AperturaCajaService aperturaCajaService;
+    @Mock private EmpresaAccesoService empresaAccesoService;
 
     @InjectMocks private ClienteServiceImpl service;
 

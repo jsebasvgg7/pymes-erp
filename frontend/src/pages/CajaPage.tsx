@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Receipt, TrendingDown, TrendingUp, Wallet, Plus, ArrowLeftRight } from "lucide-react";
+import { Receipt, TrendingDown, TrendingUp, Wallet, Plus, ArrowLeftRight, CircleHelp } from "lucide-react";
 import DataTable, { DataTableLayout } from "../components/DataTable";
 import { formatDateShort } from "../utils/formatDate";
 import LoadingState from "../components/LoadingState";
@@ -11,6 +11,7 @@ import PrimaryButton from "../components/PrimaryButton";
 import SecondaryButton from "../components/SecondaryButton";
 import StatCard from "../components/StatCard";
 import StatusBadge from "../components/StatusBadge";
+import { etiquetaMovimiento } from "../utils/etiquetaMovimiento";
 import { authService } from "../services/authService";
 import { formaPagoService, type FormaPago } from "../services/formaPagoService";
 import { cajaService, type AperturaCaja, type CajaResumen, type MovimientoCajaResponse } from "../services/cajaService";
@@ -21,8 +22,16 @@ import { formatoMoneda } from "../utils/montoCaja";
 import "./CajaPage.css";
 import { formatCurrency, useFormato } from "../utils/formatoConfig";
 
+type TipoMovimientoForm = "INGRESO" | "EGRESO" | "GASTO";
+
+const AYUDA_TIPO: Record<TipoMovimientoForm, string> = {
+    INGRESO: "Dinero que entra a la caja y no es una venta.",
+    EGRESO: "Dinero que sale de la caja y no es un gasto del negocio.",
+    GASTO: "Costos del día a día del negocio: servicios, arriendo, transporte, domicilios."
+};
+
 type CashFormState = {
-    tipo: "INGRESO" | "EGRESO";
+    tipo: TipoMovimientoForm;
     formaPagoId: string;
     descripcion: string;
     monto: string;
@@ -172,11 +181,15 @@ export default function CajaPage() {
         setFormError(null);
     }, []);
 
-    const isValid = useMemo(() => {
-        const descripcionOk = form.descripcion.trim().length > 0;
-        const monto = parseDecimalInput(form.monto);
-        return descripcionOk && monto > 0 && form.formaPagoId !== "";
+    const faltantes = useMemo(() => {
+        const lista: string[] = [];
+        if (parseDecimalInput(form.monto) <= 0) lista.push("valor");
+        if (form.formaPagoId === "") lista.push("forma de pago");
+        if (form.descripcion.trim().length === 0) lista.push("concepto");
+        return lista;
     }, [form.descripcion, form.monto, form.formaPagoId]);
+
+    const isValid = faltantes.length === 0;
 
     const handleSave = useCallback(async () => {
         if (!isValid || !empresaId || !cajaId) return;
@@ -188,7 +201,8 @@ export default function CajaPage() {
                 empresaId,
                 cajaId,
                 formaPagoId: Number(form.formaPagoId),
-                tipo: form.tipo,
+                tipo: form.tipo === "INGRESO" ? "INGRESO" : "EGRESO",
+                tipoReferencia: form.tipo === "GASTO" ? "GASTO" : undefined,
                 monto: parseDecimalInput(form.monto),
                 descripcion: form.descripcion.trim()
             });
@@ -243,7 +257,7 @@ export default function CajaPage() {
         principal: (r) => r.descripcion || "Sin concepto",
         secundario: (r) => formatDateShort(r.fecha),
         etiquetas: (r) => (r.formaPagoNombre ? <span className="ui-list__chip">{r.formaPagoNombre}</span> : null),
-        estado: (r) => <StatusBadge status={r.tipo === "INGRESO" ? "Ingreso" : "Egreso"} />,
+        estado: (r) => <StatusBadge status={etiquetaMovimiento(r.tipo, r.tipoReferencia)} />,
         valor: (r) => `${r.tipo === "INGRESO" ? "+" : "−"} ${formatCurrency(r.monto)}`
     };
 
@@ -474,10 +488,11 @@ export default function CajaPage() {
                             <select
                                 className="cash__select"
                                 value={form.tipo}
-                                onChange={(e) => setForm((v) => ({ ...v, tipo: e.target.value as "INGRESO" | "EGRESO" }))}
+                                onChange={(e) => setForm((v) => ({ ...v, tipo: e.target.value as TipoMovimientoForm }))}
                             >
                                 <option value="INGRESO">Ingreso</option>
                                 <option value="EGRESO">Egreso</option>
+                                <option value="GASTO">Gasto</option>
                             </select>
                         </div>
 
@@ -491,6 +506,11 @@ export default function CajaPage() {
                                 value={form.monto}
                                 onChange={(e) => setForm((v) => ({ ...v, monto: e.target.value }))}
                             />
+                        </div>
+
+                        <div className="cash__field cash__field--full cash__help">
+                            <CircleHelp size={16} strokeWidth={2} aria-hidden="true" />
+                            <span>{AYUDA_TIPO[form.tipo]}</span>
                         </div>
 
                         <div className="cash__field cash__field--full">
@@ -519,6 +539,8 @@ export default function CajaPage() {
                                 onChange={(e) => setForm((v) => ({ ...v, descripcion: e.target.value }))}
                             />
                         </div>
+
+                        {faltantes.length > 0 ? <div className="cash__field cash__field--full cash__hint">Falta: {faltantes.join(", ")}.</div> : null}
 
                         {formError ? <div className="cash__field cash__field--full cash__formError">{formError}</div> : null}
                     </div>

@@ -36,6 +36,7 @@ public class ClienteServiceImpl extends BaseCrudService implements ClienteServic
     private final MovimientoCajaRepository movimientoCajaRepository;
     private final FacturaVentaRepository facturaVentaRepository;
     private final AperturaCajaService aperturaCajaService;
+    private final EmpresaAccesoService empresaAccesoService;
 
     public ClienteServiceImpl(
         ClienteRepository clienteRepository,
@@ -46,7 +47,8 @@ public class ClienteServiceImpl extends BaseCrudService implements ClienteServic
         CajaRepository cajaRepository,
         MovimientoCajaRepository movimientoCajaRepository,
         FacturaVentaRepository facturaVentaRepository,
-        AperturaCajaService aperturaCajaService
+        AperturaCajaService aperturaCajaService,
+        EmpresaAccesoService empresaAccesoService
     ) {
         this.clienteRepository = clienteRepository;
         this.empresaRepository = empresaRepository;
@@ -57,12 +59,13 @@ public class ClienteServiceImpl extends BaseCrudService implements ClienteServic
         this.movimientoCajaRepository = movimientoCajaRepository;
         this.facturaVentaRepository = facturaVentaRepository;
         this.aperturaCajaService = aperturaCajaService;
+        this.empresaAccesoService = empresaAccesoService;
     }
 
     @Override
     @Transactional(readOnly = true)
     public Page<ClienteResponse> listar(Pageable pageable) {
-        return clienteRepository.findByActiveTrue(pageable)
+        return clienteRepository.findByActiveTrueAndEmpresaId(pageable, empresaAccesoService.empresaIdActual())
             .map(clienteMapper::toResponse);
     }
 
@@ -90,11 +93,13 @@ public class ClienteServiceImpl extends BaseCrudService implements ClienteServic
     public ClienteResponse obtenerPorId(Long id) {
         Cliente entity = clienteRepository.findByIdAndActiveTrue(id)
             .orElseThrow(() -> new ResourceNotFoundException("Cliente no encontrado: " + id));
+        empresaAccesoService.exigir(entity.getEmpresa().getId());
         return clienteMapper.toResponse(entity);
     }
 
     @Override
     public ClienteResponse crear(ClienteCreateRequest request) {
+        empresaAccesoService.exigir(request.empresaId());
         // Verificar que la empresa existe
         Empresa empresa = getByIdOrThrow(empresaRepository, request.empresaId(), "Empresa");
         if (!isActive(empresa)) {
@@ -110,6 +115,7 @@ public class ClienteServiceImpl extends BaseCrudService implements ClienteServic
     public ClienteResponse actualizar(Long id, ClienteUpdateRequest request) {
         Cliente entity = clienteRepository.findByIdAndActiveTrue(id)
             .orElseThrow(() -> new ResourceNotFoundException("Cliente no encontrado: " + id));
+        empresaAccesoService.exigir(entity.getEmpresa().getId());
 
         clienteMapper.updateEntity(request, entity);
         Cliente saved = clienteRepository.save(entity);
@@ -121,6 +127,7 @@ public class ClienteServiceImpl extends BaseCrudService implements ClienteServic
         // Soft delete
         Cliente entity = clienteRepository.findByIdAndActiveTrue(id)
             .orElseThrow(() -> new ResourceNotFoundException("Cliente no encontrado: " + id));
+        empresaAccesoService.exigir(entity.getEmpresa().getId());
         softDelete(entity);
         clienteRepository.save(entity);
     }
@@ -130,6 +137,7 @@ public class ClienteServiceImpl extends BaseCrudService implements ClienteServic
         // Hard delete (físico)
         Cliente entity = clienteRepository.findById(id)
             .orElseThrow(() -> new ResourceNotFoundException("Cliente no encontrado: " + id));
+        empresaAccesoService.exigir(entity.getEmpresa().getId());
         clienteRepository.delete(entity);
     }
 
@@ -138,6 +146,7 @@ public class ClienteServiceImpl extends BaseCrudService implements ClienteServic
     public BigDecimal obtenerSaldoPendiente(Long id) {
         Cliente entity = clienteRepository.findByIdAndActiveTrue(id)
             .orElseThrow(() -> new ResourceNotFoundException("Cliente no encontrado: " + id));
+        empresaAccesoService.exigir(entity.getEmpresa().getId());
 
         return cuentaPorCobrarRepository.calcularSaldoPendientePorCliente(id);
     }
@@ -166,6 +175,7 @@ public class ClienteServiceImpl extends BaseCrudService implements ClienteServic
 
             Cliente cliente = clienteRepository.findByIdAndActiveTrue(clienteId)
                 .orElseThrow(() -> new ResourceNotFoundException("Cliente no encontrado"));
+            empresaAccesoService.exigir(cliente.getEmpresa().getId());
 
             FormaPago formaPago = formaPagoRepository.findByIdAndActiveTrue(formaPagoId)
                 .orElseThrow(() -> new ResourceNotFoundException("Forma de pago no encontrada"));

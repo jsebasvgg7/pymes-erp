@@ -62,6 +62,7 @@ class FacturaVentaCantidadDecimalTest {
     @Mock private CuentaPorCobrarRepository cuentaPorCobrarRepository;
     @Mock private AperturaCajaService aperturaCajaService;
     @Mock private ConfiguracionEmpresaRepository configuracionEmpresaRepository;
+    @Mock private EmpresaAccesoService empresaAccesoService;
 
     @InjectMocks private FacturaVentaServiceImpl service;
 

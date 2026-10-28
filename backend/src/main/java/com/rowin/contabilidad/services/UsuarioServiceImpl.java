@@ -29,25 +29,28 @@ public class UsuarioServiceImpl extends BaseCrudService implements UsuarioServic
     private final RolRepository rolRepository;
     private final UsuarioMapper usuarioMapper;
     private final PasswordEncoder passwordEncoder;
+    private final EmpresaAccesoService empresaAccesoService;
 
     public UsuarioServiceImpl(
         UsuarioRepository usuarioRepository,
         EmpresaRepository empresaRepository,
         RolRepository rolRepository,
         UsuarioMapper usuarioMapper,
-        PasswordEncoder passwordEncoder
+        PasswordEncoder passwordEncoder,
+        EmpresaAccesoService empresaAccesoService
     ) {
         this.usuarioRepository = usuarioRepository;
         this.empresaRepository = empresaRepository;
         this.rolRepository = rolRepository;
         this.usuarioMapper = usuarioMapper;
         this.passwordEncoder = passwordEncoder;
+        this.empresaAccesoService = empresaAccesoService;
     }
 
     @Override
     @Transactional(readOnly = true)
     public Page<UsuarioResponse> listar(Pageable pageable) {
-        return usuarioRepository.findByActiveTrue(pageable)
+        return usuarioRepository.findByActiveTrueAndEmpresaId(pageable, empresaAccesoService.empresaIdActual())
             .map(usuarioMapper::toResponse);
     }
 
@@ -68,44 +71,31 @@ public class UsuarioServiceImpl extends BaseCrudService implements UsuarioServic
     public UsuarioResponse obtenerPorId(Long id) {
         Usuario entity = usuarioRepository.findByIdAndActiveTrue(id)
             .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado: " + id));
+        empresaAccesoService.exigir(entity.getEmpresa().getId());
         return usuarioMapper.toResponse(entity);
     }
 
     @Override
     public UsuarioResponse crear(UsuarioCreateRequest request) {
-        // Validar empresa
+        empresaAccesoService.exigir(request.empresaId());
         Empresa empresa = getByIdOrThrow(empresaRepository, request.empresaId(), "Empresa");
         if (!isActive(empresa)) {
             throw new ResourceNotFoundException("Empresa no encontrada: " + request.empresaId());
         }
 
-        // Validar username único
         if (usuarioRepository.existsByUsernameAndActiveTrue(request.username())) {
             throw new IllegalArgumentException("El nombre de usuario ya está en uso: " + request.username());
         }
 
-        // Validar email único
         if (usuarioRepository.existsByEmailAndActiveTrue(request.email())) {
             throw new IllegalArgumentException("El email ya está registrado: " + request.email());
         }
 
-        // Crear usuario
         Usuario entity = usuarioMapper.toEntity(request, empresa);
-
-        // Encriptar contraseña
         entity.setPasswordHash(passwordEncoder.encode(request.password()));
 
-        // Asignar roles
         if (request.rolIds() != null && !request.rolIds().isEmpty()) {
-            Set<Rol> roles = new HashSet<>();
-            for (Long rolId : request.rolIds()) {
-                Rol rol = getByIdOrThrow(rolRepository, rolId, "Rol");
-                if (!isActive(rol)) {
-                    throw new ResourceNotFoundException("Rol no encontrado: " + rolId);
-                }
-                roles.add(rol);
-            }
-            entity.setRoles(roles);
+            entity.setRoles(resolverRoles(request.rolIds(), empresa.getId()));
         }
 
         Usuario saved = usuarioRepository.save(entity);
@@ -116,26 +106,17 @@ public class UsuarioServiceImpl extends BaseCrudService implements UsuarioServic
     public UsuarioResponse actualizar(Long id, UsuarioUpdateRequest request) {
         Usuario entity = usuarioRepository.findByIdAndActiveTrue(id)
             .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado: " + id));
+        Long empresaId = entity.getEmpresa().getId();
+        empresaAccesoService.exigir(empresaId);
 
-        // Actualizar campos
         usuarioMapper.updateEntity(request, entity);
 
-        // Actualizar contraseña si se proporciona
         if (request.password() != null && !request.password().isBlank()) {
             entity.setPasswordHash(passwordEncoder.encode(request.password()));
         }
 
-        // Actualizar roles
         if (request.rolIds() != null) {
-            Set<Rol> roles = new HashSet<>();
-            for (Long rolId : request.rolIds()) {
-                Rol rol = getByIdOrThrow(rolRepository, rolId, "Rol");
-                if (!isActive(rol)) {
-                    throw new ResourceNotFoundException("Rol no encontrado: " + rolId);
-                }
-                roles.add(rol);
-            }
-            entity.setRoles(roles);
+            entity.setRoles(resolverRoles(request.rolIds(), empresaId));
         }
 
         Usuario saved = usuarioRepository.save(entity);
@@ -146,6 +127,7 @@ public class UsuarioServiceImpl extends BaseCrudService implements UsuarioServic
     public void eliminar(Long id) {
         Usuario entity = usuarioRepository.findByIdAndActiveTrue(id)
             .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado: " + id));
+        empresaAccesoService.exigir(entity.getEmpresa().getId());
         softDelete(entity);
         usuarioRepository.save(entity);
     }
@@ -154,7 +136,23 @@ public class UsuarioServiceImpl extends BaseCrudService implements UsuarioServic
     public void cambiarEstado(Long id, boolean active) {
         Usuario entity = usuarioRepository.findById(id)
             .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado: " + id));
+        empresaAccesoService.exigir(entity.getEmpresa().getId());
         entity.setActive(active);
         usuarioRepository.save(entity);
+    }
+
+    private Set<Rol> resolverRoles(Set<Long> rolIds, Long empresaId) {
+        Set<Rol> roles = new HashSet<>();
+        for (Long rolId : rolIds) {
+            Rol rol = getByIdOrThrow(rolRepository, rolId, "Rol");
+            if (!isActive(rol)) {
+                throw new ResourceNotFoundException("Rol no encontrado: " + rolId);
+            }
+            if (!rol.getEmpresa().getId().equals(empresaId)) {
+                throw new IllegalArgumentException("El rol no pertenece a la empresa del usuario.");
+            }
+            roles.add(rol);
+        }
+        return roles;
     }
 }

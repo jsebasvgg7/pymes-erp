@@ -66,6 +66,7 @@ class FacturaVentaCreditoTest {
     @Mock private CuentaPorCobrarRepository cuentaPorCobrarRepository;
     @Mock private AperturaCajaService aperturaCajaService;
     @Mock private ConfiguracionEmpresaRepository configuracionEmpresaRepository;
+    @Mock private EmpresaAccesoService empresaAccesoService;
 
     @InjectMocks private FacturaVentaServiceImpl service;
 
@@ -190,6 +191,7 @@ class FacturaVentaCreditoTest {
     void markingInvoiceAsPaidWithPendingBalanceIsRejected() {
         FacturaVenta factura = new FacturaVenta();
         factura.setId(7L);
+        factura.setEmpresa(empresa);
         factura.setEstado(FacturaEstado.EMITIDA);
         CuentaPorCobrar cuenta = new CuentaPorCobrar();
         cuenta.setSaldo(new BigDecimal("4000"));
@@ -208,6 +210,7 @@ class FacturaVentaCreditoTest {
     void cancellingInvoiceClosesItsReceivable() {
         FacturaVenta factura = new FacturaVenta();
         factura.setId(7L);
+        factura.setEmpresa(empresa);
         factura.setEstado(FacturaEstado.EMITIDA);
         CuentaPorCobrar cuenta = new CuentaPorCobrar();
         cuenta.setSaldo(new BigDecimal("4000"));
