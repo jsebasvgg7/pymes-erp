@@ -139,3 +139,25 @@
 		grid-template-columns: 1fr;
 	}
 }
+
+.cash__hint {
+	font-size: 12px;
+	color: var(--muted);
+}
+
+.cash__help {
+	display: flex;
+	align-items: flex-start;
+	gap: 8px;
+	font-size: 13px;
+	color: var(--muted);
+	background: var(--surface);
+	border: 1px solid var(--line);
+	border-radius: 12px;
+	padding: 10px 12px;
+}
+
+.cash__help svg {
+	flex-shrink: 0;
+	margin-top: 1px;
+}
