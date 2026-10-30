@@ -23,9 +23,9 @@ const PLANES: Plan[] = [
       "Parches de seguridad y mantenimiento de estabilidad continuos",
       "Interfaz responsive optimizada para PC, tablet y teléfono móvil",
     ],
-    precio: "$ 199,99",
+    precio: "$$$",
     precioSufijo: "pago único",
-    ctaLabel: "Crear cuenta",
+    ctaLabel: "Consultar precio",
   },
   {
     titulo: "Plan Avanzado",
@@ -36,9 +36,9 @@ const PLANES: Plan[] = [
       "Soporte técnico prioritario y asistencia directa",
       "Acceso continuo a nuevas funciones y actualizaciones del sistema",
     ],
-    precio: "$ 14,99",
+    precio: "$$$",
     precioSufijo: "mensual",
-    ctaLabel: "Mejorar cuenta",
+    ctaLabel: "Consultar precio",
     destacado: true,
   },
 ];
@@ -147,7 +147,7 @@ export default function Pricing() {
                 </span>
                 <button
                   type="button"
-                  onClick={() => navigate("/checkout")}
+                  onClick={() => navigate("/#contacto")}
                   className={`lp-plan__cta${
                     plan.destacado ? " lp-plan__cta--lima" : " lp-plan__cta--oscuro"
                   }`}

@@ -26,7 +26,6 @@ const UsuariosPage = lazy(() => import("../pages/UsuariosPage"));
 const ProductosPage = lazy(() => import("../pages/ProductosPage"));
 const ProveedoresPage = lazy(() => import("../pages/ProveedoresPage"));
 const SetupPage = lazy(() => import("../landing/SetupPage"));
-const CheckoutPage = lazy(() => import("../pages/CheckoutPage"));
 
 // LA NUEVA PÁGINA (Asegúrate de crear src/pages/RolesPage.tsx)
 const RolesPage = lazy(() => import("../pages/RolesPage"));
@@ -53,7 +52,6 @@ export default function AppRouter() {
       <Routes>
         <Route path="/login" element={<LoginPage />} />
         <Route path="/setup" element={<SetupPage />} />
-        <Route path="/checkout" element={<CheckoutPage />} />
         <Route path="/recover-admin" element={<AdminRecoveryPage />} />
         <Route path="/" element={<LandingPage />} />
 
