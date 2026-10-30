@@ -14,6 +14,7 @@ export type PaginaClave =
     | "clientes"
     | "proveedores"
     | "usuarios"
+    | "roles"
     | "configuracion";
 
 export type CausaError = "conexion" | "servidor" | "sesion" | "inesperado";
@@ -66,6 +67,7 @@ const PAGINAS: Record<PaginaClave, DatosPagina> = {
     clientes: { abrev: "CLI", nombre: "Clientes", que: "los clientes" },
     proveedores: { abrev: "PRV", nombre: "Proveedores", que: "los proveedores" },
     usuarios: { abrev: "USU", nombre: "Usuarios", que: "los usuarios" },
+    roles: { abrev: "ROL", nombre: "Roles", que: "los roles" },
     configuracion: { abrev: "CFG", nombre: "Configuración", que: "la configuración" }
 };
 

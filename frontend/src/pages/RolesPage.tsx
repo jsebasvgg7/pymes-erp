@@ -1,150 +1,279 @@
-import { useCallback, useEffect, useState } from "react";
-import { Plus, Edit2 } from "lucide-react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { Edit2, Plus, ShieldCheck } from "lucide-react";
 import PageHeader from "../components/PageHeader";
 import PrimaryButton from "../components/PrimaryButton";
+import SecondaryButton from "../components/SecondaryButton";
 import Modal from "../components/Modal";
+import LoadingState from "../components/LoadingState";
+import ErrorState from "../components/ErrorState";
 import DataTable, { DataTableLayout } from "../components/DataTable";
 import { authService } from "../services/authService";
 import { http } from "../services/http";
+import { describirError, errorSesion, type ErrorPagina } from "../utils/erroresPagina";
 import "./RolesPage.css";
 
 type RolResponse = {
-    id: number;
-    nombre: string;
-    descripcion: string;
-    modulos: string[];
+	id: number;
+	nombre: string;
+	descripcion: string;
+	modulos: string[];
 };
 
-const MODULOS_DISPONIBLES = [
-    "DASHBOARD", "CLIENTES", "PROVEEDORES", "PRODUCTOS", "CATEGORIAS",
-    "COMPRAS", "INVENTARIO", "POS", "CAJA", "REPORTES", "CONFIGURACION", "USUARIOS", "ROLES"
+type RolFormState = {
+	nombre: string;
+	descripcion: string;
+	modulos: string[];
+};
+
+const MODULOS_DISPONIBLES: { clave: string; etiqueta: string }[] = [
+	{ clave: "DASHBOARD", etiqueta: "Panel principal" },
+	{ clave: "CLIENTES", etiqueta: "Clientes" },
+	{ clave: "PROVEEDORES", etiqueta: "Proveedores" },
+	{ clave: "PRODUCTOS", etiqueta: "Productos" },
+	{ clave: "CATEGORIAS", etiqueta: "Categorías" },
+	{ clave: "COMPRAS", etiqueta: "Compras" },
+	{ clave: "INVENTARIO", etiqueta: "Inventario y pronósticos" },
+	{ clave: "POS", etiqueta: "Punto de venta" },
+	{ clave: "CAJA", etiqueta: "Caja" },
+	{ clave: "REPORTES", etiqueta: "Reportes" },
+	{ clave: "CONFIGURACION", etiqueta: "Configuración" },
+	{ clave: "USUARIOS", etiqueta: "Usuarios" },
+	{ clave: "ROLES", etiqueta: "Roles y permisos" }
 ];
 
+const defaultForm: RolFormState = { nombre: "", descripcion: "", modulos: [] };
+
+function mensajeDeError(err: unknown): string {
+	const mensaje = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
+	return mensaje || "No se pudo guardar el rol. Revisa los datos e intenta nuevamente.";
+}
+
 export default function RolesPage() {
-    const empresaId = authService.getUsuario()?.empresaId;
-    const [roles, setRoles] = useState<RolResponse[]>([]);
-    const [loading, setLoading] = useState(true);
+	const empresaId = authService.getUsuario()?.empresaId;
+	const [roles, setRoles] = useState<RolResponse[]>([]);
+	const [loading, setLoading] = useState(true);
+	const [error, setError] = useState<ErrorPagina | null>(null);
 
-    // Modal state
-    const [modalOpen, setModalOpen] = useState(false);
-    const [editId, setEditId] = useState<number | null>(null);
-    const [form, setForm] = useState({ nombre: "", descripcion: "", modulos: [] as string[] });
+	const [modalOpen, setModalOpen] = useState(false);
+	const [editId, setEditId] = useState<number | null>(null);
+	const [form, setForm] = useState<RolFormState>(defaultForm);
+	const [formError, setFormError] = useState<string | null>(null);
+	const [saving, setSaving] = useState(false);
 
-    const loadRoles = useCallback(async () => {
-        if (!empresaId) return;
-        try {
-            const { data } = await http.get(`/api/roles/listar-por-empresa/${empresaId}`);
-            setRoles(data.content || data);
-        } catch (error) {
-            console.error("Error al cargar roles:", error);
-        } finally {
-            setLoading(false);
-        }
-    }, [empresaId]);
+	const loadRoles = useCallback(async () => {
+		if (!empresaId) {
+			setError(errorSesion("roles"));
+			setLoading(false);
+			return;
+		}
 
-    useEffect(() => {
-        loadRoles();
-    }, [loadRoles]);
+		setLoading(true);
+		setError(null);
+		try {
+			const { data } = await http.get(`/api/roles/listar-por-empresa/${empresaId}`);
+			setRoles(data.content || data);
+		} catch (err) {
+			setError(describirError("roles", err));
+		} finally {
+			setLoading(false);
+		}
+	}, [empresaId]);
 
-    const handleToggleModulo = (modulo: string) => {
-        setForm(prev => ({
-            ...prev,
-            modulos: prev.modulos.includes(modulo)
-                ? prev.modulos.filter(m => m !== modulo)
-                : [...prev.modulos, modulo]
-        }));
-    };
+	useEffect(() => {
+		loadRoles();
+	}, [loadRoles]);
 
-    const handleSave = async (e: React.FormEvent) => {
-        e.preventDefault();
-        try {
-            const payload = { ...form, empresaId };
-            if (editId) {
-                await http.put(`/api/roles/actualizar/${editId}`, payload);
-            } else {
-                await http.post("/api/roles/crear", payload);
-            }
-            setModalOpen(false);
-            loadRoles();
-        } catch (error) {
-            alert("Error al guardar el rol. Verifica tu conexión.");
-        }
-    };
+	const openCreateModal = () => {
+		setEditId(null);
+		setForm(defaultForm);
+		setFormError(null);
+		setModalOpen(true);
+	};
 
-    const layout: DataTableLayout<RolResponse> = {
-        principal: (r) => r.nombre,
-        secundario: (r) => r.descripcion || "Sin descripción",
-        etiquetas: (r) => r.nombre === "ADMIN"
-            ? <span style={{ color: "green" }}>Acceso Total</span>
-            : <span>{r.modulos ? r.modulos.length : 0} módulos permitidos</span>,
-        estado: () => null,
-        valor: (r) => r.nombre === "ADMIN" ? null : (
-            <div style={{ display: 'flex', gap: '8px' }}>
-                <button onClick={() => {
-                    setEditId(r.id);
-                    setForm({ nombre: r.nombre, descripcion: r.descripcion, modulos: r.modulos || [] });
-                    setModalOpen(true);
-                }} style={{ border: 'none', background: 'none', cursor: 'pointer', color: '#666' }}>
-                    <Edit2 size={16} />
-                </button>
-            </div>
-        )
-    };
+	const openEditModal = (rol: RolResponse) => {
+		setEditId(rol.id);
+		setForm({ nombre: rol.nombre, descripcion: rol.descripcion || "", modulos: rol.modulos || [] });
+		setFormError(null);
+		setModalOpen(true);
+	};
 
-    return (
-        <div style={{ padding: "24px" }}>
-            <PageHeader
-                title="Roles y Permisos"
-                subtitle="Crea perfiles de acceso y decide qué puede ver cada usuario."
-                actions={
-                    <PrimaryButton type="button" onClick={() => {
-                        setEditId(null);
-                        setForm({ nombre: "", descripcion: "", modulos: [] });
-                        setModalOpen(true);
-                    }}>
-                        <Plus size={14} /> Nuevo Rol
-                    </PrimaryButton>
-                }
-            />
+	const closeModal = () => {
+		if (saving) return;
+		setModalOpen(false);
+	};
 
-            {!loading && <DataTable data={roles} layout={layout} title="Roles Activos" pageSize={10} />}
+	const handleToggleModulo = (modulo: string) => {
+		setForm((prev) => ({
+			...prev,
+			modulos: prev.modulos.includes(modulo) ? prev.modulos.filter((m) => m !== modulo) : [...prev.modulos, modulo]
+		}));
+	};
 
-            <Modal open={modalOpen} onClose={() => setModalOpen(false)} title={editId ? "Editar Rol" : "Crear Rol"}>
-                <form onSubmit={handleSave} style={{ display: "flex", flexDirection: "column", gap: "16px", marginTop: "16px" }}>
-                    <div>
-                        <label style={{ display: "block", fontSize: "13px", marginBottom: "4px" }}>Nombre del Rol</label>
-                        <input required value={form.nombre} onChange={e => setForm({ ...form, nombre: e.target.value })}
-                            style={{ width: "100%", padding: "8px", borderRadius: "6px", border: "1px solid #ccc" }} />
-                    </div>
-                    <div>
-                        <label style={{ display: "block", fontSize: "13px", marginBottom: "4px" }}>Descripción</label>
-                        <input value={form.descripcion} onChange={e => setForm({ ...form, descripcion: e.target.value })}
-                            style={{ width: "100%", padding: "8px", borderRadius: "6px", border: "1px solid #ccc" }} />
-                    </div>
+	const todosMarcados = form.modulos.length === MODULOS_DISPONIBLES.length;
 
-                    <div>
-                        <label style={{ display: "block", fontSize: "14px", fontWeight: "600", marginTop: "8px", marginBottom: "12px" }}>
-                            Paneles Permitidos
-                        </label>
-                        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
-                            {MODULOS_DISPONIBLES.map(mod => (
-                                <label key={mod} style={{ display: "flex", alignItems: "center", gap: "8px", cursor: "pointer", fontSize: "13px" }}>
-                                    <input
-                                        type="checkbox"
-                                        checked={form.modulos.includes(mod)}
-                                        onChange={() => handleToggleModulo(mod)}
-                                    />
-                                    {mod}
-                                </label>
-                            ))}
-                        </div>
-                    </div>
+	const handleToggleTodos = () => {
+		setForm((prev) => ({
+			...prev,
+			modulos: todosMarcados ? [] : MODULOS_DISPONIBLES.map((m) => m.clave)
+		}));
+	};
 
-                    <div style={{ display: "flex", justifyContent: "flex-end", marginTop: "16px" }}>
-                        <PrimaryButton type="submit">Guardar Rol</PrimaryButton>
-                    </div>
-                </form>
-            </Modal>
-        </div>
-    );
+	const isFormValid = useMemo(() => form.nombre.trim().length > 0, [form.nombre]);
+
+	const handleSave = async () => {
+		if (!isFormValid || saving) return;
+
+		setSaving(true);
+		setFormError(null);
+		try {
+			const payload = { ...form, nombre: form.nombre.trim(), empresaId };
+			if (editId) {
+				await http.put(`/api/roles/actualizar/${editId}`, payload);
+			} else {
+				await http.post("/api/roles/crear", payload);
+			}
+			setModalOpen(false);
+			await loadRoles();
+		} catch (err) {
+			setFormError(mensajeDeError(err));
+		} finally {
+			setSaving(false);
+		}
+	};
+
+	const layout: DataTableLayout<RolResponse> = {
+		principal: (r) => r.nombre,
+		secundario: (r) => r.descripcion || "Sin descripción",
+		etiquetas: (r) => {
+			if (r.nombre === "ADMIN") return <span className="rol__tag rol__tag--full">Acceso total</span>;
+			const total = r.modulos ? r.modulos.length : 0;
+			return <span className="rol__tag">{total} {total === 1 ? "módulo" : "módulos"}</span>;
+		},
+		estado: () => null,
+		valor: (r) =>
+			r.nombre === "ADMIN" ? null : (
+				<div className="rol__actions">
+					<button type="button" className="rol__iconBtn" aria-label={`Editar rol ${r.nombre}`} onClick={() => openEditModal(r)}>
+						<Edit2 size={14} strokeWidth={2} />
+					</button>
+				</div>
+			)
+	};
+
+	if (loading) {
+		return (
+			<div className="rol">
+				<LoadingState label="Cargando roles..." />
+			</div>
+		);
+	}
+
+	if (error) {
+		return (
+			<div className="rol">
+				<ErrorState pagina="roles" error={error} onRetry={loadRoles} />
+			</div>
+		);
+	}
+
+	return (
+		<div className="rol">
+			<PageHeader
+				title="Roles y permisos"
+				subtitle="Crea perfiles de acceso y decide qué puede ver cada usuario."
+				actions={
+					<PrimaryButton type="button" onClick={openCreateModal}>
+						<Plus size={14} strokeWidth={2.2} />
+						<span>Nuevo rol</span>
+					</PrimaryButton>
+				}
+			/>
+
+			<DataTable
+				data={roles}
+				layout={layout}
+				title="Roles activos"
+				count={roles.length}
+				pageSize={10}
+				emptyState={
+					<div className="rol__empty">
+						<div className="rol__emptyTitle">No hay roles creados.</div>
+						<div className="rol__emptySubtitle">Crea el primer rol para asignarlo a tus usuarios.</div>
+					</div>
+				}
+			/>
+
+			<Modal
+				open={modalOpen}
+				size="md"
+				title={editId ? "Editar rol" : "Crear nuevo rol"}
+				subtitle="Elige los paneles que podrá abrir quien tenga este rol."
+				icon={<ShieldCheck size={20} strokeWidth={2} />}
+				onClose={closeModal}
+				footer={
+					<div className="rol__modalActions">
+						<SecondaryButton type="button" onClick={closeModal} disabled={saving}>
+							Cancelar
+						</SecondaryButton>
+						<PrimaryButton type="button" onClick={handleSave} disabled={!isFormValid || saving}>
+							{saving ? "Guardando..." : "Guardar"}
+						</PrimaryButton>
+					</div>
+				}
+			>
+				<form className="rol__form" onSubmit={(e) => e.preventDefault()}>
+					<div className="rol__field">
+						<label className="rol__label" htmlFor="rol-nombre">
+							Nombre del rol <span className="rol__req">*</span>
+						</label>
+						<input
+							id="rol-nombre"
+							className="rol__input"
+							value={form.nombre}
+							placeholder="Ej. Cajero"
+							onChange={(e) => setForm({ ...form, nombre: e.target.value })}
+						/>
+					</div>
+
+					<div className="rol__field">
+						<label className="rol__label" htmlFor="rol-descripcion">
+							Descripción
+						</label>
+						<input
+							id="rol-descripcion"
+							className="rol__input"
+							value={form.descripcion}
+							placeholder="Opcional"
+							onChange={(e) => setForm({ ...form, descripcion: e.target.value })}
+						/>
+					</div>
+
+					<div className="rol__field">
+						<div className="rol__modulesHead">
+							<span className="rol__label">Paneles permitidos</span>
+							<span className="rol__count">
+								{form.modulos.length} de {MODULOS_DISPONIBLES.length}
+							</span>
+							<button type="button" className="rol__link" onClick={handleToggleTodos}>
+								{todosMarcados ? "Quitar todos" : "Marcar todos"}
+							</button>
+						</div>
+						<div className="rol__modules">
+							{MODULOS_DISPONIBLES.map((mod) => {
+								const activo = form.modulos.includes(mod.clave);
+								return (
+									<label key={mod.clave} className={`rol__module${activo ? " rol__module--on" : ""}`}>
+										<input type="checkbox" checked={activo} onChange={() => handleToggleModulo(mod.clave)} />
+										{mod.etiqueta}
+									</label>
+								);
+							})}
+						</div>
+					</div>
+
+					{formError ? <div className="rol__formError">{formError}</div> : null}
+				</form>
+			</Modal>
+		</div>
+	);
 }
