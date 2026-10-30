@@ -181,10 +181,6 @@ export default function LoginPage() {
             >
               Consigue tu cuenta ¡AQUÍ!
             </button>
-            <Link className="login__recoveryLink" to="/recover-admin">
-              ¿Perdiste el acceso de administrador?
-            </Link>
-
             <p className="login__footer">Pymes ERP · Tu negocio, más simple</p>
           </div>
         </section>
