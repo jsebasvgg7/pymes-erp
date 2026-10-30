@@ -1,163 +1,188 @@
-import { useEffect, useId, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useId, useState } from "react";
+import { Link } from "react-router-dom";
+import { Building2, Eye, EyeOff, KeyRound, Lock, Mail, User } from "lucide-react";
+import type { ReactNode } from "react";
 import PrimaryButton from "../components/PrimaryButton";
-import { authService } from "../services/authService";
-import loginIllustration from "../assets/login-element-1.png";
 import logo from "../assets/logo.png";
+import registroIllustration from "../assets/registro-illustration.png";
 import "./LoginPage.css";
 import "./SetupPage.css";
 
-function errorMessage(error: unknown) {
-  if (error && typeof error === "object" && "response" in error) {
-    const response = (error as { response?: { data?: { detail?: string; message?: string } } }).response;
-    return response?.data?.detail ?? response?.data?.message ?? "No se pudo completar la configuración.";
-  }
-  return "No se pudo conectar con el servidor. Verifica que el backend esté iniciado.";
+interface CampoProps {
+  label: string;
+  icon: ReactNode;
+  name: string;
+  type: string;
+  value: string;
+  placeholder: string;
+  autoComplete: string;
+  onChange: (value: string) => void;
+  toggle?: { visible: boolean; onToggle: () => void; labelShow: string; labelHide: string };
+}
+
+function Campo({ label, icon, name, type, value, placeholder, autoComplete, onChange, toggle }: CampoProps) {
+  const id = useId();
+  return (
+    <div className="login__field">
+      <label className="login__label" htmlFor={id}>
+        {label}
+      </label>
+      <div className="login__inputWrap">
+        <span className="login__inputIcon" aria-hidden="true">
+          {icon}
+        </span>
+        <input
+          className={toggle ? "login__input login__input--password" : "login__input"}
+          id={id}
+          name={name}
+          type={type}
+          value={value}
+          placeholder={placeholder}
+          autoComplete={autoComplete}
+          onChange={(e) => onChange(e.target.value)}
+        />
+        {toggle && (
+          <button
+            type="button"
+            className="login__toggle"
+            onClick={toggle.onToggle}
+            aria-label={toggle.visible ? toggle.labelHide : toggle.labelShow}
+          >
+            {toggle.visible ? <EyeOff size={18} /> : <Eye size={18} />}
+          </button>
+        )}
+      </div>
+    </div>
+  );
 }
 
 export default function SetupPage() {
-  const navigate = useNavigate();
-  const prefix = useId();
-  const [loading, setLoading] = useState(true);
-  const [available, setAvailable] = useState(false);
-  const [companyExists, setCompanyExists] = useState(false);
-  const [initialized, setInitialized] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [empresa, setEmpresa] = useState("");
+  const [usuario, setUsuario] = useState("");
+  const [correo, setCorreo] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmar, setConfirmar] = useState("");
+  const [codigo, setCodigo] = useState("");
+  const [verPassword, setVerPassword] = useState(false);
+  const [verCodigo, setVerCodigo] = useState(false);
 
-  useEffect(() => {
-    authService.getBootstrapStatus()
-      .then((status) => {
-        setAvailable(status.setupAvailable);
-        setCompanyExists(status.companyExists);
-        setInitialized(status.initialized);
-      })
-      .catch((err: unknown) => setError(errorMessage(err)))
-      .finally(() => setLoading(false));
-  }, []);
-
-  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setError(null);
-    const data = new FormData(event.currentTarget);
-    const password = String(data.get("adminPassword") ?? "");
-    const passwordConfirmation = String(data.get("passwordConfirmation") ?? "");
-    if (password !== passwordConfirmation) {
-      setError("Las contraseñas no coinciden.");
-      return;
-    }
-
-    setSubmitting(true);
-    try {
-      await authService.bootstrap({
-        empresa: {
-          nombre: companyExists ? "" : String(data.get("companyName") ?? "").trim(),
-          nit: String(data.get("nit") ?? "").trim() || null,
-          direccion: String(data.get("address") ?? "").trim() || null,
-          telefono: String(data.get("phone") ?? "").trim() || null,
-          email: String(data.get("companyEmail") ?? "").trim() || null
-        },
-        administrador: {
-          username: String(data.get("username") ?? "").trim(),
-          email: String(data.get("adminEmail") ?? "").trim(),
-          password
-        }
-      });
-      navigate("/dashboard", { replace: true });
-    } catch (err) {
-      setError(errorMessage(err));
-      setSubmitting(false);
-    }
-  }
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+  };
 
   return (
-    <div className="login setup">
+    <div className="login">
       <div className="login__shell setup__shell">
         <section className="login__left">
-          <div className="login__form-wrap setup__form-wrap">
-            <Link to="/login" className="setup__brand" aria-label="Volver al inicio de sesión">
+          <div className="login__form-wrap">
+            <div className="login__brandLogo">
               <img src={logo} alt="Pymes ERP" className="login__brandLogoImg" />
-            </Link>
-            <h1 className="login__welcomeTitle">Configura tu negocio</h1>
+            </div>
+
+            <h1 className="login__welcomeTitle">Crea tu cuenta</h1>
             <p className="login__welcomeText">
-              Crea la empresa y la cuenta administradora inicial para comenzar.
+              Registra tu negocio y empieza a gestionar tu operación desde un solo lugar.
             </p>
 
-            {loading ? (
-              <p role="status">Verificando si la configuración inicial está disponible...</p>
-            ) : available ? (
-              <form className="login__form setup__form" onSubmit={handleSubmit}>
-                {!companyExists && (
-                  <>
-                    <h2 className="setup__sectionTitle">Datos de la empresa</h2>
-                    <div className="login__field">
-                      <label className="login__label" htmlFor={`${prefix}-company`}>Nombre de la empresa *</label>
-                      <input className="login__input setup__input" id={`${prefix}-company`} name="companyName" required maxLength={200} autoComplete="organization" />
-                    </div>
-                    <div className="setup__grid">
-                      <div className="login__field">
-                        <label className="login__label" htmlFor={`${prefix}-nit`}>NIT</label>
-                        <input className="login__input setup__input" id={`${prefix}-nit`} name="nit" maxLength={50} />
-                      </div>
-                      <div className="login__field">
-                        <label className="login__label" htmlFor={`${prefix}-phone`}>Teléfono</label>
-                        <input className="login__input setup__input" id={`${prefix}-phone`} name="phone" maxLength={50} autoComplete="tel" />
-                      </div>
-                    </div>
-                    <div className="login__field">
-                      <label className="login__label" htmlFor={`${prefix}-address`}>Dirección</label>
-                      <input className="login__input setup__input" id={`${prefix}-address`} name="address" maxLength={255} autoComplete="street-address" />
-                    </div>
-                    <div className="login__field">
-                      <label className="login__label" htmlFor={`${prefix}-company-email`}>Correo de la empresa</label>
-                      <input className="login__input setup__input" id={`${prefix}-company-email`} name="companyEmail" type="email" maxLength={150} autoComplete="email" />
-                    </div>
-                  </>
-                )}
+            <form className="login__form setup__form" onSubmit={handleSubmit}>
+              <Campo
+                label="Empresa"
+                icon={<Building2 size={16} />}
+                name="empresa"
+                type="text"
+                value={empresa}
+                placeholder="Nombre de tu negocio"
+                autoComplete="organization"
+                onChange={setEmpresa}
+              />
+              <Campo
+                label="Usuario"
+                icon={<User size={16} />}
+                name="usuario"
+                type="text"
+                value={usuario}
+                placeholder="Nombre de usuario"
+                autoComplete="username"
+                onChange={setUsuario}
+              />
+              <Campo
+                label="Correo"
+                icon={<Mail size={16} />}
+                name="correo"
+                type="email"
+                value={correo}
+                placeholder="Correo electronico"
+                autoComplete="email"
+                onChange={setCorreo}
+              />
+              <Campo
+                label="Contraseña"
+                icon={<Lock size={16} />}
+                name="password"
+                type={verPassword ? "text" : "password"}
+                value={password}
+                placeholder="••••••••"
+                autoComplete="new-password"
+                onChange={setPassword}
+                toggle={{
+                  visible: verPassword,
+                  onToggle: () => setVerPassword((v) => !v),
+                  labelShow: "Mostrar contraseñas",
+                  labelHide: "Ocultar contraseñas",
+                }}
+              />
+              <Campo
+                label="Confirmar contraseña"
+                icon={<Lock size={16} />}
+                name="confirmar"
+                type={verPassword ? "text" : "password"}
+                value={confirmar}
+                placeholder="••••••••"
+                autoComplete="new-password"
+                onChange={setConfirmar}
+              />
+              <Campo
+                label="Código de acceso"
+                icon={<KeyRound size={16} />}
+                name="codigo"
+                type={verCodigo ? "text" : "password"}
+                value={codigo}
+                placeholder="Código que te entregamos"
+                autoComplete="off"
+                onChange={setCodigo}
+                toggle={{
+                  visible: verCodigo,
+                  onToggle: () => setVerCodigo((v) => !v),
+                  labelShow: "Mostrar código",
+                  labelHide: "Ocultar código",
+                }}
+              />
 
-                <h2 className="setup__sectionTitle">Cuenta administradora</h2>
-                <div className="setup__grid">
-                  <div className="login__field">
-                    <label className="login__label" htmlFor={`${prefix}-username`}>Usuario *</label>
-                    <input className="login__input setup__input" id={`${prefix}-username`} name="username" required maxLength={80} autoComplete="username" />
-                  </div>
-                  <div className="login__field">
-                    <label className="login__label" htmlFor={`${prefix}-admin-email`}>Correo *</label>
-                    <input className="login__input setup__input" id={`${prefix}-admin-email`} name="adminEmail" type="email" required maxLength={150} autoComplete="email" />
-                  </div>
-                </div>
-                <div className="login__field">
-                  <label className="login__label" htmlFor={`${prefix}-password`}>Contraseña (mínimo 8 caracteres) *</label>
-                  <input className="login__input setup__input" id={`${prefix}-password`} name="adminPassword" type="password" required minLength={8} maxLength={255} autoComplete="new-password" />
-                </div>
-                <div className="login__field">
-                  <label className="login__label" htmlFor={`${prefix}-confirm-password`}>Confirmar contraseña *</label>
-                  <input className="login__input setup__input" id={`${prefix}-confirm-password`} name="passwordConfirmation" type="password" required minLength={8} maxLength={255} autoComplete="new-password" />
-                </div>
+              <PrimaryButton className="login__submit" type="submit">
+                Crear cuenta
+              </PrimaryButton>
+            </form>
 
-                {error && <div className="login__error" role="alert">{error}</div>}
-                <PrimaryButton className="login__submit" type="submit" disabled={submitting}>
-                  {submitting ? "Configurando..." : "Crear empresa y administrador"}
-                </PrimaryButton>
-              </form>
-            ) : (
-              <div className="setup__notice" role={error ? "alert" : "status"}>
-                {error ?? (initialized
-                  ? "La configuración inicial ya fue completada. Inicia sesión con la cuenta administradora."
-                  : "La configuración inicial no está disponible para el estado actual de la base de datos. Contacta a quien administra la instalación.")}
-              </div>
-            )}
+            <Link className="login__recoveryLink" to="/login">
+              ¿Ya tienes cuenta? Inicia sesión
+            </Link>
 
-            <Link className="setup__back" to="/login">Volver al inicio de sesión</Link>
             <p className="login__footer">Pymes ERP · Tu negocio, más simple</p>
           </div>
         </section>
+
         <section className="login__right" aria-hidden="true">
           <div className="login__panel">
-            <div className="login__illustration"><img src={loginIllustration} alt="" /></div>
+            <div className="login__illustration">
+              <img src={registroIllustration} alt="" />
+            </div>
             <div className="login__panelCaption">
-              <h2>Un primer paso para tu negocio</h2>
-              <p>Esta configuración solo se puede realizar una vez en una instalación vacía.</p>
+              <h2>Crea tu cuenta en Pymes ERP</h2>
+              <p>Ingresa el código de acceso que te entregamos y registra tu negocio en minutos.</p>
+            </div>
+            <div className="login__dots">
+              <span className="login__dot login__dot--active" />
+              <span className="login__dot" />
             </div>
           </div>
         </section>

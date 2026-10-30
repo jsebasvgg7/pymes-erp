@@ -1,4 +1,4 @@
-import { useEffect, useId, useState } from "react";
+import { useId, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import PrimaryButton from "../components/PrimaryButton";
 import { authService } from "../services/authService";
@@ -14,14 +14,7 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [remember, setRemember] = useState(true);
-  const [setupAvailable, setSetupAvailable] = useState(false);
   const [email, setEmail] = useState("");
-
-  useEffect(() => {
-    authService.getBootstrapStatus()
-      .then(({ setupAvailable }) => setSetupAvailable(setupAvailable))
-      .catch(() => setSetupAvailable(false));
-  }, []);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -184,9 +177,9 @@ export default function LoginPage() {
             <button
               type="button"
               className="login__secondary"
-              onClick={() => navigate(setupAvailable ? "/setup" : "/#precios")}
+              onClick={() => navigate("/setup")}
             >
-              {setupAvailable ? "Configurar empresa y crear administrador" : "Consigue tu cuenta ¡AQUÍ!"}
+              Consigue tu cuenta ¡AQUÍ!
             </button>
             <Link className="login__recoveryLink" to="/recover-admin">
               ¿Perdiste el acceso de administrador?

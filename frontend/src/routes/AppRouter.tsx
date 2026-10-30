@@ -25,7 +25,7 @@ const ConfiguracionPage = lazy(() => import("../pages/ConfiguracionPage"));
 const UsuariosPage = lazy(() => import("../pages/UsuariosPage"));
 const ProductosPage = lazy(() => import("../pages/ProductosPage"));
 const ProveedoresPage = lazy(() => import("../pages/ProveedoresPage"));
-const SetupPage = lazy(() => import("../landing/SetupPage"));
+const SetupPage = lazy(() => import("../pages/SetupPage"));
 
 // LA NUEVA PÁGINA (Asegúrate de crear src/pages/RolesPage.tsx)
 const RolesPage = lazy(() => import("../pages/RolesPage"));
