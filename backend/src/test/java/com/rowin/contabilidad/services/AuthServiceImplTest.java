@@ -12,6 +12,7 @@ import com.rowin.contabilidad.entities.FormaPago;
 import com.rowin.contabilidad.entities.Rol;
 import com.rowin.contabilidad.entities.TipoFormaPago;
 import com.rowin.contabilidad.entities.Usuario;
+import com.rowin.contabilidad.exceptions.CodigoRegistroInvalidoException;
 import com.rowin.contabilidad.repositories.CajaRepository;
 import com.rowin.contabilidad.repositories.EmpresaRepository;
 import com.rowin.contabilidad.repositories.FormaPagoRepository;
@@ -57,6 +58,7 @@ class AuthServiceImplTest {
     @Mock private CajaRepository cajaRepository;
     @Mock private FormaPagoRepository formaPagoRepository;
     @Mock private AperturaCajaService aperturaCajaService;
+    @Mock private CodigoRegistroService codigoRegistroService;
     @Mock private EntityManager entityManager;
     @Mock private Query lockQuery;
     @Mock private Authentication authentication;
@@ -218,8 +220,9 @@ class AuthServiceImplTest {
 
     @Test
     void registrarClienteSaaSSeedsBasicPaymentMethodsAndCredit() {
-        RegistroClienteRequest request = new RegistroClienteRequest("Tienda Nueva", "dueno", "dueno@example.com", "ClaveSegura123");
+        RegistroClienteRequest request = new RegistroClienteRequest("Tienda Nueva", "dueno", "dueno@example.com", "ClaveSegura123", "CODIGO-VALIDO");
 
+        when(codigoRegistroService.consumir("CODIGO-VALIDO")).thenReturn("huella-codigo");
         when(usuarioRepository.existsByEmail("dueno@example.com")).thenReturn(false);
         when(empresaRepository.save(any(Empresa.class))).thenAnswer(invocation -> {
             Empresa empresa = invocation.getArgument(0);
@@ -242,6 +245,7 @@ class AuthServiceImplTest {
         ArgumentCaptor<Empresa> empresaCaptor = ArgumentCaptor.forClass(Empresa.class);
         verify(empresaRepository).save(empresaCaptor.capture());
         assertEquals("Tienda Nueva", empresaCaptor.getValue().getNombre());
+        verify(codigoRegistroService).asignarEmpresa("huella-codigo", 9L);
         verify(configuracionEmpresaSeeder).sembrar(empresaCaptor.getValue());
         verify(formaPagoCreditoSeeder).sembrar(empresaCaptor.getValue());
 
@@ -260,13 +264,31 @@ class AuthServiceImplTest {
 
     @Test
     void registrarClienteSaaSRejectsAnExistingEmailWithoutSeedingAnything() {
-        RegistroClienteRequest request = new RegistroClienteRequest("Tienda Nueva", "dueno", "dueno@example.com", "ClaveSegura123");
+        RegistroClienteRequest request = new RegistroClienteRequest("Tienda Nueva", "dueno", "dueno@example.com", "ClaveSegura123", "CODIGO-VALIDO");
         when(usuarioRepository.existsByEmail("dueno@example.com")).thenReturn(true);
 
         assertThrows(IllegalArgumentException.class, () -> authService.registrarClienteSaaS(request));
 
         verify(empresaRepository, never()).save(any(Empresa.class));
+        verify(codigoRegistroService, never()).asignarEmpresa(anyString(), any());
         verify(formaPagoCreditoSeeder, never()).sembrar(any(Empresa.class));
         verify(formaPagoRepository, never()).save(any(FormaPago.class));
+    }
+
+    @Test
+    void registrarClienteSaaSRejectsAnInvalidCodeBeforeTouchingAnyData() {
+        RegistroClienteRequest request = new RegistroClienteRequest("Tienda Nueva", "dueno", "dueno@example.com", "ClaveSegura123", "CODIGO-MALO");
+        when(codigoRegistroService.consumir("CODIGO-MALO")).thenThrow(new CodigoRegistroInvalidoException());
+
+        ResponseStatusException exception = assertThrows(
+            CodigoRegistroInvalidoException.class,
+            () -> authService.registrarClienteSaaS(request)
+        );
+
+        assertEquals(HttpStatus.FORBIDDEN, exception.getStatusCode());
+        verify(usuarioRepository, never()).existsByEmail(anyString());
+        verify(empresaRepository, never()).save(any(Empresa.class));
+        verify(formaPagoRepository, never()).save(any(FormaPago.class));
+        verify(codigoRegistroService, never()).asignarEmpresa(anyString(), any());
     }
 }

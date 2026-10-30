@@ -6,8 +6,11 @@ import com.rowin.contabilidad.dto.auth.BootstrapRequest;
 import com.rowin.contabilidad.dto.auth.BootstrapStatusResponse;
 import com.rowin.contabilidad.dto.auth.AdminRecoveryRequest;
 import com.rowin.contabilidad.dto.auth.RegisterRequest;
+import com.rowin.contabilidad.exceptions.CodigoRegistroInvalidoException;
 import com.rowin.contabilidad.services.AuthService;
+import com.rowin.contabilidad.services.LimiteIntentosRegistro;
 import com.rowin.contabilidad.dto.auth.RegistroClienteRequest;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -22,9 +25,11 @@ import org.springframework.web.bind.annotation.RestController;
 public class AuthController {
 
     private final AuthService authService;
+    private final LimiteIntentosRegistro limiteIntentosRegistro;
 
-    public AuthController(AuthService authService) {
+    public AuthController(AuthService authService, LimiteIntentosRegistro limiteIntentosRegistro) {
         this.authService = authService;
+        this.limiteIntentosRegistro = limiteIntentosRegistro;
     }
 
     @GetMapping("/bootstrap-status")
@@ -58,8 +63,18 @@ public class AuthController {
     }
 
     @PostMapping("/registro-cliente")
-        public ResponseEntity<LoginResponse> registroClienteSaaS(@Valid @RequestBody RegistroClienteRequest request) {
-            LoginResponse response = authService.registrarClienteSaaS(request);
-            return ResponseEntity.ok(response);
+        public ResponseEntity<LoginResponse> registroClienteSaaS(
+                @Valid @RequestBody RegistroClienteRequest request,
+                HttpServletRequest httpRequest) {
+            String origen = httpRequest.getRemoteAddr();
+            limiteIntentosRegistro.verificar(origen);
+            try {
+                LoginResponse response = authService.registrarClienteSaaS(request);
+                limiteIntentosRegistro.limpiar(origen);
+                return ResponseEntity.ok(response);
+            } catch (CodigoRegistroInvalidoException e) {
+                limiteIntentosRegistro.registrarFallo(origen);
+                throw e;
+            }
         }
 }

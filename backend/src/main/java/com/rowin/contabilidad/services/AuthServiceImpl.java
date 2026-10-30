@@ -60,6 +60,7 @@ public class AuthServiceImpl implements AuthService {
     private final CajaRepository cajaRepository;
     private final FormaPagoRepository formaPagoRepository;
     private final AperturaCajaService aperturaCajaService;
+    private final CodigoRegistroService codigoRegistroService;
 
     @PersistenceContext
     private EntityManager entityManager;
@@ -79,7 +80,8 @@ public class AuthServiceImpl implements AuthService {
             ConfiguracionEmpresaSeeder configuracionEmpresaSeeder,
             CajaRepository cajaRepository,
             FormaPagoRepository formaPagoRepository,
-            AperturaCajaService aperturaCajaService
+            AperturaCajaService aperturaCajaService,
+            CodigoRegistroService codigoRegistroService
         ) {
             this.authenticationManager = authenticationManager;
             this.usuarioRepository = usuarioRepository;
@@ -93,6 +95,7 @@ public class AuthServiceImpl implements AuthService {
             this.cajaRepository = cajaRepository;
             this.formaPagoRepository = formaPagoRepository;
             this.aperturaCajaService = aperturaCajaService;
+            this.codigoRegistroService = codigoRegistroService;
         }
 
         @Override
@@ -305,6 +308,8 @@ public class AuthServiceImpl implements AuthService {
     @Override
     @Transactional
     public LoginResponse registrarClienteSaaS(RegistroClienteRequest request) {
+        String huellaCodigo = codigoRegistroService.consumir(request.codigoRegistro());
+
         if (usuarioRepository.existsByEmail(request.email())) {
             throw new IllegalArgumentException("El correo electrónico ya está registrado.");
         }
@@ -313,6 +318,7 @@ public class AuthServiceImpl implements AuthService {
         nuevaEmpresa.setNombre(request.empresaNombre());
         nuevaEmpresa.setNit("PENDIENTE");
         nuevaEmpresa = empresaRepository.save(nuevaEmpresa);
+        codigoRegistroService.asignarEmpresa(huellaCodigo, nuevaEmpresa.getId());
         configuracionEmpresaSeeder.sembrar(nuevaEmpresa);
 
         Rol rolAdmin = new Rol();

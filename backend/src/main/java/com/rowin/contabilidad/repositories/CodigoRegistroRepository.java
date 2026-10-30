@@ -12,14 +12,14 @@ public interface CodigoRegistroRepository extends JpaRepository<CodigoRegistro, 
 
     Optional<CodigoRegistro> findByCodigoHash(String codigoHash);
 
-    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Modifying
     @Query(value = "UPDATE codigo_registro "
             + "SET usado_en = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP "
             + "WHERE codigo_hash = :hash AND usado_en IS NULL AND active = TRUE "
             + "AND expira_en > CURRENT_TIMESTAMP", nativeQuery = true)
     int consumir(@Param("hash") String hash);
 
-    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Modifying
     @Query(value = "UPDATE codigo_registro "
             + "SET empresa_id = :empresaId, updated_at = CURRENT_TIMESTAMP "
             + "WHERE codigo_hash = :hash", nativeQuery = true)
