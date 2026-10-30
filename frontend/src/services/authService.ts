@@ -27,6 +27,14 @@ export type BootstrapRequest = {
   };
 };
 
+export type RegistroClienteRequest = {
+  empresaNombre: string;
+  username: string;
+  email: string;
+  password: string;
+  codigoRegistro: string;
+};
+
 export type AdminRecoveryRequest = {
   recoveryKey: string;
   username: string;
@@ -111,8 +119,12 @@ export const authService = {
     return !!this.getToken();
   },
 
-  async registrarNuevaEmpresa(data: { empresaNombre: string; username: string; email: string; password: string }) {
-    const response = await http.post('/api/auth/registro-cliente', data);
+  async registrarNuevaEmpresa(data: RegistroClienteRequest): Promise<LoginResponse> {
+    const response = await http.post<LoginResponse>("/api/auth/registro-cliente", data);
+    if (response.data.token) {
+      localStorage.setItem("token", response.data.token);
+      localStorage.setItem("usuario", JSON.stringify(response.data.usuario));
+    }
     return response.data;
   }
 };

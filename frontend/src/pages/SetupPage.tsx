@@ -1,8 +1,9 @@
 import { useId, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Building2, Eye, EyeOff, KeyRound, Lock, Mail, User } from "lucide-react";
 import type { ReactNode } from "react";
 import PrimaryButton from "../components/PrimaryButton";
+import { authService } from "../services/authService";
 import logo from "../assets/logo.png";
 import registroIllustration from "../assets/registro-illustration.png";
 import "./LoginPage.css";
@@ -56,7 +57,30 @@ function Campo({ label, icon, name, type, value, placeholder, autoComplete, onCh
   );
 }
 
+const MIN_PASSWORD = 6;
+
+function mensajeDeError(err: any): string {
+  const status = err?.response?.status;
+  const data = err?.response?.data;
+
+  if (!err?.response) {
+    return "No pudimos conectar con el servidor. Revisa tu conexión e inténtalo de nuevo.";
+  }
+  if (status === 403) {
+    return "Código de acceso inválido";
+  }
+  if (status === 429) {
+    return data?.message || "Demasiados intentos. Espera unos minutos antes de volver a intentarlo.";
+  }
+  if (status === 400 && data?.errors) {
+    const primero = Object.values(data.errors)[0];
+    if (typeof primero === "string") return primero;
+  }
+  return data?.message || "No se pudo crear la cuenta. Inténtalo de nuevo.";
+}
+
 export default function SetupPage() {
+  const navigate = useNavigate();
   const [empresa, setEmpresa] = useState("");
   const [usuario, setUsuario] = useState("");
   const [correo, setCorreo] = useState("");
@@ -65,9 +89,47 @@ export default function SetupPage() {
   const [codigo, setCodigo] = useState("");
   const [verPassword, setVerPassword] = useState(false);
   const [verCodigo, setVerCodigo] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    if (loading) return;
+    setError(null);
+
+    const nombreEmpresa = empresa.trim();
+    const nombreUsuario = usuario.trim();
+    const correoLimpio = correo.trim();
+    const codigoLimpio = codigo.trim();
+
+    if (!nombreEmpresa || !nombreUsuario || !correoLimpio || !password || !codigoLimpio) {
+      setError("Completa todos los campos para crear tu cuenta.");
+      return;
+    }
+    if (password.length < MIN_PASSWORD) {
+      setError(`La contraseña debe tener al menos ${MIN_PASSWORD} caracteres.`);
+      return;
+    }
+    if (password !== confirmar) {
+      setError("Las contraseñas no coinciden.");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      await authService.registrarNuevaEmpresa({
+        empresaNombre: nombreEmpresa,
+        username: nombreUsuario,
+        email: correoLimpio,
+        password,
+        codigoRegistro: codigoLimpio,
+      });
+      navigate("/dashboard");
+    } catch (err: any) {
+      setError(mensajeDeError(err));
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -158,8 +220,18 @@ export default function SetupPage() {
                 }}
               />
 
-              <PrimaryButton className="login__submit" type="submit">
-                Crear cuenta
+              {error && (
+                <div className="login__error" role="alert">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <circle cx="12" cy="12" r="9.25" stroke="currentColor" strokeWidth="1.8" />
+                    <path d="M9 9l6 6M15 9l-6 6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+                  </svg>
+                  <span>{error}</span>
+                </div>
+              )}
+
+              <PrimaryButton className="login__submit" type="submit" disabled={loading}>
+                {loading ? "Creando cuenta..." : "Crear cuenta"}
               </PrimaryButton>
             </form>
 
