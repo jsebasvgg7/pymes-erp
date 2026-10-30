@@ -1,9 +1,14 @@
 server:
-  port: 8080
+  port: ${PORT:8080}
 
 app:
   security:
     admin-recovery-key: ${ADMIN_RECOVERY_KEY:}
+  cors:
+    allowed-origins: ${ALLOWED_ORIGINS:http://localhost:5173,http://localhost:5174,http://127.0.0.1:5173,http://127.0.0.1:5174}
+
+jwt:
+  secret: ${JWT_SECRET}
 
 spring:
   datasource:
@@ -12,7 +17,7 @@ spring:
     password: ${DB_PASSWORD}
     driver-class-name: org.postgresql.Driver
     hikari:
-      maximum-pool-size: 40
+      maximum-pool-size: ${DB_POOL_SIZE:40}
   jpa:
     database-platform: org.hibernate.dialect.PostgreSQLDialect
     show-sql: false
@@ -33,5 +38,8 @@ spring:
     locations: classpath:db/migration
 
 springdoc:
+  api-docs:
+    enabled: ${SWAGGER_ENABLED:true}
   swagger-ui:
+    enabled: ${SWAGGER_ENABLED:true}
     path: /swagger-ui.html

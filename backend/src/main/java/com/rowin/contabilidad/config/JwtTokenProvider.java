@@ -4,6 +4,7 @@ import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
+import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -18,11 +19,20 @@ import java.util.function.Function;
 @Component
 public class JwtTokenProvider {
 
-    @Value("${jwt.secret:404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970}")
+    private static final int LONGITUD_MINIMA_SECRETO = 32;
+
+    @Value("${jwt.secret}")
     private String jwtSecret;
 
     @Value("${jwt.expiration:86400000}")
     private int jwtExpiration;
+
+    @PostConstruct
+    public void validarSecreto() {
+        if (jwtSecret == null || jwtSecret.getBytes().length < LONGITUD_MINIMA_SECRETO) {
+            throw new IllegalStateException("JWT_SECRET debe tener al menos " + LONGITUD_MINIMA_SECRETO + " caracteres");
+        }
+    }
 
     private Key getSigningKey() {
         byte[] keyBytes = jwtSecret.getBytes();
