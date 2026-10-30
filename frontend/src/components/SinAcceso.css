@@ -1,0 +1,29 @@
+.sinAcceso {
+	display: grid;
+	justify-items: center;
+	align-content: center;
+	gap: 8px;
+	min-height: calc(100vh - 160px);
+	text-align: center;
+}
+
+.sinAcceso__icon {
+	width: 44px;
+	height: 44px;
+	display: grid;
+	place-items: center;
+	border-radius: 12px;
+	background: var(--surface);
+	color: var(--muted);
+}
+
+.sinAcceso__title {
+	font-size: 14px;
+	font-weight: 600;
+	color: var(--ink);
+}
+
+.sinAcceso__text {
+	font-size: 12px;
+	color: var(--muted);
+}

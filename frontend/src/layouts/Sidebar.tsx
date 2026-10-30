@@ -14,7 +14,8 @@ import {
 	Wallet,
 	FileBarChart,
 	UserCog,
-	Shield, // AÑADIDO: Icono para Roles
+	Shield,
+	Lock,
 	Settings,
 	LogOut,
 	ChevronDown,
@@ -28,6 +29,7 @@ import { authService } from "../services/authService";
 import { empresaService } from "../services/empresaService";
 import { useFormatoEmpresa } from "../hooks/useFormatoEmpresa";
 import { ATAJO_BUSQUEDA } from "../utils/commandCatalog";
+import { tieneModulo } from "../utils/permisos";
 import logo from "../assets/logo-black.png";
 import "./Sidebar.css";
 
@@ -35,6 +37,7 @@ type MenuItem = {
 	label: string;
 	icon: typeof LayoutDashboard;
 	path?: string;
+	modulo?: string;
 };
 
 type MenuGroup = {
@@ -45,34 +48,34 @@ type MenuGroup = {
 const menuGroups: MenuGroup[] = [
 	{
 		title: "General",
-		items: [{ label: "Dashboard", path: "/dashboard", icon: LayoutDashboard }]
+		items: [{ label: "Dashboard", path: "/dashboard", icon: LayoutDashboard, modulo: "DASHBOARD" }]
 	},
 	{
 		title: "Operación",
 		items: [
-			{ label: "Ventas (POS)", path: "/pos", icon: Monitor },
-			{ label: "Caja", path: "/caja", icon: Wallet },
-			{ label: "Inventario", path: "/inventario", icon: Warehouse },
-			{ label: "Pronósticos", path: "/pronosticos", icon: TrendingUp },
-			{ label: "Compras", path: "/compras", icon: ShoppingCart }
+			{ label: "Ventas (POS)", path: "/pos", icon: Monitor, modulo: "POS" },
+			{ label: "Caja", path: "/caja", icon: Wallet, modulo: "CAJA" },
+			{ label: "Inventario", path: "/inventario", icon: Warehouse, modulo: "INVENTARIO" },
+			{ label: "Pronósticos", path: "/pronosticos", icon: TrendingUp, modulo: "INVENTARIO" },
+			{ label: "Compras", path: "/compras", icon: ShoppingCart, modulo: "COMPRAS" }
 		]
 	},
 	{
 		title: "Catálogo",
 		items: [
-			{ label: "Productos", path: "/productos", icon: Package },
-			{ label: "Categorías", path: "/categorias", icon: FolderTree },
-			{ label: "Clientes", path: "/clientes", icon: Users },
-			{ label: "Proveedores", path: "/proveedores", icon: Truck }
+			{ label: "Productos", path: "/productos", icon: Package, modulo: "PRODUCTOS" },
+			{ label: "Categorías", path: "/categorias", icon: FolderTree, modulo: "CATEGORIAS" },
+			{ label: "Clientes", path: "/clientes", icon: Users, modulo: "CLIENTES" },
+			{ label: "Proveedores", path: "/proveedores", icon: Truck, modulo: "PROVEEDORES" }
 		]
 	},
 	{
 		title: "Administración",
 		items: [
-			{ label: "Reportes", path: "/reportes", icon: FileBarChart },
-			{ label: "Usuarios", path: "/usuarios", icon: UserCog },
-			{ label: "Roles y Permisos", path: "/roles", icon: Shield }, // AÑADIDO: Enlace a RolesPage
-			{ label: "Configuración", path: "/configuracion", icon: Settings }
+			{ label: "Reportes", path: "/reportes", icon: FileBarChart, modulo: "REPORTES" },
+			{ label: "Usuarios", path: "/usuarios", icon: UserCog, modulo: "USUARIOS" },
+			{ label: "Roles y Permisos", path: "/roles", icon: Shield, modulo: "ROLES" },
+			{ label: "Configuración", path: "/configuracion", icon: Settings, modulo: "CONFIGURACION" }
 		]
 	}
 ];
@@ -90,6 +93,7 @@ export default function Sidebar() {
 	});
 	const [accountMenuOpen, setAccountMenuOpen] = useState(false);
 	const [paletteOpen, setPaletteOpen] = useState(false);
+	const [bloqueadoPulsado, setBloqueadoPulsado] = useState<string | null>(null);
 	const accountMenuRef = useRef<HTMLDivElement>(null);
 	const location = useLocation();
 	const navigate = useNavigate();
@@ -206,6 +210,7 @@ export default function Sidebar() {
 						{group.items.map((item) => {
 							const isActive = item.path ? location.pathname.startsWith(item.path) : false;
 							const ItemIcon = item.icon;
+							const bloqueado = !tieneModulo(usuario, item.modulo);
 
 							if (!item.path) {
 								return (
@@ -215,6 +220,29 @@ export default function Sidebar() {
 										</span>
 										<span className="dash__navLabel">{item.label}</span>
 										<span className="dash__navBadge">Pronto</span>
+									</button>
+								);
+							}
+
+							if (bloqueado) {
+								return (
+									<button
+										key={item.label}
+										type="button"
+										className={`dash__navItem dash__navItem--locked${bloqueadoPulsado === item.label ? " dash__navItem--pressed" : ""}`}
+										aria-disabled="true"
+										title="Sin acceso a este panel"
+										onClick={() => setBloqueadoPulsado(item.label)}
+										onAnimationEnd={() => setBloqueadoPulsado(null)}
+									>
+										<span className="dash__navIcon" aria-hidden="true">
+											<ItemIcon size={16} strokeWidth={1.8} />
+										</span>
+										<span className="dash__navLabel">{item.label}</span>
+										<span className="dash__navLock" aria-hidden="true">
+											<Lock size={13} strokeWidth={2} />
+										</span>
+										<span className="dash__srOnly">Sin acceso</span>
 									</button>
 								);
 							}

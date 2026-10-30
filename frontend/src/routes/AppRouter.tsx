@@ -8,6 +8,8 @@ import AdminRecoveryPage from "../pages/AdminRecoveryPage";
 import NotFoundPage from "../pages/NotFoundPage";
 import { authService } from "../services/authService";
 import LoadingState from "../components/LoadingState";
+import SinAcceso from "../components/SinAcceso";
+import { primeraRutaPermitida, tieneModulo } from "../utils/permisos";
 
 // Optimización: Lazy Loading
 const DashboardPage = lazy(() => import("../pages/DashboardPage"));
@@ -34,23 +36,15 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   return children;
 }
 
-// NUEVO: Componente Guardia que bloquea paneles no autorizados
 function ModuleGuard({ children, modulo }: { children: React.ReactNode, modulo: string }) {
   const usuario = authService.getUsuario();
 
-  // Si es ADMIN, tiene acceso total siempre
-  const isAdmin = usuario?.roles?.some(r => r.nombre === "ADMIN");
-  if (isAdmin) return <>{children}</>;
+  if (tieneModulo(usuario, modulo)) return <>{children}</>;
 
-  // Si no es ADMIN, revisa si algún rol tiene el módulo permitido
-  const tienePermiso = usuario?.roles?.some(r => r.modulos?.includes(modulo));
+  const destino = primeraRutaPermitida(usuario);
+  if (destino) return <Navigate to={destino} replace />;
 
-  if (!tienePermiso) {
-    // Si no tiene permiso, lo devuelve al inicio silenciosamente
-    return <Navigate to="/dashboard" replace />;
-  }
-
-  return <>{children}</>;
+  return <SinAcceso />;
 }
 
 export default function AppRouter() {
