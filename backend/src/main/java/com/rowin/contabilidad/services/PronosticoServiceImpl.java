@@ -17,6 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.Clock;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
@@ -39,18 +40,21 @@ public class PronosticoServiceImpl extends BaseCrudService implements Pronostico
     private final EmpresaRepository empresaRepository;
     private final FacturaVentaService facturaVentaService;
     private final ArbolDemanda arbolDemanda;
+    private final Clock clock;
 
     public PronosticoServiceImpl(
             PronosticoDemandaRepository pronosticoDemandaRepository,
             ProductoRepository productoRepository,
             EmpresaRepository empresaRepository,
             FacturaVentaService facturaVentaService,
-            ArbolDemanda arbolDemanda) {
+            ArbolDemanda arbolDemanda,
+            Clock clock) {
         this.pronosticoDemandaRepository = pronosticoDemandaRepository;
         this.productoRepository = productoRepository;
         this.empresaRepository = empresaRepository;
         this.facturaVentaService = facturaVentaService;
         this.arbolDemanda = arbolDemanda;
+        this.clock = clock;
     }
 
     @Override
@@ -60,7 +64,8 @@ public class PronosticoServiceImpl extends BaseCrudService implements Pronostico
             return;
         }
 
-        LocalDate semanaPronosticada = HistorialSemanal.inicioSemana(LocalDate.now());
+        LocalDate hoy = LocalDate.now(clock);
+        LocalDate semanaPronosticada = HistorialSemanal.inicioSemana(hoy);
         Map<Long, VentasProducto> historial = cargarHistorial(empresaId, SEMANAS_DE_ENTRADA + 1);
         Map<Long, PronosticoDemanda> existentes = new HashMap<>();
         for (PronosticoDemanda p : pronosticoDemandaRepository.findByEmpresaIdAndActiveTrue(empresaId)) {
@@ -93,7 +98,7 @@ public class PronosticoServiceImpl extends BaseCrudService implements Pronostico
             pronostico.setSemanaPronosticada(semanaPronosticada);
             pronostico.setUnidadesProyectadas(prediccion);
             pronostico.setVersionModelo(arbolDemanda.getVersion());
-            pronostico.setFechaCalculo(LocalDateTime.now());
+            pronostico.setFechaCalculo(LocalDateTime.now(clock));
             pronostico.setActive(true);
             porGuardar.add(pronostico);
             calculados++;
@@ -115,7 +120,8 @@ public class PronosticoServiceImpl extends BaseCrudService implements Pronostico
                 .map(PronosticoDemanda::getSemanaPronosticada)
                 .min(Comparator.naturalOrder())
                 .orElseThrow();
-        LocalDate semanaActual = HistorialSemanal.inicioSemana(LocalDate.now());
+        LocalDate hoy = LocalDate.now(clock);
+        LocalDate semanaActual = HistorialSemanal.inicioSemana(hoy);
         long semanasNecesarias = ChronoUnit.WEEKS.between(masAntigua.minusWeeks(1), semanaActual) + 1;
         int semanas = (int) Math.max(2, Math.min(MAX_SEMANAS_HISTORIAL, semanasNecesarias));
         Map<Long, VentasProducto> historial = cargarHistorial(empresaId, semanas);

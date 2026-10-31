@@ -18,14 +18,17 @@ import com.rowin.contabilidad.repositories.ImpuestoRepository;
 import com.rowin.contabilidad.repositories.InventarioRepository;
 import com.rowin.contabilidad.repositories.MovimientoCajaRepository;
 import com.rowin.contabilidad.repositories.ProductoRepository;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.time.Clock;
+import java.time.Instant;
+import java.time.ZoneId;
 import java.util.List;
 import java.util.Optional;
 
@@ -45,6 +48,8 @@ class FacturaVentaAislamientoTest {
     private static final Long FACTURA_ID = 10L;
     private static final Long EMPRESA_PROPIA = 1L;
     private static final Long EMPRESA_AJENA = 2L;
+    private static final Clock RELOJ_FIJO = Clock.fixed(
+        Instant.parse("2026-11-02T01:00:00Z"), ZoneId.of("America/Bogota"));
 
     @Mock private FacturaVentaRepository facturaVentaRepository;
     @Mock private DetalleFacturaRepository detalleFacturaRepository;
@@ -62,7 +67,16 @@ class FacturaVentaAislamientoTest {
     @Mock private ConfiguracionEmpresaRepository configuracionEmpresaRepository;
     @Mock private EmpresaAccesoService empresaAccesoService;
 
-    @InjectMocks private FacturaVentaServiceImpl service;
+    private FacturaVentaServiceImpl service;
+
+    @BeforeEach
+    void setUp() {
+        service = new FacturaVentaServiceImpl(
+            facturaVentaRepository, detalleFacturaRepository, empresaRepository, clienteRepository,
+            formaPagoRepository, productoRepository, inventarioRepository, impuestoRepository,
+            movimientoCajaRepository, cajaRepository, facturaVentaMapper, cuentaPorCobrarRepository,
+            aperturaCajaService, configuracionEmpresaRepository, empresaAccesoService, RELOJ_FIJO);
+    }
 
     private FacturaVenta facturaDeEmpresa(Long empresaId) {
         Empresa empresa = new Empresa();

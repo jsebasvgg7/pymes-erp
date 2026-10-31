@@ -18,6 +18,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.time.Clock;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -32,21 +33,25 @@ public class InventarioSemanalService {
     private final InventarioRepository inventarioRepository;
     private final InventarioSemanalRepository inventarioSemanalRepository;
     private final UsuarioRepository usuarioRepository;
+    private final Clock clock;
 
     public InventarioSemanalService(
         InventarioRepository inventarioRepository,
         InventarioSemanalRepository inventarioSemanalRepository,
-        UsuarioRepository usuarioRepository
+        UsuarioRepository usuarioRepository,
+        Clock clock
     ) {
         this.inventarioRepository = inventarioRepository;
         this.inventarioSemanalRepository = inventarioSemanalRepository;
         this.usuarioRepository = usuarioRepository;
+        this.clock = clock;
     }
 
     @Scheduled(cron = "0 5 0 * * MON", zone = "America/Bogota")
     @Transactional
     public void capturarSemanaProgramado() {
-        int nuevos = capturarSemana(HistorialSemanal.inicioSemana(LocalDate.now()));
+        LocalDate hoy = LocalDate.now(clock);
+        int nuevos = capturarSemana(HistorialSemanal.inicioSemana(hoy));
         log.info("Foto semanal de inventario: {} productos registrados", nuevos);
     }
 
@@ -54,7 +59,8 @@ public class InventarioSemanalService {
     @Transactional
     public void capturarAlArrancar() {
         try {
-            int nuevos = capturarSemana(HistorialSemanal.inicioSemana(LocalDate.now()));
+            LocalDate hoy = LocalDate.now(clock);
+            int nuevos = capturarSemana(HistorialSemanal.inicioSemana(hoy));
             log.info("Foto semanal de inventario al arrancar: {} productos registrados", nuevos);
         } catch (Exception e) {
             log.warn("No se pudo registrar la foto semanal de inventario al arrancar", e);
@@ -62,13 +68,17 @@ public class InventarioSemanalService {
     }
 
     public int capturarSemana(LocalDate semanaInicio) {
-        Set<Long> yaRegistrados = new HashSet<>(inventarioSemanalRepository.findProductoIdsBySemanaInicio(semanaInicio));
+        Set<Long> yaRegistrados = new HashSet<>(
+            inventarioSemanalRepository.findProductoIdsBySemanaInicio(semanaInicio)
+        );
+
         List<InventarioSemanal> nuevos = new ArrayList<>();
 
         for (Inventario inventario : inventarioRepository.findAll()) {
             if (!inventario.isActive() || yaRegistrados.contains(inventario.getProducto().getId())) {
                 continue;
             }
+
             InventarioSemanal foto = new InventarioSemanal();
             foto.setEmpresa(inventario.getEmpresa());
             foto.setProducto(inventario.getProducto());
@@ -84,23 +94,38 @@ public class InventarioSemanalService {
     @Transactional(readOnly = true)
     public List<InventarioSemanalResponse> historial(Long empresaId, int semanas, String email) {
         verificarEmpresa(empresaId, email);
+
         if (semanas < 1 || semanas > 104) {
             throw new IllegalArgumentException("El número de semanas debe estar entre 1 y 104");
         }
-        LocalDate desde = HistorialSemanal.inicioSemana(LocalDate.now()).minusWeeks(semanas - 1L);
+
+        LocalDate hoy = LocalDate.now(clock);
+        LocalDate desde = HistorialSemanal.inicioSemana(hoy).minusWeeks(semanas - 1L);
+
         return inventarioSemanalRepository.findHistorial(empresaId, desde).stream()
             .map(s -> new InventarioSemanalResponse(
-                s.getSemanaInicio(), s.getProducto().getId(), s.getProducto().getNombre(), s.getCantidad()))
+                s.getSemanaInicio(),
+                s.getProducto().getId(),
+                s.getProducto().getNombre(),
+                s.getCantidad()
+            ))
             .toList();
     }
 
     private void verificarEmpresa(Long empresaId, String email) {
-        Usuario usuario = email == null ? null : usuarioRepository.findByEmailAndActiveTrue(email).orElse(null);
+        Usuario usuario = email == null
+            ? null
+            : usuarioRepository.findByEmailAndActiveTrue(email).orElse(null);
+
         boolean autorizado = usuario != null
             && usuario.getEmpresa() != null
             && empresaId.equals(usuario.getEmpresa().getId());
+
         if (!autorizado) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "No tienes acceso al inventario de esta empresa");
+            throw new ResponseStatusException(
+                HttpStatus.FORBIDDEN,
+                "No tienes acceso al inventario de esta empresa"
+            );
         }
     }
 }

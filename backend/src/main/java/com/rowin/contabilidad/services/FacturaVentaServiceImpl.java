@@ -16,6 +16,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Clock;
 import java.time.LocalDateTime;
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -44,6 +45,7 @@ public class FacturaVentaServiceImpl extends BaseCrudService implements FacturaV
     private final AperturaCajaService aperturaCajaService;
     private final ConfiguracionEmpresaRepository configuracionEmpresaRepository;
     private final EmpresaAccesoService empresaAccesoService;
+    private final Clock clock;
 
     public FacturaVentaServiceImpl(
         FacturaVentaRepository facturaVentaRepository,
@@ -60,7 +62,8 @@ public class FacturaVentaServiceImpl extends BaseCrudService implements FacturaV
         CuentaPorCobrarRepository cuentaPorCobrarRepository,
         AperturaCajaService aperturaCajaService,
         ConfiguracionEmpresaRepository configuracionEmpresaRepository,
-        EmpresaAccesoService empresaAccesoService
+        EmpresaAccesoService empresaAccesoService,
+        Clock clock
     ) {
         this.facturaVentaRepository = facturaVentaRepository;
         this.detalleFacturaRepository = detalleFacturaRepository;
@@ -77,6 +80,7 @@ public class FacturaVentaServiceImpl extends BaseCrudService implements FacturaV
         this.aperturaCajaService = aperturaCajaService;
         this.configuracionEmpresaRepository = configuracionEmpresaRepository;
         this.empresaAccesoService = empresaAccesoService;
+        this.clock = clock;
     }
 
     @Override
@@ -177,7 +181,7 @@ public class FacturaVentaServiceImpl extends BaseCrudService implements FacturaV
         factura.setEmpresa(empresa);
         factura.setCliente(cliente);
         factura.setFormaPago(formaPago);
-        factura.setFechaEmision(LocalDateTime.now());
+        factura.setFechaEmision(LocalDateTime.now(clock));
         factura.setEstado(FacturaEstado.EMITIDA);
 
         // Generar número de factura (formato: FAC-YYYYMMDD-XXXXX)
@@ -193,7 +197,7 @@ public class FacturaVentaServiceImpl extends BaseCrudService implements FacturaV
                 // Si falla, usar 1
             }
         }
-        String numero = String.format("FAC-%tY%<tm%<td-%05d", LocalDateTime.now(), secuencia);
+        String numero = String.format("FAC-%tY%<tm%<td-%05d", LocalDateTime.now(clock), secuencia);
         factura.setNumero(numero);
 
         // 7. Procesar detalles y calcular totales
@@ -291,7 +295,7 @@ public class FacturaVentaServiceImpl extends BaseCrudService implements FacturaV
             movimiento.setCaja(caja);
             movimiento.setFormaPago(formaPago);
             movimiento.setApertura(apertura);
-            movimiento.setFecha(LocalDateTime.now());
+            movimiento.setFecha(LocalDateTime.now(clock));
             movimiento.setTipo(TipoMovimientoCaja.INGRESO);
             movimiento.setMonto(savedFactura.getTotal());
             movimiento.setDescripcion("Venta factura #" + savedFactura.getNumero());
@@ -312,7 +316,7 @@ public class FacturaVentaServiceImpl extends BaseCrudService implements FacturaV
             cuenta.setMontoOriginal(savedFactura.getTotal());
             cuenta.setSaldo(savedFactura.getTotal());
             Integer diasCredito = configuracion.map(ConfiguracionEmpresa::getDiasVencimientoCredito).orElse(null);
-            cuenta.setFechaVencimiento(diasCredito == null ? null : LocalDateTime.now().plusDays(diasCredito));
+            cuenta.setFechaVencimiento(diasCredito == null ? null : LocalDateTime.now(clock).plusDays(diasCredito));
             cuenta.setEstado(EstadoCuenta.ABIERTA);
 
             cuentaPorCobrarRepository.save(cuenta);
@@ -403,7 +407,8 @@ public class FacturaVentaServiceImpl extends BaseCrudService implements FacturaV
         if (semanas < 1 || semanas > 104) {
             throw new IllegalArgumentException("El número de semanas debe estar entre 1 y 104");
         }
-        LocalDate semanaActual = com.rowin.contabilidad.utils.HistorialSemanal.inicioSemana(LocalDate.now());
+        LocalDate hoy = LocalDate.now(clock);
+        LocalDate semanaActual = com.rowin.contabilidad.utils.HistorialSemanal.inicioSemana(hoy);
         LocalDate semanaInicial = semanaActual.minusWeeks(semanas - 1L);
         LocalDateTime inicio = semanaInicial.atStartOfDay();
         LocalDateTime fin = semanaActual.plusDays(6).atTime(LocalTime.MAX);

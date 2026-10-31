@@ -9,18 +9,21 @@ import com.rowin.contabilidad.entities.Usuario;
 import com.rowin.contabilidad.repositories.InventarioRepository;
 import com.rowin.contabilidad.repositories.InventarioSemanalRepository;
 import com.rowin.contabilidad.repositories.UsuarioRepository;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.math.BigDecimal;
+import java.time.Clock;
+import java.time.Instant;
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.List;
 import java.util.Optional;
 
@@ -38,6 +41,8 @@ class InventarioSemanalServiceTest {
 
     private static final LocalDate LUNES = LocalDate.of(2026, 10, 19);
     private static final String EMAIL = "admin@vegashop.com";
+    private static final Clock RELOJ_FIJO = Clock.fixed(
+        Instant.parse("2026-11-02T01:00:00Z"), ZoneId.of("America/Bogota"));
 
     @Mock private InventarioRepository inventarioRepository;
     @Mock private InventarioSemanalRepository inventarioSemanalRepository;
@@ -45,7 +50,13 @@ class InventarioSemanalServiceTest {
 
     @Captor private ArgumentCaptor<List<InventarioSemanal>> captor;
 
-    @InjectMocks private InventarioSemanalService service;
+    private InventarioSemanalService service;
+
+    @BeforeEach
+    void setUp() {
+        service = new InventarioSemanalService(
+            inventarioRepository, inventarioSemanalRepository, usuarioRepository, RELOJ_FIJO);
+    }
 
     private Empresa empresa(Long id) {
         Empresa empresa = new Empresa();

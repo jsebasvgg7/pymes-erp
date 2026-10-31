@@ -28,13 +28,15 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
 
 import java.math.BigDecimal;
+import java.time.Clock;
+import java.time.Instant;
+import java.time.ZoneId;
 import java.util.List;
 import java.util.Optional;
 
@@ -48,6 +50,9 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
 class FacturaVentaCantidadDecimalTest {
+    private static final Clock RELOJ_FIJO = Clock.fixed(
+        Instant.parse("2026-11-02T01:00:00Z"), ZoneId.of("America/Bogota"));
+
     @Mock private FacturaVentaRepository facturaVentaRepository;
     @Mock private DetalleFacturaRepository detalleFacturaRepository;
     @Mock private EmpresaRepository empresaRepository;
@@ -64,13 +69,19 @@ class FacturaVentaCantidadDecimalTest {
     @Mock private ConfiguracionEmpresaRepository configuracionEmpresaRepository;
     @Mock private EmpresaAccesoService empresaAccesoService;
 
-    @InjectMocks private FacturaVentaServiceImpl service;
+    private FacturaVentaServiceImpl service;
 
     private Producto producto;
     private Inventario inventario;
 
     @BeforeEach
     void setUp() {
+        service = new FacturaVentaServiceImpl(
+            facturaVentaRepository, detalleFacturaRepository, empresaRepository, clienteRepository,
+            formaPagoRepository, productoRepository, inventarioRepository, impuestoRepository,
+            movimientoCajaRepository, cajaRepository, facturaVentaMapper, cuentaPorCobrarRepository,
+            aperturaCajaService, configuracionEmpresaRepository, empresaAccesoService, RELOJ_FIJO);
+
         Empresa empresa = new Empresa();
         empresa.setId(1L);
 

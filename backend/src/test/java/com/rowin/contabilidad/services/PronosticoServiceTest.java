@@ -12,15 +12,18 @@ import com.rowin.contabilidad.repositories.PronosticoDemandaRepository;
 import com.rowin.contabilidad.services.ml.ArbolDemanda;
 import com.rowin.contabilidad.utils.HistorialSemanal;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
+import java.time.Clock;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -40,7 +43,9 @@ class PronosticoServiceTest {
 
     private static final Long EMPRESA_ID = 1L;
     private static final Long PRODUCTO_ID = 10L;
-    private static final LocalDate SEMANA = HistorialSemanal.inicioSemana(LocalDate.now());
+        private static final Clock RELOJ_FIJO = Clock.fixed(
+            Instant.parse("2026-11-02T01:00:00Z"), ZoneId.of("America/Bogota"));
+        private static final LocalDate SEMANA = HistorialSemanal.inicioSemana(LocalDate.now(RELOJ_FIJO));
 
     @Mock
     private PronosticoDemandaRepository pronosticoDemandaRepository;
@@ -53,8 +58,14 @@ class PronosticoServiceTest {
     @Mock
     private ArbolDemanda arbolDemanda;
 
-    @InjectMocks
     private PronosticoServiceImpl servicio;
+
+    @BeforeEach
+    void setUp() {
+        servicio = new PronosticoServiceImpl(
+                pronosticoDemandaRepository, productoRepository, empresaRepository,
+                facturaVentaService, arbolDemanda, RELOJ_FIJO);
+    }
 
     @Test
     void alimentaElArbolConLasVentasRealesYSemUnoEsLaMasReciente() {
@@ -235,7 +246,7 @@ class PronosticoServiceTest {
         pronostico.setSemanaPronosticada(SEMANA);
         pronostico.setUnidadesProyectadas(new BigDecimal("50.00"));
         pronostico.setVersionModelo("1.0");
-        pronostico.setFechaCalculo(LocalDateTime.now());
+        pronostico.setFechaCalculo(LocalDateTime.now(RELOJ_FIJO));
         pronostico.setActive(true);
         return pronostico;
     }

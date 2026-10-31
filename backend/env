@@ -1,0 +1,3 @@
+DB_URL=jdbc:postgresql://ep-ancient-paper-b4ny3r9r.c-6.us-east-2.aws.neon.tech/neondb?sslmode=require
+DB_USER=neondb_owner
+DB_PASSWORD=npg_J13DuRqgvSbY
