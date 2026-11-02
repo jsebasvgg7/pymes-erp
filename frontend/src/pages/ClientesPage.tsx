@@ -6,7 +6,6 @@ import ErrorState from "../components/ErrorState";
 import { describirError, errorSesion, type ErrorPagina } from "../utils/erroresPagina";
 import Modal from "../components/Modal";
 import PageHeader from "../components/PageHeader";
-import SummaryPanel from "../components/SummaryPanel";
 import PrimaryButton from "../components/PrimaryButton";
 import SearchBar from "../components/SearchBar";
 import SecondaryButton from "../components/SecondaryButton";
@@ -34,9 +33,19 @@ const defaultFormState: ClienteFormState = {
 	direccion: ""
 };
 
+const POR_PAGINA = 20;
+
+function iniciales(nombre: string) {
+	const partes = nombre.trim().split(/\s+/).filter(Boolean);
+	if (partes.length === 0) return "?";
+	const primera = partes[0][0];
+	const ultima = partes.length > 1 ? partes[partes.length - 1][0] : "";
+	return (primera + ultima).toUpperCase();
+}
+
 function DeudaBadge({ deuda, onAbonar }: { deuda: number; onAbonar: () => void }) {
 	useFormato();
-	if (deuda <= 0) return null;
+	if (deuda <= 0) return <span className="cli__none">Sin deuda</span>;
 
 	return (
 		<div className="cli__debt">
@@ -59,6 +68,7 @@ export default function ClientesPage() {
 	const [error, setError] = useState<ErrorPagina | null>(null);
 
 	const [searchQuery, setSearchQuery] = useState("");
+	const [visibles, setVisibles] = useState(POR_PAGINA);
 
 	const [modalOpen, setModalOpen] = useState(false);
 	const [editingClienteId, setEditingClienteId] = useState<number | null>(null);
@@ -68,14 +78,14 @@ export default function ClientesPage() {
 
 	const [confirmOpen, setConfirmOpen] = useState(false);
 	const [confirmTarget, setConfirmTarget] = useState<Cliente | null>(null);
-  const [deleting, setDeleting] = useState(false);
+	const [deleting, setDeleting] = useState(false);
 
-  const [formasPago, setFormasPago] = useState<FormaPago[]>([]);
-  const [abonoModalOpen, setAbonoModalOpen] = useState(false);
-  const [abonoCliente, setAbonoCliente] = useState<Cliente | null>(null);
-  const [abonoMonto, setAbonoMonto] = useState("");
-  const [abonoFormaPago, setAbonoFormaPago] = useState("");
-  const [saldos, setSaldos] = useState<Record<number, number>>({});
+	const [formasPago, setFormasPago] = useState<FormaPago[]>([]);
+	const [abonoModalOpen, setAbonoModalOpen] = useState(false);
+	const [abonoCliente, setAbonoCliente] = useState<Cliente | null>(null);
+	const [abonoMonto, setAbonoMonto] = useState("");
+	const [abonoFormaPago, setAbonoFormaPago] = useState("");
+	const [saldos, setSaldos] = useState<Record<number, number>>({});
 
 	const loadClientes = useCallback(async () => {
 		if (!empresaId) {
@@ -182,7 +192,7 @@ export default function ClientesPage() {
 		} finally {
 			setSaving(false);
 		}
-  }, [closeModal, editingClienteId, empresaId, form]);
+	}, [closeModal, editingClienteId, empresaId, form]);
 
 	const abonoDeuda = abonoCliente ? saldos[abonoCliente.id] ?? 0 : 0;
 	const abonoExcede = Number(abonoMonto) > abonoDeuda;
@@ -236,17 +246,14 @@ export default function ClientesPage() {
 		return clientes.filter((c) => c.nombre.toLowerCase().includes(q));
 	}, [clientes, searchQuery]);
 
-	const formatFecha = useCallback((iso: string) => formatDate(iso), [formato]);
+	const handleSearch = useCallback((value: string) => {
+		setSearchQuery(value);
+		setVisibles(POR_PAGINA);
+	}, []);
 
-	const resumen = useMemo(() => {
-		const activos = clientes.filter((c) => c.active).length;
-		const limite = Date.now() - 30 * 24 * 60 * 60 * 1000;
-		const nuevos = clientes.filter((c) => new Date(c.createdAt).getTime() >= limite).length;
-		const recientes = [...clientes]
-			.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime() || b.id - a.id)
-			.slice(0, 6);
-		return { activos, inactivos: clientes.length - activos, nuevos, recientes };
-	}, [clientes]);
+	const visibleClientes = useMemo(() => filteredClientes.slice(0, visibles), [filteredClientes, visibles]);
+
+	const formatFecha = useCallback((iso: string) => formatDate(iso), [formato]);
 
 	const emptyState = useMemo(() => {
 		if (clientes.length === 0) {
@@ -295,98 +302,80 @@ export default function ClientesPage() {
 				}
 			/>
 
-			<div className="cli__search">
-				<SearchBar placeholder="Buscar por nombre..." value={searchQuery} onChange={setSearchQuery} />
-			</div>
-
-			<div className="cli__layout">
-				<div className="cli__main">
-					{filteredClientes.length === 0 ? (
-						emptyState
-					) : (
-						<div className="cli__grid-cards">
-							{filteredClientes.map((c) => (
-								<article key={c.id} className="cli__card">
-									<div className="cli__cardTop">
-										<span className="cli__avatar" aria-hidden="true">
-											<User size={22} strokeWidth={1.8} />
-										</span>
-										<StatusBadge status={c.active ? "Activo" : "Inactivo"} />
-									</div>
-									<div className="cli__identity">
-										<div className="cli__name" title={c.nombre}>
-											{c.nombre}
-										</div>
-                    <div className="cli__role">Cliente</div>
-										<DeudaBadge
-											deuda={saldos[c.id] ?? 0}
-											onAbonar={() => {
-												setAbonoCliente(c);
-												setAbonoModalOpen(true);
-											}}
-										/>
-									</div>
-									<div className="cli__meta">
-										<div className="cli__metaItem">
-											<span className="cli__metaLabel">Documento</span>
-											<span className="cli__metaValue">{c.documento || "—"}</span>
-										</div>
-										<div className="cli__metaItem">
-											<span className="cli__metaLabel">Creado</span>
-											<span className="cli__metaValue">{formatFecha(c.createdAt)}</span>
-										</div>
-									</div>
-									<div className="cli__cardBottom">
-										<div className="cli__contact">
-											<span title={c.email}>{c.email || "—"}</span>
-											<span>{c.telefono || "—"}</span>
-										</div>
-										<div className="cli__actions">
-											<button type="button" className="cli__iconBtn" aria-label="Editar cliente" onClick={() => openEditModal(c)}>
-												<Pencil size={15} strokeWidth={2} />
-											</button>
-											<button
-												type="button"
-												className="cli__iconBtn cli__iconBtn--danger"
-												aria-label="Eliminar cliente"
-												onClick={() => openConfirmDelete(c)}
-											>
-												<Trash2 size={15} strokeWidth={2} />
-											</button>
-										</div>
-									</div>
-								</article>
-							))}
-						</div>
-					)}
+			<div className="cli__tools">
+				<div className="cli__search">
+					<SearchBar placeholder="Buscar por nombre..." value={searchQuery} onChange={handleSearch} />
 				</div>
-
-				{clientes.length > 0 ? (
-					<SummaryPanel
-						title="Resumen de clientes"
-						subtitle="Un vistazo rápido a tu directorio."
-						stats={[
-							{ label: "Total", value: clientes.length },
-							{ label: "Activos", value: resumen.activos },
-							{ label: "Inactivos", value: resumen.inactivos },
-							{ label: "Nuevos en 30 días", value: resumen.nuevos }
-						]}
-						sections={[
-							{
-								title: "Agregados recientemente",
-								emptyText: "Aún no hay clientes registrados.",
-								items: resumen.recientes.map((c) => ({
-									key: c.id,
-									primary: c.nombre,
-									secondary: c.documento || "Sin documento",
-									value: formatFecha(c.createdAt),
-									onClick: () => openEditModal(c)
-								}))
-							}
-						]}
-					/>
-				) : null}
+				<span className="cli__count">
+					{clientes.length} {clientes.length === 1 ? "cliente" : "clientes"}
+				</span>
 			</div>
+
+			{filteredClientes.length === 0 ? (
+				emptyState
+			) : (
+				<div className="cli__list">
+					<div className="cli__cols" aria-hidden="true">
+						<span>Cliente</span>
+						<span>Contacto</span>
+						<span>Creado</span>
+						<span>Deuda</span>
+						<span>Estado</span>
+						<span />
+					</div>
+					{visibleClientes.map((c) => (
+						<article key={c.id} className="cli__row">
+							<div className="cli__who">
+								<span className="cli__avatar" aria-hidden="true">
+									{iniciales(c.nombre)}
+								</span>
+								<div className="cli__whoText">
+									<div className="cli__name" title={c.nombre}>
+										{c.nombre}
+									</div>
+									<div className="cli__doc">{c.documento ? `Doc. ${c.documento}` : "Sin documento"}</div>
+								</div>
+							</div>
+							<div className="cli__contact">
+								<span title={c.email}>{c.email || "—"}</span>
+								<span>{c.telefono || "—"}</span>
+							</div>
+							<div className="cli__date">{formatFecha(c.createdAt)}</div>
+							<DeudaBadge
+								deuda={saldos[c.id] ?? 0}
+								onAbonar={() => {
+									setAbonoCliente(c);
+									setAbonoModalOpen(true);
+								}}
+							/>
+							<StatusBadge status={c.active ? "Activo" : "Inactivo"} />
+							<div className="cli__actions">
+								<button type="button" className="cli__iconBtn" aria-label="Editar cliente" onClick={() => openEditModal(c)}>
+									<Pencil size={16} strokeWidth={2} />
+								</button>
+								<button
+									type="button"
+									className="cli__iconBtn cli__iconBtn--danger"
+									aria-label="Eliminar cliente"
+									onClick={() => openConfirmDelete(c)}
+								>
+									<Trash2 size={16} strokeWidth={2} />
+								</button>
+							</div>
+						</article>
+					))}
+					<div className="cli__footer">
+						<span>
+							Mostrando {visibleClientes.length} de {filteredClientes.length} clientes
+						</span>
+						{visibleClientes.length < filteredClientes.length ? (
+							<SecondaryButton type="button" onClick={() => setVisibles((v) => v + POR_PAGINA)}>
+								Ver más
+							</SecondaryButton>
+						) : null}
+					</div>
+				</div>
+			)}
 
 			<Modal
 				open={modalOpen}
@@ -482,7 +471,7 @@ export default function ClientesPage() {
 				cancelText="Cancelar"
 				onConfirm={confirmDelete}
 				onCancel={closeConfirm}
-      />
+			/>
 			<Modal
 				open={abonoModalOpen}
 				title="Abonar a Deuda"
