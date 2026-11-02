@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Plus, Pencil, Trash2, RotateCcw, Tag } from "lucide-react";
 import ConfirmDialog from "../components/ConfirmDialog";
-import DataTable, { DataTableLayout } from "../components/DataTable";
 import LoadingState from "../components/LoadingState";
 import ErrorState from "../components/ErrorState";
 import { describirError, errorSesion, type ErrorPagina } from "../utils/erroresPagina";
@@ -12,9 +11,13 @@ import SearchBar from "../components/SearchBar";
 import SecondaryButton from "../components/SecondaryButton";
 import StatusBadge from "../components/StatusBadge";
 import { authService } from "../services/authService";
+import { productoService } from "../services/ProductoService";
+import { iconoParaCategoria, normalizarBusqueda } from "../utils/categoriaIcono";
 import { categoriaProductoService, type CategoriaProducto } from "../services/CategoriaProductoService";
 import { useAccionRapida } from "../hooks/useAccionRapida";
 import "./CategoriasPage.css";
+
+const POR_PAGINA = 20;
 
 type CategoryFormState = {
 	nombre: string;
@@ -30,6 +33,9 @@ export default function CategoriasPage() {
 	const [categories, setCategories] = useState<CategoriaProducto[]>([]);
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState<ErrorPagina | null>(null);
+
+	const [conteos, setConteos] = useState<Map<number, number>>(new Map());
+	const [visibles, setVisibles] = useState(POR_PAGINA);
 
 	const [searchQuery, setSearchQuery] = useState("");
 
@@ -60,6 +66,14 @@ export default function CategoriasPage() {
 				categoriaProductoService.listarInactivasPorEmpresa(empresaId)
 			]);
 			setCategories([...activas, ...inactivas]);
+			try {
+				const productos = await productoService.listarTodosPorEmpresa(empresaId);
+				const mapa = new Map<number, number>();
+				productos.forEach((p) => mapa.set(p.categoriaId, (mapa.get(p.categoriaId) ?? 0) + 1));
+				setConteos(mapa);
+			} catch {
+				setConteos(new Map());
+			}
 		} catch (err) {
 			setError(describirError("categorias", err));
 		} finally {
@@ -166,40 +180,16 @@ export default function CategoriasPage() {
 	}, []);
 
 	const filteredCategories = useMemo(() => {
-		const q = searchQuery.trim().toLowerCase();
+		const q = normalizarBusqueda(searchQuery.trim());
 		if (!q) return categories;
-		return categories.filter((c) => c.nombre.toLowerCase().includes(q));
+		return categories.filter((c) => normalizarBusqueda(c.nombre).includes(q));
 	}, [categories, searchQuery]);
 
-	const layout: DataTableLayout<CategoriaProducto> = useMemo(
-		() => ({
-			principal: (r) => r.nombre,
-			estado: (r) => <StatusBadge status={r.active ? "Activo" : "Inactivo"} />,
-			acciones: (r) =>
-				r.active ? (
-					<>
-						<button type="button" className="ui-list__iconBtn" aria-label={`Editar ${r.nombre}`} title="Editar" onClick={() => openEditModal(r)}>
-						<Pencil size={16} strokeWidth={1.8} />
-					</button>
-						<button type="button" className="ui-list__iconBtn ui-list__iconBtn--danger" aria-label={`Eliminar ${r.nombre}`} title="Eliminar" onClick={() => openConfirmDelete(r)}>
-						<Trash2 size={16} strokeWidth={1.8} />
-					</button>
-					</>
-				) : (
-					<button
-						type="button"
-						className="ui-list__iconBtn"
-						aria-label={`Reactivar ${r.nombre}`}
-						title={reactivatingId === r.id ? "Reactivando..." : "Reactivar"}
-						onClick={() => handleReactivate(r)}
-						disabled={reactivatingId === r.id}
-					>
-						<RotateCcw size={16} strokeWidth={1.8} />
-					</button>
-				)
-		}),
-		[handleReactivate, openConfirmDelete, openEditModal, reactivatingId]
-	);
+	useEffect(() => {
+		setVisibles(POR_PAGINA);
+	}, [searchQuery]);
+
+	const visibleCategories = useMemo(() => filteredCategories.slice(0, visibles), [filteredCategories, visibles]);
 
 	const emptyState = useMemo(() => {
 		if (categories.length === 0) {
@@ -260,9 +250,68 @@ export default function CategoriasPage() {
 				</div>
 			</div>
 
-			<div className="cat__table">
-				<DataTable title="Categorías" layout={layout} data={filteredCategories} emptyState={emptyState} pageSize={10} />
+			{filteredCategories.length === 0 && categories.length > 0 ? emptyState : null}
+
+			<div className="cat__grid-cards">
+				{visibleCategories.map((c) => {
+					const Icono = iconoParaCategoria(c.nombre);
+					const total = conteos.get(c.id) ?? 0;
+					return (
+						<article key={c.id} className={`cat__card${c.active ? "" : " cat__card--inactiva"}`}>
+							<div className="cat__cardTop">
+								<span className="cat__avatar">
+									<Icono size={20} strokeWidth={1.8} />
+								</span>
+								<div className="cat__cardActions">
+									{c.active ? (
+										<>
+											<button type="button" className="cat__iconBtn" aria-label={`Editar ${c.nombre}`} title="Editar" onClick={() => openEditModal(c)}>
+												<Pencil size={16} strokeWidth={1.8} />
+											</button>
+											<button type="button" className="cat__iconBtn cat__iconBtn--danger" aria-label={`Eliminar ${c.nombre}`} title="Eliminar" onClick={() => openConfirmDelete(c)}>
+												<Trash2 size={16} strokeWidth={1.8} />
+											</button>
+										</>
+									) : (
+										<button
+											type="button"
+											className="cat__iconBtn"
+											aria-label={`Reactivar ${c.nombre}`}
+											title={reactivatingId === c.id ? "Reactivando..." : "Reactivar"}
+											onClick={() => handleReactivate(c)}
+											disabled={reactivatingId === c.id}
+										>
+											<RotateCcw size={16} strokeWidth={1.8} />
+										</button>
+									)}
+								</div>
+							</div>
+							<div className="cat__cardBottom">
+								<div className="cat__cardName">{c.nombre}</div>
+								<div className="cat__cardMeta">
+									<span>{total} {total === 1 ? "producto" : "productos"}</span>
+									{c.active ? null : <StatusBadge status="Inactivo" />}
+								</div>
+							</div>
+						</article>
+					);
+				})}
+
+				{!searchQuery.trim() ? (
+					<button type="button" className="cat__card cat__card--nueva" onClick={openCreateModal}>
+						<Plus size={20} strokeWidth={1.8} />
+						<span>Nueva categoría</span>
+					</button>
+				) : null}
 			</div>
+
+			{visibleCategories.length < filteredCategories.length ? (
+				<div className="cat__more">
+					<SecondaryButton type="button" onClick={() => setVisibles((v) => v + POR_PAGINA)}>
+						Ver más
+					</SecondaryButton>
+				</div>
+			) : null}
 
 			<Modal
 				open={modalOpen}

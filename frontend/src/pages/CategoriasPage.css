@@ -10,8 +10,141 @@
 	gap: 12px;
 }
 
-.cat__table {
+.cat__grid-cards {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+	gap: 16px;
+}
+
+.cat__card {
+	box-sizing: border-box;
+	display: flex;
+	flex-direction: column;
+	justify-content: space-between;
+	min-height: 176px;
+	padding: 20px;
+	border: 1px solid var(--line);
+	border-radius: 18px;
+	background: var(--paper);
+	color: var(--ink);
+	transition: background-color 160ms ease;
+}
+
+.cat__card:hover {
+	background: var(--surface);
+}
+
+.cat__card--inactiva {
+	opacity: 0.7;
+}
+
+.cat__card--nueva {
+	align-items: center;
+	justify-content: center;
+	gap: 8px;
+	border-style: dashed;
+	color: var(--muted);
+	font: inherit;
+	font-size: 14px;
+	cursor: pointer;
+}
+
+.cat__card--nueva:hover {
+	color: var(--ink);
+}
+
+.cat__card--nueva:focus-visible {
+	outline: 2px solid var(--ink);
+	outline-offset: 2px;
+}
+
+.cat__cardTop {
+	display: flex;
+	align-items: flex-start;
+	justify-content: space-between;
+	gap: 8px;
+}
+
+.cat__avatar {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 44px;
+	height: 44px;
+	border-radius: 999px;
+	background: var(--surface);
+	color: var(--ink);
+}
+
+.cat__card:hover .cat__avatar {
+	background: var(--paper);
+}
+
+.cat__cardActions {
+	display: flex;
+	gap: 4px;
+}
+
+.cat__iconBtn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 40px;
+	height: 40px;
+	padding: 0;
+	border: 0;
+	border-radius: 10px;
+	background: transparent;
+	color: var(--muted);
+	cursor: pointer;
+	transition: background-color 160ms ease, color 160ms ease;
+}
+
+.cat__iconBtn:hover {
+	background: var(--paper);
+	color: var(--ink);
+}
+
+.cat__iconBtn:focus-visible {
+	outline: 2px solid var(--ink);
+	outline-offset: 1px;
+}
+
+.cat__iconBtn:disabled {
+	opacity: 0.5;
+	cursor: not-allowed;
+}
+
+.cat__iconBtn--danger:hover {
+	color: #b91c1c;
+}
+
+.cat__cardBottom {
+	display: grid;
+	gap: 4px;
 	min-width: 0;
+}
+
+.cat__cardName {
+	font-size: 16px;
+	font-weight: 700;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.cat__cardMeta {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 8px;
+	font-size: 13px;
+	color: var(--muted);
+}
+
+.cat__more {
+	display: flex;
+	justify-content: center;
 }
 
 .cat__empty {
