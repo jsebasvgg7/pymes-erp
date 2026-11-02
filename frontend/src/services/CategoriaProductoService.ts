@@ -16,15 +16,18 @@ export type CategoriaProducto = {
 	active: boolean;
 	empresaId: number;
 	nombre: string;
+	icono: string | null;
 };
 
 export type CategoriaProductoCreateRequest = {
 	empresaId: number;
 	nombre: string;
+	icono?: string | null;
 };
 
 export type CategoriaProductoUpdateRequest = {
 	nombre: string;
+	icono?: string | null;
 	active?: boolean;
 };
 

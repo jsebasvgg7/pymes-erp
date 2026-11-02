@@ -12,7 +12,7 @@ import SecondaryButton from "../components/SecondaryButton";
 import StatusBadge from "../components/StatusBadge";
 import { authService } from "../services/authService";
 import { productoService } from "../services/ProductoService";
-import { iconoParaCategoria, normalizarBusqueda } from "../utils/categoriaIcono";
+import { ICONOS_CATEGORIA, ICONO_POR_DEFECTO, iconoParaCategoria, normalizarBusqueda } from "../utils/categoriaIcono";
 import { categoriaProductoService, type CategoriaProducto } from "../services/CategoriaProductoService";
 import { useAccionRapida } from "../hooks/useAccionRapida";
 import "./CategoriasPage.css";
@@ -21,10 +21,12 @@ const POR_PAGINA = 20;
 
 type CategoryFormState = {
 	nombre: string;
+	icono: string | null;
 };
 
 const defaultFormState: CategoryFormState = {
-	nombre: ""
+	nombre: "",
+	icono: null
 };
 
 export default function CategoriasPage() {
@@ -102,7 +104,7 @@ export default function CategoriasPage() {
 
 	const openEditModal = useCallback((category: CategoriaProducto) => {
 		setEditingCategoryId(category.id);
-		setForm({ nombre: category.nombre });
+		setForm({ nombre: category.nombre, icono: category.icono });
 		setFormError(null);
 		setModalOpen(true);
 	}, []);
@@ -123,13 +125,15 @@ export default function CategoriasPage() {
 		try {
 			if (editingCategoryId) {
 				const updated = await categoriaProductoService.actualizar(editingCategoryId, {
-					nombre: form.nombre.trim()
+					nombre: form.nombre.trim(),
+					icono: form.icono
 				});
 				setCategories((prev) => prev.map((c) => (c.id === updated.id ? updated : c)));
 			} else {
 				const created = await categoriaProductoService.crear({
 					empresaId,
-					nombre: form.nombre.trim()
+					nombre: form.nombre.trim(),
+					icono: form.icono
 				});
 				setCategories((prev) => [...prev, created]);
 			}
@@ -139,7 +143,7 @@ export default function CategoriasPage() {
 		} finally {
 			setSaving(false);
 		}
-	}, [closeModal, editingCategoryId, empresaId, form.nombre]);
+	}, [closeModal, editingCategoryId, empresaId, form.icono, form.nombre]);
 
 	const openConfirmDelete = useCallback((category: CategoriaProducto) => {
 		setConfirmTarget(category);
@@ -254,7 +258,7 @@ export default function CategoriasPage() {
 
 			<div className="cat__grid-cards">
 				{visibleCategories.map((c) => {
-					const Icono = iconoParaCategoria(c.nombre);
+					const Icono = iconoParaCategoria(c.nombre, c.icono);
 					const total = conteos.get(c.id) ?? 0;
 					return (
 						<article key={c.id} className={`cat__card${c.active ? "" : " cat__card--inactiva"}`}>
@@ -339,8 +343,32 @@ export default function CategoriasPage() {
 								type="text"
 								placeholder="Ej: Bebidas"
 								value={form.nombre}
-								onChange={(e) => setForm({ nombre: e.target.value })}
+								onChange={(e) => setForm((f) => ({ ...f, nombre: e.target.value }))}
 							/>
+						</div>
+
+						<div className="cat__field cat__field--full">
+							<span className="cat__label" id="cat-icono-label">Icono</span>
+							<div className="cat__iconGrid" role="radiogroup" aria-labelledby="cat-icono-label">
+								{ICONOS_CATEGORIA.map((o) => {
+									const Icono = o.icono;
+									const activo = (form.icono ?? ICONO_POR_DEFECTO) === o.clave;
+									return (
+										<button
+											key={o.clave}
+											type="button"
+											role="radio"
+											aria-checked={activo}
+											aria-label={o.etiqueta}
+											title={o.etiqueta}
+											className={`cat__iconOpt${activo ? " cat__iconOpt--activo" : ""}`}
+											onClick={() => setForm((f) => ({ ...f, icono: o.clave }))}
+										>
+											<Icono size={20} strokeWidth={1.8} />
+										</button>
+									);
+								})}
+							</div>
 						</div>
 
 						{formError ? <div className="cat__field cat__field--full cat__formError">{formError}</div> : null}

@@ -18,6 +18,7 @@ public interface CategoriaProductoMapper {
     }
 
     @Mapping(target = "nombre", source = "request.nombre")
+    @Mapping(target = "icono", expression = "java(normalizarIcono(request.icono()))")
     @Mapping(target = "empresa", source = "empresa")
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
@@ -33,10 +34,15 @@ public interface CategoriaProductoMapper {
     @Mapping(target = "empresa", ignore = true)
     @Mapping(target = "productos", ignore = true)
     @Mapping(target = "nombre", source = "request.nombre")
+    @Mapping(target = "icono", expression = "java(normalizarIcono(request.icono()))")
     void updateEntity(CategoriaProductoUpdateRequest request, @MappingTarget CategoriaProducto entity);
 
     @Mapping(target = "empresaId", source = "empresa.id")
     CategoriaProductoResponse toResponse(CategoriaProducto entity);
 
     List<CategoriaProductoResponse> toResponseList(List<CategoriaProducto> entities);
+
+    default String normalizarIcono(String icono) {
+        return icono == null || icono.isBlank() ? null : icono.trim();
+    }
 }

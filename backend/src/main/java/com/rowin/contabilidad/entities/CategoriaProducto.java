@@ -24,6 +24,9 @@ public class CategoriaProducto extends BaseEntity {
 	@Column(nullable = false, length = 120)
 	private String nombre;
 
+	@Column(length = 40)
+	private String icono;
+
 	@OneToMany(mappedBy = "categoria")
 	private List<Producto> productos = new ArrayList<>();
 

@@ -86,7 +86,7 @@ class CategoriaProductoAislamientoTest {
     @Test
     void crearRechazaUnaEmpresaAjena() {
         assertThrows(ResponseStatusException.class,
-            () -> service.crear(new CategoriaProductoCreateRequest(EMPRESA_AJENA, "Categoria")));
+            () -> service.crear(new CategoriaProductoCreateRequest(EMPRESA_AJENA, "Categoria", null)));
 
         verifyNoInteractions(empresaRepository, categoriaProductoMapper);
         verify(categoriaProductoRepository, never()).save(any());
@@ -99,7 +99,7 @@ class CategoriaProductoAislamientoTest {
         categoriaExiste(categoria);
 
         assertThrows(ResponseStatusException.class,
-            () -> service.actualizar(CATEGORIA_ID, new CategoriaProductoUpdateRequest("Nuevo", null)));
+            () -> service.actualizar(CATEGORIA_ID, new CategoriaProductoUpdateRequest("Nuevo", null, null)));
 
         assertEquals("Original", categoria.getNombre());
         verify(categoriaProductoRepository, never()).save(any());

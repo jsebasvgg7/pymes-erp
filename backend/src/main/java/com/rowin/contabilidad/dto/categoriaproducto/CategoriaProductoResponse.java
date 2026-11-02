@@ -9,6 +9,7 @@ public record CategoriaProductoResponse(
 	LocalDateTime updatedAt,
 	boolean active,
 	Long empresaId,
-	@NotBlank String nombre
+	@NotBlank String nombre,
+	String icono
 ) {
 }

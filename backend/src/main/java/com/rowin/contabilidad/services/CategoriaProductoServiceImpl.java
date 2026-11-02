@@ -98,6 +98,10 @@ public class CategoriaProductoServiceImpl extends BaseCrudService implements Cat
 		// Actualizar nombre
 		entity.setNombre(request.nombre());
 
+		if (request.icono() != null) {
+			entity.setIcono(categoriaProductoMapper.normalizarIcono(request.icono()));
+		}
+
 		// Actualizar active solo si se envía explícitamente
 		if (request.active() != null) {
 			entity.setActive(request.active());

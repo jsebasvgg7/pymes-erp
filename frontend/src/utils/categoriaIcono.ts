@@ -4,13 +4,50 @@ import {
 	Cookie,
 	Croissant,
 	CupSoda,
+	Gift,
+	House,
+	Laptop,
 	Milk,
+	Package,
 	Pencil,
+	Pill,
+	Puzzle,
+	Shirt,
+	ShoppingBasket,
+	Sparkles,
 	SprayCan,
 	Tag,
+	Utensils,
 	Wrench,
 	type LucideIcon
 } from "lucide-react";
+
+export type OpcionIcono = { clave: string; etiqueta: string; icono: LucideIcon };
+
+export const ICONOS_CATEGORIA: OpcionIcono[] = [
+	{ clave: "tag", etiqueta: "General", icono: Tag },
+	{ clave: "cup-soda", etiqueta: "Bebidas", icono: CupSoda },
+	{ clave: "croissant", etiqueta: "Panadería", icono: Croissant },
+	{ clave: "spray-can", etiqueta: "Limpieza", icono: SprayCan },
+	{ clave: "pencil", etiqueta: "Papelería", icono: Pencil },
+	{ clave: "wrench", etiqueta: "Ferretería", icono: Wrench },
+	{ clave: "beef", etiqueta: "Carnes", icono: Beef },
+	{ clave: "milk", etiqueta: "Lácteos", icono: Milk },
+	{ clave: "apple", etiqueta: "Frutas y verduras", icono: Apple },
+	{ clave: "cookie", etiqueta: "Snacks y dulces", icono: Cookie },
+	{ clave: "shopping-basket", etiqueta: "Mercado", icono: ShoppingBasket },
+	{ clave: "shirt", etiqueta: "Ropa", icono: Shirt },
+	{ clave: "laptop", etiqueta: "Tecnología", icono: Laptop },
+	{ clave: "house", etiqueta: "Hogar", icono: House },
+	{ clave: "utensils", etiqueta: "Cocina", icono: Utensils },
+	{ clave: "puzzle", etiqueta: "Juguetería", icono: Puzzle },
+	{ clave: "pill", etiqueta: "Farmacia", icono: Pill },
+	{ clave: "sparkles", etiqueta: "Cuidado personal", icono: Sparkles },
+	{ clave: "package", etiqueta: "Empaques", icono: Package },
+	{ clave: "gift", etiqueta: "Regalos", icono: Gift }
+];
+
+export const ICONO_POR_DEFECTO = "tag";
 
 const REGLAS: Array<{ claves: string[]; icono: LucideIcon }> = [
 	{ claves: ["bebida", "gaseosa", "jugo", "agua", "cerveza", "licor", "cafe"], icono: CupSoda },
@@ -31,7 +68,9 @@ function normalizar(texto: string): string {
 		.toLowerCase();
 }
 
-export function iconoParaCategoria(nombre: string): LucideIcon {
+export function iconoParaCategoria(nombre: string, clave?: string | null): LucideIcon {
+	const elegido = clave ? ICONOS_CATEGORIA.find((o) => o.clave === clave) : undefined;
+	if (elegido) return elegido.icono;
 	const base = normalizar(nombre);
 	const regla = REGLAS.find((r) => r.claves.some((c) => base.includes(c)));
 	return regla ? regla.icono : Tag;

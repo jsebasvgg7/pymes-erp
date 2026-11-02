@@ -115,8 +115,49 @@
 	cursor: not-allowed;
 }
 
+.cat__iconBtn--danger {
+	color: var(--danger);
+	background: color-mix(in srgb, var(--danger) 8%, var(--paper));
+}
+
 .cat__iconBtn--danger:hover {
-	color: #b91c1c;
+	color: var(--danger);
+	background: color-mix(in srgb, var(--danger) 16%, var(--paper));
+}
+
+.cat__iconGrid {
+	display: grid;
+	grid-template-columns: repeat(5, minmax(0, 1fr));
+	gap: 8px;
+}
+
+.cat__iconOpt {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	height: 48px;
+	border: 1px solid var(--line);
+	border-radius: 12px;
+	background: var(--paper);
+	color: var(--muted);
+	cursor: pointer;
+	transition: background-color 160ms ease, color 160ms ease, border-color 160ms ease;
+}
+
+.cat__iconOpt:hover {
+	background: var(--surface);
+	color: var(--ink);
+}
+
+.cat__iconOpt--activo {
+	border-color: var(--ink);
+	background: var(--surface);
+	color: var(--ink);
+}
+
+.cat__iconOpt:focus-visible {
+	outline: 2px solid var(--ink);
+	outline-offset: 2px;
 }
 
 .cat__cardBottom {
@@ -263,9 +304,9 @@
 
 .cat__formError {
 	font-size: 13px;
-	color: #b91c1c;
-	background: rgba(220,38,38,0.1);
-	border: 1px solid rgba(220,38,38,0.22);
+	color: var(--danger);
+	background: color-mix(in srgb, var(--danger) 10%, var(--paper));
+	border: 1px solid color-mix(in srgb, var(--danger) 22%, var(--paper));
 	border-radius: 10px;
 	padding: 10px 12px;
 }
