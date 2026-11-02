@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "motion/react";
-import { memo, useEffect, useMemo, useState } from "react";
+import { memo, useEffect, useMemo, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { cn } from "@/lib/utils";
 import { useChart, useChartStable } from "./chart-context";
@@ -13,6 +13,8 @@ export interface BarXAxisProps {
   showAllLabels?: boolean;
   /** Maximum number of labels to show. Default: 12 */
   maxLabels?: number;
+  /** Custom renderer for each label. Default: plain text */
+  renderLabel?: (label: string) => ReactNode;
 }
 
 interface BarXAxisLabelProps {
@@ -21,6 +23,7 @@ interface BarXAxisLabelProps {
   crosshairX: number | null;
   isHovering: boolean;
   tickerHalfWidth: number;
+  renderLabel?: (label: string) => ReactNode;
 }
 
 function BarXAxisLabel({
@@ -29,6 +32,7 @@ function BarXAxisLabel({
   crosshairX,
   isHovering,
   tickerHalfWidth,
+  renderLabel,
 }: BarXAxisLabelProps) {
   const fadeBuffer = 20;
   const fadeRadius = tickerHalfWidth + fadeBuffer;
@@ -59,9 +63,10 @@ function BarXAxisLabel({
         animate={{ opacity }}
         className={cn("whitespace-nowrap text-chart-label text-xs")}
         initial={{ opacity: 1 }}
+        style={renderLabel ? { pointerEvents: "auto" } : undefined}
         transition={{ duration: 0.4, ease: "easeInOut" }}
       >
-        {label}
+        {renderLabel ? renderLabel(label) : label}
       </motion.span>
     </div>
   );
@@ -91,6 +96,7 @@ const BarXAxisInner = memo(function BarXAxisInner({
   tickerHalfWidth = 50,
   showAllLabels = false,
   maxLabels = 12,
+  renderLabel,
   container,
 }: BarXAxisProps & { container: HTMLDivElement }) {
   const { margin, tooltipData, barScale, bandWidth, barXAccessor, data } =
@@ -139,6 +145,7 @@ const BarXAxisInner = memo(function BarXAxisInner({
           isHovering={isHovering}
           key={`${item.label}-${item.x}`}
           label={item.label}
+          renderLabel={renderLabel}
           tickerHalfWidth={tickerHalfWidth}
           x={item.x}
         />

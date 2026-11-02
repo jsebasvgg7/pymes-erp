@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useCallback, useMemo } from "react";
 import { Info, Check } from "lucide-react";
 import { BarChart } from "../charts/bar-chart";
 import { Bar } from "../charts/bar";
@@ -7,6 +7,7 @@ import { BarXAxis } from "../charts/bar-x-axis";
 import { ChartTooltip } from "../charts/tooltip/chart-tooltip";
 import type { CategoriaVenta } from "../../services/dashboardAnalytics";
 import { totalVentasPorCategoria, promedioVentasPorCategoria } from "../../services/dashboardAnalytics";
+import { iconoParaCategoria, normalizarBusqueda } from "../../utils/categoriaIcono";
 import "./dashboard-charts.css";
 import { formatCurrency as formatCurrencyShort, useFormato } from "../../utils/formatoConfig";
 
@@ -19,13 +20,15 @@ type CategoryBreakdownChartProps = {
 	fechaInicio: string;
 	fechaFin: string;
 	onChangeRango: (inicio: string, fin: string) => void;
+	iconosPorNombre?: Record<string, string | null>;
 };
 
 export default function CategoryBreakdownChart({
 	categorias,
 	fechaInicio,
 	fechaFin,
-	onChangeRango
+	onChangeRango,
+	iconosPorNombre
 }: CategoryBreakdownChartProps) {
 	useFormato();
 	const total = useMemo(() => totalVentasPorCategoria(categorias), [categorias]);
@@ -35,6 +38,18 @@ export default function CategoryBreakdownChart({
 		[categorias, promedio]
 	);
 	const hayDatos = data.length > 0;
+
+	const renderEtiqueta = useCallback(
+		(nombre: string) => {
+			const Icono = iconoParaCategoria(nombre, iconosPorNombre?.[normalizarBusqueda(nombre)]);
+			return (
+				<span className="dbChart__catIcon" data-nombre={nombre} aria-label={nombre} role="img" tabIndex={0}>
+					<Icono size={18} strokeWidth={1.8} />
+				</span>
+			);
+		},
+		[iconosPorNombre]
+	);
 
 	return (
 		<article className="dbChart">
@@ -79,11 +94,11 @@ export default function CategoryBreakdownChart({
 					xDataKey="label"
 					aspectRatio="1.7 / 1"
 					barGap={0.45}
-					margin={{ top: 28, right: 8, bottom: 28, left: 40 }}
+					margin={{ top: 28, right: 8, bottom: 44, left: 40 }}
 				>
 					<Grid horizontal strokeDasharray="3,4" />
 					<Bar dataKey="total" fill="var(--ink)" />
-					<BarXAxis maxLabels={8} />
+					<BarXAxis showAllLabels renderLabel={renderEtiqueta} />
 					<ChartTooltip
 						rows={(point) => [
 							{ label: String(point.label), value: formatCurrencyShort(Number(point.total) || 0), color: "var(--ink)" },

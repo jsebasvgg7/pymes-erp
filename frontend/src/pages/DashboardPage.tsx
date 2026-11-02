@@ -4,8 +4,6 @@ import DataTable, { DataTableLayout } from "../components/DataTable";
 import PageHeader from "../components/PageHeader";
 import AperturaCajaControl from "../components/AperturaCajaControl";
 import { useEstadoCaja } from "../hooks/useEstadoCaja";
-import PrimaryButton from "../components/PrimaryButton";
-import SecondaryButton from "../components/SecondaryButton";
 import StatusBadge from "../components/StatusBadge";
 import { etiquetaMovimiento } from "../utils/etiquetaMovimiento";
 import { formatDateShort } from "../utils/formatDate";
@@ -21,6 +19,8 @@ import { ventaService, type CategoriaVenta } from "../services/VentaService";
 import { cajaService, type MovimientoCajaResponse, type FlujoCajaDiario } from "../services/cajaService";
 import { productoService, type Producto } from "../services/ProductoService";
 import { clienteService, type Cliente } from "../services/clienteService";
+import { categoriaProductoService } from "../services/CategoriaProductoService";
+import { normalizarBusqueda } from "../utils/categoriaIcono";
 import { calcularNetoCajaHoy } from "../services/dashboardAnalytics";
 import {
 	cargarVentasHoyAyer,
@@ -86,11 +86,12 @@ export default function DashboardPage() {
 	const [productos, setProductos] = useState<Producto[]>([]);
 	const [clientes, setClientes] = useState<Cliente[]>([]);
 	const [ventasDia, setVentasDia] = useState<VentasHoyAyer | null>(null);
+	const [iconosCategoria, setIconosCategoria] = useState<Record<string, string | null>>({});
 
 	const cargarDashboard = useCallback(
 		async (empresaIdActual: number, signalCancelled: () => boolean) => {
 			// LÍMITE ESTRICTO: Se reduce la carga de productos y clientes a 50 (suficientes para la métrica "nuevos hoy")
-			const [resumenData, cajaData, flujoData, productosData, clientesData, ventasDiaData] = await Promise.all([
+			const [resumenData, cajaData, flujoData, productosData, clientesData, ventasDiaData, categoriasData] = await Promise.all([
 				dashboardService.obtenerResumen(empresaIdActual),
 				cajaService.listarMovimientosPorEmpresa(empresaIdActual, 0, 50),
 				cajaService.obtenerFlujoCajaDiario(empresaIdActual, 12).catch((e) => {
@@ -102,7 +103,8 @@ export default function DashboardPage() {
 				cargarVentasHoyAyer(empresaIdActual).catch((e) => {
 					console.error("Ventas de hoy no disponibles:", e);
 					return null;
-				})
+				}),
+				categoriaProductoService.listarPorEmpresa(empresaIdActual).catch(() => [])
 			]);
 
 			if (signalCancelled()) return;
@@ -115,6 +117,7 @@ export default function DashboardPage() {
 			setProductos(productosData.content);
 			setClientes(clientesData.content);
 			setVentasDia(ventasDiaData);
+			setIconosCategoria(Object.fromEntries(categoriasData.map((c) => [normalizarBusqueda(c.nombre), c.icono])));
 		},
 		[]
 	);
@@ -276,13 +279,16 @@ export default function DashboardPage() {
 				actions={
 					<>
 						<AperturaCajaControl estado={estadoCaja} />
-						<SecondaryButton type="button" disabled>
-							Hoy
-						</SecondaryButton>
-						<PrimaryButton type="button" onClick={handleRecargar} disabled={reloading}>
+						<button
+							type="button"
+							className="db__reloadBtn"
+							onClick={handleRecargar}
+							disabled={reloading}
+							aria-label="Recargar"
+							title={reloading ? "Recargando..." : "Recargar"}
+						>
 							<RefreshCw size={14} strokeWidth={2} className={reloading ? "db__reloadIcon--spin" : ""} />
-							<span>Recargar</span>
-						</PrimaryButton>
+						</button>
 					</>
 				}
 			/>
@@ -329,6 +335,7 @@ export default function DashboardPage() {
 				<CashFlowChart puntosDiarios={flujoCajaDiario} />
 				<CategoryBreakdownChart
 					categorias={categoriasVenta}
+					iconosPorNombre={iconosCategoria}
 					fechaInicio={fechaInicio}
 					fechaFin={fechaFin}
 					onChangeRango={(inicio, fin) => {

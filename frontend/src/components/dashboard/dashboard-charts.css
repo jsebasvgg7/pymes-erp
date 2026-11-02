@@ -190,3 +190,44 @@
 		align-items: flex-start;
 	}
 }
+.dbChart__catIcon {
+	position: relative;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 28px;
+	height: 28px;
+	border-radius: 999px;
+	background: var(--surface);
+	color: var(--ink);
+	cursor: default;
+	outline: none;
+}
+
+.dbChart__catIcon::after {
+	content: attr(data-nombre);
+	position: absolute;
+	bottom: calc(100% + 6px);
+	left: 50%;
+	z-index: 5;
+	padding: 4px 8px;
+	border-radius: 8px;
+	background: var(--ink);
+	color: var(--paper);
+	font-size: 12px;
+	white-space: nowrap;
+	opacity: 0;
+	pointer-events: none;
+	transform: translateX(-50%);
+	transition: opacity 120ms ease;
+}
+
+.dbChart__catIcon:hover::after,
+.dbChart__catIcon:focus-visible::after {
+	opacity: 1;
+}
+
+.dbChart__catIcon:focus-visible {
+	outline: 2px solid var(--ink);
+	outline-offset: 2px;
+}

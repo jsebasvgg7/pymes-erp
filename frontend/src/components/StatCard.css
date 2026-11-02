@@ -1,4 +1,5 @@
 .ui-statCard {
+	min-width: 0;
 	background: var(--paper);
 	border-radius: 18px;
 	border: 1px solid var(--line);
@@ -57,7 +58,8 @@
 }
 
 .ui-statCard__value {
-	font-size: 22px;
+	font-size: clamp(18px, 1.5vw, 22px);
+	white-space: nowrap;
 	font-weight: 800;
 	letter-spacing: -0.02em;
 	color: var(--ink);
