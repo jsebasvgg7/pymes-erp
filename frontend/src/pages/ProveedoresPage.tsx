@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Plus, Pencil, Trash2, Truck } from "lucide-react";
+import { Plus, Pencil, Trash2, Truck, Phone } from "lucide-react";
 import ConfirmDialog from "../components/ConfirmDialog";
-import DataTable, { DataTableLayout } from "../components/DataTable";
 import LoadingState from "../components/LoadingState";
 import ErrorState from "../components/ErrorState";
 import { describirError, errorSesion, type ErrorPagina } from "../utils/erroresPagina";
@@ -14,7 +13,22 @@ import StatusBadge from "../components/StatusBadge";
 import { authService } from "../services/authService";
 import { proveedorService, type Proveedor } from "../services/proveedorService";
 import { useAccionRapida } from "../hooks/useAccionRapida";
+import { normalizarBusqueda } from "../utils/categoriaIcono";
 import "./ProveedoresPage.css";
+
+const POR_PAGINA = 20;
+
+function iniciales(nombre: string) {
+	return (
+		nombre
+			.trim()
+			.split(/\s+/)
+			.filter(Boolean)
+			.slice(0, 2)
+			.map((w) => w[0]?.toUpperCase() ?? "")
+			.join("") || "?"
+	);
+}
 
 type ProveedorFormState = {
 	nombre: string;
@@ -40,6 +54,7 @@ export default function ProveedoresPage() {
 	const [error, setError] = useState<ErrorPagina | null>(null);
 
 	const [searchQuery, setSearchQuery] = useState("");
+	const [visibles, setVisibles] = useState(POR_PAGINA);
 
 	const [modalOpen, setModalOpen] = useState(false);
 	const [editingProveedorId, setEditingProveedorId] = useState<number | null>(null);
@@ -166,37 +181,18 @@ export default function ProveedoresPage() {
 	}, [closeConfirm, confirmTarget]);
 
 	const filteredProveedores = useMemo(() => {
-		const q = searchQuery.trim().toLowerCase();
+		const q = normalizarBusqueda(searchQuery.trim());
 		if (!q) return proveedores;
-		return proveedores.filter(
-			(p) =>
-				p.nombre.toLowerCase().includes(q) ||
-				(p.documento ?? "").toLowerCase().includes(q) ||
-				(p.email ?? "").toLowerCase().includes(q) ||
-				(p.telefono ?? "").toLowerCase().includes(q) ||
-				(p.direccion ?? "").toLowerCase().includes(q)
+		return proveedores.filter((p) =>
+			normalizarBusqueda([p.nombre, p.documento, p.email, p.telefono, p.direccion].filter(Boolean).join(" ")).includes(q)
 		);
 	}, [proveedores, searchQuery]);
 
-	const layout: DataTableLayout<Proveedor> = useMemo(
-		() => ({
-			principal: (r) => r.nombre,
-			secundario: (r) => r.telefono || "Sin teléfono",
-			etiquetas: (r) => (r.documento ? <span className="ui-list__chip">NIT {r.documento}</span> : null),
-			estado: (r) => <StatusBadge status={r.active ? "Activo" : "Inactivo"} />,
-			acciones: (r) => (
-				<>
-					<button type="button" className="ui-list__iconBtn" aria-label={`Editar ${r.nombre}`} title="Editar" onClick={() => openEditModal(r)}>
-						<Pencil size={16} strokeWidth={1.8} />
-					</button>
-					<button type="button" className="ui-list__iconBtn ui-list__iconBtn--danger" aria-label={`Eliminar ${r.nombre}`} title="Eliminar" onClick={() => openConfirmDelete(r)}>
-						<Trash2 size={16} strokeWidth={1.8} />
-					</button>
-				</>
-			)
-		}),
-		[openConfirmDelete, openEditModal]
-	);
+	useEffect(() => {
+		setVisibles(POR_PAGINA);
+	}, [searchQuery]);
+
+	const visibleProveedores = useMemo(() => filteredProveedores.slice(0, visibles), [filteredProveedores, visibles]);
 
 	const emptyState = useMemo(() => {
 		if (proveedores.length === 0) {
@@ -255,9 +251,61 @@ export default function ProveedoresPage() {
 				</div>
 			</div>
 
-			<div className="prov__table">
-				<DataTable title="Proveedores" layout={layout} data={filteredProveedores} emptyState={emptyState} pageSize={10} />
-			</div>
+			{filteredProveedores.length === 0 ? (
+				emptyState
+			) : (
+				<>
+					<div className="prov__count">
+						{filteredProveedores.length} {filteredProveedores.length === 1 ? "proveedor" : "proveedores"}
+					</div>
+
+					<div className="prov__cards">
+						{visibleProveedores.map((p) => (
+							<article key={p.id} className="prov__card">
+								<div className="prov__cardTop">
+									<span className="prov__avatar" aria-hidden="true">
+										{iniciales(p.nombre)}
+									</span>
+									<div className="prov__cardActions">
+										<button type="button" className="prov__iconBtn" aria-label={`Editar ${p.nombre}`} title="Editar" onClick={() => openEditModal(p)}>
+											<Pencil size={16} strokeWidth={1.8} />
+										</button>
+										<button type="button" className="prov__iconBtn prov__iconBtn--danger" aria-label={`Eliminar ${p.nombre}`} title="Eliminar" onClick={() => openConfirmDelete(p)}>
+											<Trash2 size={16} strokeWidth={1.8} />
+										</button>
+									</div>
+								</div>
+								<div className="prov__cardBody">
+									<div className="prov__cardName">{p.nombre}</div>
+									<div className="prov__cardLine">
+										<Phone size={14} strokeWidth={1.8} />
+										<span>{p.telefono || "Sin teléfono"}</span>
+									</div>
+								</div>
+								<div className="prov__cardFoot">
+									{p.documento ? <span className="prov__chip">NIT {p.documento}</span> : <span />}
+									<StatusBadge status={p.active ? "Activo" : "Inactivo"} />
+								</div>
+							</article>
+						))}
+
+						{!searchQuery.trim() ? (
+							<button type="button" className="prov__card prov__card--nuevo" onClick={openCreateModal}>
+								<Plus size={20} strokeWidth={1.8} />
+								<span>Nuevo proveedor</span>
+							</button>
+						) : null}
+					</div>
+
+					{visibleProveedores.length < filteredProveedores.length ? (
+						<div className="prov__more">
+							<SecondaryButton type="button" onClick={() => setVisibles((v) => v + POR_PAGINA)}>
+								Ver más
+							</SecondaryButton>
+						</div>
+					) : null}
+				</>
+			)}
 
 			<Modal
 				open={modalOpen}
@@ -345,4 +393,4 @@ export default function ProveedoresPage() {
 			/>
 		</div>
 	);
-}
+}
