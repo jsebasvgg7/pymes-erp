@@ -140,8 +140,8 @@
   flex-direction: column;
   justify-content: space-between;
   gap: 16px;
-  min-height: 176px;
-  padding: 18px;
+  min-height: var(--sk-alto, 176px);
+  padding: var(--sk-relleno, 18px);
   border: 1px solid var(--line);
   border-radius: 18px;
   background: var(--paper);
@@ -155,6 +155,13 @@
 
 .sk-mosaico__texto {
   display: grid;
+  gap: 8px;
+}
+
+.sk-mosaico__pie {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   gap: 8px;
 }
 

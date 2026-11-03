@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Plus, Pencil, Trash2, Truck, Phone } from "lucide-react";
 import ConfirmDialog from "../components/ConfirmDialog";
-import LoadingState from "../components/LoadingState";
+import CargaPagina from "../components/CargaPagina";
+import { SkeletonControles, SkeletonEncabezado, SkeletonMosaico } from "../components/skeleton/Skeleton";
 import ErrorState from "../components/ErrorState";
 import { describirError, errorSesion, type ErrorPagina } from "../utils/erroresPagina";
 import Modal from "../components/Modal";
@@ -215,7 +216,11 @@ export default function ProveedoresPage() {
 	if (loading) {
 		return (
 			<div className="prov">
-				<LoadingState label="Cargando proveedores..." pagina="proveedores" />
+				<CargaPagina pagina="proveedores">
+					<SkeletonEncabezado acciones={1} />
+					<SkeletonControles conteo />
+					<SkeletonMosaico cantidad={8} minimo={260} altoMinimo={188} relleno={20} pie />
+				</CargaPagina>
 			</div>
 		);
 	}

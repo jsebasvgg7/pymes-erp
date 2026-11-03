@@ -101,10 +101,24 @@ interface SkeletonMosaicoProps {
   cantidad?: number;
   minimo?: number;
   cuadrado?: boolean;
+  altoMinimo?: number;
+  relleno?: number;
+  pie?: boolean;
 }
 
-export function SkeletonMosaico({ cantidad = 8, minimo = 240, cuadrado = false }: SkeletonMosaicoProps) {
-  const estilo = { "--sk-min": `${minimo}px` } as CSSProperties;
+export function SkeletonMosaico({
+  cantidad = 8,
+  minimo = 240,
+  cuadrado = false,
+  altoMinimo,
+  relleno,
+  pie = false
+}: SkeletonMosaicoProps) {
+  const estilo = {
+    "--sk-min": `${minimo}px`,
+    ...(altoMinimo !== undefined ? { "--sk-alto": `${altoMinimo}px` } : {}),
+    ...(relleno !== undefined ? { "--sk-relleno": `${relleno}px` } : {})
+  } as CSSProperties;
   return (
     <div className="sk-mosaico" style={estilo}>
       {Array.from({ length: cantidad }, (_, i) => (
@@ -117,6 +131,12 @@ export function SkeletonMosaico({ cantidad = 8, minimo = 240, cuadrado = false }
             <Bloque ancho="65%" alto={16} radio={6} />
             <Bloque ancho="40%" alto={12} />
           </div>
+          {pie ? (
+            <div className="sk-mosaico__pie">
+              <Bloque ancho={84} alto={24} radio={8} />
+              <Bloque ancho={64} alto={22} radio={999} />
+            </div>
+          ) : null}
         </div>
       ))}
     </div>
