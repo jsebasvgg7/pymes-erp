@@ -1,0 +1,259 @@
+.sk {
+  display: block;
+  max-width: 100%;
+  background: linear-gradient(
+    90deg,
+    var(--surface) 0%,
+    color-mix(in srgb, var(--line) 55%, var(--paper)) 50%,
+    var(--surface) 100%
+  );
+  background-size: 200% 100%;
+  border-radius: 6px;
+  animation: sk-brillo 1.4s ease-in-out infinite;
+}
+
+@keyframes sk-brillo {
+  from {
+    background-position: 200% 0;
+  }
+  to {
+    background-position: -200% 0;
+  }
+}
+
+.sk-encabezado {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px 16px;
+}
+
+.sk-encabezado__texto {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+  flex: 1 1 240px;
+}
+
+.sk-encabezado__acciones {
+  display: flex;
+  gap: 8px;
+}
+
+.sk-tarjetas {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(var(--sk-min, 220px), 1fr));
+  gap: 14px;
+  min-width: 0;
+}
+
+.sk-tarjeta {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 0;
+  padding: 18px 20px;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: var(--paper);
+}
+
+.sk-tarjeta__cabeza {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.sk-tarjeta__texto {
+  display: grid;
+  flex: 1;
+  gap: 8px;
+  min-width: 0;
+}
+
+.sk-lista {
+  width: 100%;
+  padding: 6px;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: color-mix(in srgb, var(--surface) 60%, var(--paper));
+}
+
+.sk-lista__cabeza {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px 12px;
+}
+
+.sk-lista__cuerpo {
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--paper);
+}
+
+.sk-lista__fila {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(96px, 150px) 104px minmax(96px, 132px);
+  align-items: center;
+  gap: 16px;
+  min-height: 56px;
+  padding: 10px 18px;
+}
+
+.sk-lista__fila + .sk-lista__fila {
+  border-top: 1px solid var(--line);
+}
+
+.sk-lista__principal {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+
+.sk-lista__valor {
+  justify-self: end;
+}
+
+@media (max-width: 720px) {
+  .sk-lista__fila {
+    grid-template-columns: minmax(0, 1fr) minmax(72px, 112px);
+  }
+
+  .sk-lista__etiqueta,
+  .sk-lista__estado {
+    display: none;
+  }
+}
+
+.sk-mosaico {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 16px;
+  min-width: 0;
+}
+
+.sk-mosaico__tarjeta {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 16px;
+  min-height: 176px;
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: var(--paper);
+}
+
+.sk-mosaico__arriba {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.sk-mosaico__texto {
+  display: grid;
+  gap: 8px;
+}
+
+.sk-grafica {
+  min-width: 0;
+  overflow: hidden;
+  border: 2px solid var(--line);
+  border-radius: 18px;
+  background: var(--paper);
+}
+
+.sk-grafica__franja {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 18px;
+  background: var(--surface);
+}
+
+.sk-grafica__area {
+  padding: 18px;
+}
+
+.sk-formulario {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 18px;
+  padding: 20px;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: var(--paper);
+}
+
+.sk-formulario__campo {
+  display: grid;
+  gap: 8px;
+}
+
+.sk-resumen {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.sk-resumen__tarjeta {
+  display: grid;
+  gap: 6px;
+  padding: 16px 18px;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: var(--paper);
+}
+
+.sk-fila-graficas {
+  display: grid;
+  grid-template-columns: 1.35fr 1fr;
+  align-items: stretch;
+  gap: 14px;
+  min-width: 0;
+}
+
+.sk-panel {
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: var(--paper);
+}
+
+.sk-panel__barra {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 14px 16px;
+}
+
+.sk-panel .sk-lista__fila {
+  border-top: 1px solid var(--line);
+}
+
+@media (max-width: 1100px) {
+  .sk-resumen {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .sk-fila-graficas {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 560px) {
+  .sk-resumen {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sk {
+    animation: none;
+  }
+}

@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { AlertTriangle, ArrowDownRight, ArrowUpDown, ArrowUpRight, ChevronDown, ChevronUp, Info, Minus, RefreshCw } from "lucide-react";
 import ErrorState from "../components/ErrorState";
-import LoadingState from "../components/LoadingState";
+import CargaPagina from "../components/CargaPagina";
 import PageHeader from "../components/PageHeader";
 import PrimaryButton from "../components/PrimaryButton";
 import SearchBar from "../components/SearchBar";
 import SecondaryButton from "../components/SecondaryButton";
+import { SkeletonEncabezado, SkeletonPanel, SkeletonResumen } from "../components/skeleton/Skeleton";
 import StatusBadge from "../components/StatusBadge";
 import { authService } from "../services/authService";
 import { inventarioService, type Inventario } from "../services/inventarioService";
@@ -260,7 +261,11 @@ export default function PronosticosPage() {
   if (loading) {
     return (
       <div className="pro">
-        <LoadingState label="Cargando pronósticos..." pagina="pronosticos" />
+        <CargaPagina pagina="pronosticos">
+          <SkeletonEncabezado acciones={2} />
+          <SkeletonResumen cantidad={4} />
+          <SkeletonPanel filas={10} />
+        </CargaPagina>
       </div>
     );
   }

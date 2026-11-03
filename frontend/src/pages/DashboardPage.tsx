@@ -7,7 +7,8 @@ import { useEstadoCaja } from "../hooks/useEstadoCaja";
 import StatusBadge from "../components/StatusBadge";
 import { etiquetaMovimiento } from "../utils/etiquetaMovimiento";
 import { formatDateShort } from "../utils/formatDate";
-import LoadingState from "../components/LoadingState";
+import CargaPagina from "../components/CargaPagina";
+import { SkeletonEncabezado, SkeletonGraficasFila, SkeletonLista, SkeletonTarjetas } from "../components/skeleton/Skeleton";
 import ErrorState from "../components/ErrorState";
 import { describirError, errorSesion, type ErrorPagina } from "../utils/erroresPagina";
 import StatCard from "../components/StatCard";
@@ -255,7 +256,12 @@ export default function DashboardPage() {
 	if (loading) {
 		return (
 			<div className="db">
-				<LoadingState label="Cargando dashboard..." pagina="dashboard" />
+				<CargaPagina pagina="dashboard">
+					<SkeletonEncabezado acciones={2} />
+					<SkeletonTarjetas cantidad={5} minimo={250} />
+					<SkeletonGraficasFila />
+					<SkeletonLista filas={6} />
+				</CargaPagina>
 			</div>
 		);
 	}
