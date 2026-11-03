@@ -1,4 +1,4 @@
-import { Suspense, lazy } from "react";
+import { Suspense } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
 import Sidebar from "../layouts/Sidebar";
 import MainLayout from "../layouts/MainLayout";
@@ -8,27 +8,26 @@ import AdminRecoveryPage from "../pages/AdminRecoveryPage";
 import NotFoundPage from "../pages/NotFoundPage";
 import { authService } from "../services/authService";
 import LoadingState from "../components/LoadingState";
+import ContenidoProtegido from "../components/ContenidoProtegido";
 import SinAcceso from "../components/SinAcceso";
 import { primeraRutaPermitida, tieneModulo } from "../utils/permisos";
-
-// Optimización: Lazy Loading
-const DashboardPage = lazy(() => import("../pages/DashboardPage"));
-const ClientesPage = lazy(() => import("../pages/ClientesPage"));
-const CategoriasPage = lazy(() => import("../pages/CategoriasPage"));
-const ComprasPage = lazy(() => import("../pages/ComprasPage"));
-const CajaPage = lazy(() => import("../pages/CajaPage"));
-const InventarioPage = lazy(() => import("../pages/InventarioPage"));
-const PronosticosPage = lazy(() => import("../pages/PronosticosPage"));
-const PosPage = lazy(() => import("../pages/PosPage"));
-const ReportesPage = lazy(() => import("../pages/ReportesPage"));
-const ConfiguracionPage = lazy(() => import("../pages/ConfiguracionPage"));
-const UsuariosPage = lazy(() => import("../pages/UsuariosPage"));
-const ProductosPage = lazy(() => import("../pages/ProductosPage"));
-const ProveedoresPage = lazy(() => import("../pages/ProveedoresPage"));
-const SetupPage = lazy(() => import("../pages/SetupPage"));
-
-// LA NUEVA PÁGINA (Asegúrate de crear src/pages/RolesPage.tsx)
-const RolesPage = lazy(() => import("../pages/RolesPage"));
+import {
+  CajaPage,
+  CategoriasPage,
+  ClientesPage,
+  ComprasPage,
+  ConfiguracionPage,
+  DashboardPage,
+  InventarioPage,
+  PosPage,
+  ProductosPage,
+  PronosticosPage,
+  ProveedoresPage,
+  ReportesPage,
+  RolesPage,
+  SetupPage,
+  UsuariosPage,
+} from "./paginas";
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   if (!authService.isAuthenticated()) return <Navigate to="/login" replace />;
@@ -55,24 +54,23 @@ export default function AppRouter() {
         <Route path="/recover-admin" element={<AdminRecoveryPage />} />
         <Route path="/" element={<LandingPage />} />
 
-        {/* Módulos Protegidos */}
         <Route path="/" element={<ProtectedRoute><Sidebar /></ProtectedRoute>}>
-          <Route path="dashboard" element={<ModuleGuard modulo="DASHBOARD"><DashboardPage /></ModuleGuard>} />
-          <Route path="clientes" element={<ModuleGuard modulo="CLIENTES"><ClientesPage /></ModuleGuard>} />
-          <Route path="proveedores" element={<ModuleGuard modulo="PROVEEDORES"><ProveedoresPage /></ModuleGuard>} />
-          <Route path="productos" element={<ModuleGuard modulo="PRODUCTOS"><ProductosPage /></ModuleGuard>} />
-          <Route path="categorias" element={<ModuleGuard modulo="CATEGORIAS"><CategoriasPage /></ModuleGuard>} />
-          <Route path="compras" element={<ModuleGuard modulo="COMPRAS"><ComprasPage /></ModuleGuard>} />
-          <Route path="inventario" element={<ModuleGuard modulo="INVENTARIO"><InventarioPage /></ModuleGuard>} />
-          <Route path="pronosticos" element={<ModuleGuard modulo="INVENTARIO"><PronosticosPage /></ModuleGuard>} />
-          <Route path="pos" element={<ModuleGuard modulo="POS"><PosPage /></ModuleGuard>} />
-          <Route path="caja" element={<ModuleGuard modulo="CAJA"><CajaPage /></ModuleGuard>} />
-          <Route path="reportes" element={<ModuleGuard modulo="REPORTES"><ReportesPage /></ModuleGuard>} />
-
-          {/* Oculta la configuración y roles solo para ADMIN para evitar auto-elevación */}
-          <Route path="configuracion" element={<ModuleGuard modulo="CONFIGURACION"><ConfiguracionPage /></ModuleGuard>} />
-          <Route path="usuarios" element={<ModuleGuard modulo="USUARIOS"><UsuariosPage /></ModuleGuard>} />
-          <Route path="roles" element={<ModuleGuard modulo="ROLES"><RolesPage /></ModuleGuard>} />
+          <Route element={<ContenidoProtegido />}>
+            <Route path="dashboard" element={<ModuleGuard modulo="DASHBOARD"><DashboardPage /></ModuleGuard>} />
+            <Route path="clientes" element={<ModuleGuard modulo="CLIENTES"><ClientesPage /></ModuleGuard>} />
+            <Route path="proveedores" element={<ModuleGuard modulo="PROVEEDORES"><ProveedoresPage /></ModuleGuard>} />
+            <Route path="productos" element={<ModuleGuard modulo="PRODUCTOS"><ProductosPage /></ModuleGuard>} />
+            <Route path="categorias" element={<ModuleGuard modulo="CATEGORIAS"><CategoriasPage /></ModuleGuard>} />
+            <Route path="compras" element={<ModuleGuard modulo="COMPRAS"><ComprasPage /></ModuleGuard>} />
+            <Route path="inventario" element={<ModuleGuard modulo="INVENTARIO"><InventarioPage /></ModuleGuard>} />
+            <Route path="pronosticos" element={<ModuleGuard modulo="INVENTARIO"><PronosticosPage /></ModuleGuard>} />
+            <Route path="pos" element={<ModuleGuard modulo="POS"><PosPage /></ModuleGuard>} />
+            <Route path="caja" element={<ModuleGuard modulo="CAJA"><CajaPage /></ModuleGuard>} />
+            <Route path="reportes" element={<ModuleGuard modulo="REPORTES"><ReportesPage /></ModuleGuard>} />
+            <Route path="configuracion" element={<ModuleGuard modulo="CONFIGURACION"><ConfiguracionPage /></ModuleGuard>} />
+            <Route path="usuarios" element={<ModuleGuard modulo="USUARIOS"><UsuariosPage /></ModuleGuard>} />
+            <Route path="roles" element={<ModuleGuard modulo="ROLES"><RolesPage /></ModuleGuard>} />
+          </Route>
         </Route>
 
         <Route element={<MainLayout />}>
