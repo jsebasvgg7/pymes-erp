@@ -1,28 +1,28 @@
+import { useFraseRotativa } from "../hooks/useFraseRotativa";
+import { frasesDe, type ClaveCarga } from "../utils/frasesCarga";
 import "./LoadingState.css";
 
 interface LoadingStateProps {
-	/** Texto a mostrar, ej: "Cargando categorías..." */
-	label: string;
+  label: string;
+  pagina?: ClaveCarga;
 }
 
-/**
- * Estado de carga reutilizable con 3 dots animados, centrado.
- * Reemplaza el texto plano en los bloques `if (loading) { ... }` de cada página.
- *
- * Uso:
- *   <div className="cat">
- *     <LoadingState label="Cargando categorías..." />
- *   </div>
- */
-export default function LoadingState({ label }: LoadingStateProps) {
-	return (
-		<div className="loadingState">
-			<div className="loadingState__dots">
-				<span className="loadingState__dot" />
-				<span className="loadingState__dot" />
-				<span className="loadingState__dot" />
-			</div>
-			<p className="loadingState__label">{label}</p>
-		</div>
-	);
+export default function LoadingState({ label, pagina }: LoadingStateProps) {
+  const frase = useFraseRotativa(pagina ? frasesDe(pagina) : undefined);
+  const texto = frase ?? label;
+
+  return (
+    <div className="loadingState">
+      <div className="loadingState__dots" aria-hidden="true">
+        <span className="loadingState__dot" />
+        <span className="loadingState__dot" />
+        <span className="loadingState__dot" />
+      </div>
+      <p className="loadingState__label" role="status" aria-live="polite">
+        <span key={texto} className="loadingState__text">
+          {texto}
+        </span>
+      </p>
+    </div>
+  );
 }
