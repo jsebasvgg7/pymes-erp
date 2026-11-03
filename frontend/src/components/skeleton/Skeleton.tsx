@@ -267,3 +267,96 @@ export function SkeletonLateral({ filas = 5 }: { filas?: number }) {
     </div>
   );
 }
+
+export function SkeletonPos({ filas = 8 }: { filas?: number }) {
+  return (
+    <div className="sk-pos">
+      <div className="sk-pos__catalogo">
+        <div className="sk-pos__cabeza">
+          <Bloque ancho={140} alto={20} radio={6} />
+          <Bloque ancho={250} alto={36} radio={10} className="sk-pos__buscador" />
+        </div>
+        <div className="sk-pos__chips">
+          {[64, 96, 84, 110].map((ancho) => (
+            <Bloque key={ancho} ancho={ancho} alto={32} radio={999} />
+          ))}
+        </div>
+        <div className="sk-pos__lista">
+          {Array.from({ length: filas }, (_, i) => (
+            <div key={i} className="sk-pos__fila">
+              <Bloque ancho={48} alto={48} radio={12} />
+              <div className="sk-pos__info">
+                <Bloque ancho={72} alto={14} radio={999} />
+                <Bloque ancho="55%" alto={14} />
+                <Bloque ancho="35%" alto={11} />
+              </div>
+              <Bloque ancho={64} alto={14} />
+            </div>
+          ))}
+        </div>
+      </div>
+      <div className="sk-pos__pedido">
+        <Bloque ancho={160} alto={24} radio={6} />
+        <div className="sk-pos__tarjeta">
+          <div className="sk-pos__lineas">
+            {[0, 1, 2].map((i) => (
+              <div key={i} className="sk-pos__linea">
+                <Bloque ancho="55%" alto={13} />
+                <Bloque ancho={64} alto={13} />
+              </div>
+            ))}
+          </div>
+          <div className="sk-pos__resumen">
+            <div className="sk-pos__linea">
+              <Bloque ancho={70} alto={13} />
+              <Bloque ancho={72} alto={13} />
+            </div>
+            <div className="sk-pos__linea">
+              <Bloque ancho={90} alto={13} />
+              <Bloque ancho={72} alto={13} />
+            </div>
+            <Bloque alto={44} radio={10} />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+interface SkeletonAjustesProps {
+  modulos?: number;
+  filas?: number;
+}
+
+export function SkeletonAjustes({ modulos = 7, filas = 7 }: SkeletonAjustesProps) {
+  return (
+    <div className="sk-ajustes">
+      <div className="sk-ajustes__menu">
+        {Array.from({ length: modulos }, (_, i) => (
+          <Bloque key={i} alto={42} radio={10} className="sk-ajustes__item" />
+        ))}
+      </div>
+      <div className="sk-ajustes__panel">
+        <div className="sk-ajustes__cabeza">
+          <Bloque ancho={44} alto={44} radio={14} />
+          <div className="sk-ajustes__texto">
+            <Bloque ancho={160} alto={18} radio={6} />
+            <Bloque ancho="min(320px, 70%)" alto={13} />
+          </div>
+        </div>
+        <div className="sk-ajustes__filas">
+          {Array.from({ length: filas }, (_, i) => (
+            <div key={i} className="sk-ajustes__fila">
+              <div className="sk-ajustes__info">
+                <Bloque ancho="45%" alto={14} />
+                <Bloque ancho="70%" alto={12} />
+              </div>
+              <Bloque ancho="60%" alto={14} />
+              <Bloque ancho={72} alto={32} radio={10} />
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}

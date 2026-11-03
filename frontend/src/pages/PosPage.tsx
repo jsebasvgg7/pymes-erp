@@ -2,7 +2,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { KeyboardEvent } from "react";
 import { Link } from "react-router-dom";
 import { AlertTriangle, Check, ChevronDown, Minus, Package, Plus, Printer, Receipt, Trash2 } from "lucide-react";
-import LoadingState from "../components/LoadingState";
+import CargaPagina from "../components/CargaPagina";
+import { SkeletonEncabezado, SkeletonPos } from "../components/skeleton/Skeleton";
 import ErrorState from "../components/ErrorState";
 import { describirError, errorSesion, mensajeVentaNoConfirmada, type ErrorPagina } from "../utils/erroresPagina";
 import Modal from "../components/Modal";
@@ -398,7 +399,10 @@ export default function PosPage() {
 	if (loading) {
 		return (
 			<div className="pos">
-				<LoadingState label="Cargando punto de venta..." pagina="pos" />
+				<CargaPagina pagina="pos">
+					<SkeletonEncabezado acciones={0} />
+					<SkeletonPos filas={8} />
+				</CargaPagina>
 			</div>
 		);
 	}
