@@ -1,11 +1,12 @@
 import argparse
+import calendar
 import csv
 import math
 import random
 from collections import defaultdict
 from dataclasses import dataclass, field, replace
 from datetime import date, datetime, time, timedelta
-from decimal import ROUND_DOWN, ROUND_HALF_UP, Decimal
+from decimal import ROUND_CEILING, ROUND_DOWN, ROUND_HALF_UP, Decimal, getcontext
 from pathlib import Path
 
 SEMANAS = 52
@@ -23,6 +24,53 @@ VENTA_MINIMA_CREDITO = Decimal(8000)
 TAMANO_LOTE_SQL = 400
 SEMANA_SANTA = (date(2026, 3, 26), date(2026, 4, 5))
 PRIMER_DIA_SANTO = date(2026, 3, 30)
+getcontext().prec = 60
+CAJA_PRINCIPAL = CAJAS[0][0]
+FORMAS_COMPRA = (("TRANSFERENCIA", 0.75), ("TARJETA", 0.25))
+FORMAS_ABONO = (("EFECTIVO", 0.55), ("TRANSFERENCIA", 0.45))
+VARIACION_COSTO = 0.03
+HORA_COMPRA_FINAL = time(21, 5)
+MOROSOS = 3
+CAPITAL_MARGEN = Decimal(1000000)
+CAPITAL_PASO = Decimal(1000000)
+GASTOS_MIN_PCT = 9.0
+GASTOS_MAX_PCT = 11.0
+MESES = (
+    "enero", "febrero", "marzo", "abril", "mayo", "junio",
+    "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre",
+)
+GASTOS_MENSUALES = (
+    ("Nómina", 0, 3100000, 0.0, False),
+    ("Arriendo", 5, 1800000, 0.0, False),
+    ("Energía", 12, 950000, 0.15, True),
+    ("Agua", 14, 220000, 0.05, False),
+    ("Internet", 8, 120000, 0.0, False),
+    ("Gas", 20, 180000, 0.08, False),
+)
+GASTOS_MENORES = (
+    ("Insumos de aseo", 15000, 60000, 4.0),
+    ("Papelería", 10000, 45000, 3.5),
+    ("Mantenimiento", 40000, 200000, 2.5),
+)
+HASH_CLAVE_INICIAL = "$2a$10$p/Ab13klVq7/SXQno1xQIec6xUQhqwRh4.SeBhcwGPMGjOXsMJpfi"
+MODULOS_VALIDOS = (
+    "DASHBOARD", "POS", "CAJA", "INVENTARIO", "COMPRAS", "PRODUCTOS", "CATEGORIAS", "CLIENTES",
+    "PROVEEDORES", "REPORTES", "USUARIOS", "ROLES", "CONFIGURACION",
+)
+ROLES = (
+    ("CAJERO", "Atiende el punto de venta y opera la caja", ("POS", "CAJA", "CLIENTES")),
+    ("BODEGUERO", "Controla productos, inventario y compras", ("INVENTARIO", "PRODUCTOS", "CATEGORIAS", "COMPRAS", "PROVEEDORES")),
+    ("CONTADOR", "Revisa reportes, caja y compras", ("DASHBOARD", "REPORTES", "CAJA", "CLIENTES", "COMPRAS")),
+)
+USUARIOS = (
+    ("mpadilla", "maria.padilla@supermercado.test", "CAJERO"),
+    ("jarrieta", "jhon.arrieta@supermercado.test", "CAJERO"),
+    ("ycassiani", "yurleidis.cassiani@supermercado.test", "CAJERO"),
+    ("ebarrios", "edwin.barrios@supermercado.test", "BODEGUERO"),
+    ("dorozco", "doris.orozco@supermercado.test", "CONTADOR"),
+)
+CAJEROS = tuple(u[0] for u in USUARIOS if u[2] == "CAJERO")
+BODEGUERO = next(u[0] for u in USUARIOS if u[2] == "BODEGUERO")
 
 CATEGORIAS = (
     ('ABA', 'Abarrotes y granos', 'shopping-basket'),
@@ -330,6 +378,10 @@ CATALOGO = crear_catalogo(FILAS_CATALOGO)
 POR_SKU = {p.sku: p for p in CATALOGO}
 
 
+NOMBRE_CLIENTE = {documento: nombre for nombre, documento, _ in CLIENTES}
+NOMBRE_PROVEEDOR = {clave: nombre for clave, nombre, *_ in PROVEEDORES}
+
+
 @dataclass(frozen=True)
 class Linea:
     sku: str
@@ -374,14 +426,77 @@ class Ajuste:
     motivo: str
 
 
+@dataclass(frozen=True)
+class Reposicion:
+    sku: str
+    fecha: datetime
+    anterior: Decimal
+    cantidad: Decimal
+
+
+@dataclass(frozen=True)
+class LineaCompra:
+    sku: str
+    descripcion: str
+    cantidad: Decimal
+    costo: Decimal
+    total: Decimal
+
+
+@dataclass(frozen=True)
+class Compra:
+    numero: str
+    fecha: datetime
+    caja: str
+    forma: str
+    proveedor: str
+    lineas: tuple
+    total: Decimal
+
+
+@dataclass(frozen=True)
+class Movimiento:
+    fecha: datetime
+    caja: str
+    forma: str
+    tipo: str
+    monto: Decimal
+    descripcion: str
+    referencia: str
+
+
+@dataclass
+class Cuenta:
+    numero: str
+    documento: str
+    fecha: datetime
+    original: Decimal
+    saldo: Decimal
+    actualizado: datetime
+
+    @property
+    def estado(self):
+        if self.saldo == 0:
+            return "PAGADA"
+        if self.saldo == self.original:
+            return "ABIERTA"
+        return "PARCIAL"
+
+
 @dataclass
 class Resultado:
     facturas: list = field(default_factory=list)
     aperturas: list = field(default_factory=list)
     ajustes: list = field(default_factory=list)
+    reposiciones: list = field(default_factory=list)
+    compras: list = field(default_factory=list)
+    movimientos: list = field(default_factory=list)
+    cuentas: dict = field(default_factory=dict)
     stock_lunes: dict = field(default_factory=dict)
     ventas: dict = field(default_factory=lambda: defaultdict(Decimal))
     stock_final: dict = field(default_factory=dict)
+    costo_promedio: dict = field(default_factory=dict)
+    capital: dict = field(default_factory=dict)
 
 
 def poisson(rng, lam):
@@ -497,7 +612,7 @@ def planear_stock(rng, p, semana, lunes, inicio, nivel, stock, res):
         objetivo = max(redondear_paso(float(objetivo) * 0.6, p), Decimal(2))
     if objetivo > stock[p.sku]:
         fecha = datetime.combine(lunes, time(6, rng.randrange(30, 55), rng.randrange(60)))
-        res.ajustes.append(Ajuste(p.sku, fecha, "ENTRADA", stock[p.sku], objetivo, "Reposición semanal"))
+        res.reposiciones.append(Reposicion(p.sku, fecha, stock[p.sku], objetivo - stock[p.sku]))
         stock[p.sku] = objetivo
 
 
@@ -574,9 +689,12 @@ def facturar(rng, fecha, items, secuencia, documentos, documentos_credito):
     return Factura(numero, fecha, caja, forma, documento, tuple(lineas), subtotal, descuento, subtotal - descuento)
 
 
-def cerrar_caja(rng, dia, caja, ingresos_efectivo, egresos_efectivo=Decimal(0)):
-    inicial = Decimal(rng.choice(EFECTIVO_INICIAL))
-    esperado = inicial + ingresos_efectivo - egresos_efectivo
+def sortear_inicial(rng):
+    return Decimal(rng.choice(EFECTIVO_INICIAL))
+
+
+def cerrar_caja(rng, dia, caja, inicial, efectivo, ultimo):
+    esperado = inicial + efectivo
     sorteo = rng.random()
     if sorteo < 0.70:
         diferencia = 0
@@ -584,13 +702,17 @@ def cerrar_caja(rng, dia, caja, ingresos_efectivo, egresos_efectivo=Decimal(0)):
         diferencia = -rng.randrange(1, 11) * 500
     else:
         diferencia = rng.randrange(1, 7) * 500
-    apertura = datetime.combine(dia, time(6, rng.randrange(30, 60), rng.randrange(60)))
+    apertura = datetime.combine(dia, time(6, rng.randrange(0, 30), rng.randrange(60)))
     cierre = datetime.combine(dia, time(21, rng.randrange(0, 41), rng.randrange(60)))
+    if ultimo:
+        cierre = max(cierre, datetime.combine(dia, time(21, 30)))
     return Apertura(dia, caja, apertura, cierre, inicial, esperado, esperado + diferencia, Decimal(diferencia))
 
 
-def ajustar_cierre(rng, inicio, stock, res):
-    fecha = datetime.combine(inicio + timedelta(days=SEMANAS * 7 - 1), time(22, 0))
+def ajustar_cierre(inicio, stock, res):
+    dia = inicio + timedelta(days=SEMANAS * 7 - 1)
+    fecha = datetime.combine(dia, time(22, 0))
+    fecha_compra = datetime.combine(dia, HORA_COMPRA_FINAL)
     for p in CATALOGO:
         if not p.activo:
             continue
@@ -607,21 +729,160 @@ def ajustar_cierre(rng, inicio, stock, res):
                 stock[p.sku] = bajo
         elif actual < minimo:
             objetivo = minimo * 2
-            res.ajustes.append(Ajuste(p.sku, fecha, "ENTRADA", actual, objetivo, "Reposición semanal"))
+            res.reposiciones.append(Reposicion(p.sku, fecha_compra, actual, objetivo - actual))
             stock[p.sku] = objetivo
 
 
-def simular(rng, inicio):
+def variar_costo(rng, p):
+    factor = 1 + rng.uniform(-VARIACION_COSTO, VARIACION_COSTO)
+    return max(Decimal(10), Decimal(round(float(p.costo) * factor / 10) * 10))
+
+
+def costo_promedio_nuevo(promedio, anterior, cantidad, costo):
+    return ((promedio * anterior + cantidad * costo) / (anterior + cantidad)).quantize(CENTAVOS, rounding=ROUND_HALF_UP)
+
+
+def construir_compras(rng, res):
+    grupos = defaultdict(list)
+    for r in res.reposiciones:
+        grupos[(POR_SKU[r.sku].proveedor, r.fecha.date())].append(r)
+    ordenados = sorted(grupos.items(), key=lambda item: (min(r.fecha for r in item[1]), item[0][0]))
+    promedio = {p.sku: p.costo for p in CATALOGO}
+    compras = []
+    for secuencia, ((proveedor, _), reposiciones) in enumerate(ordenados, start=1):
+        fecha = min(r.fecha for r in reposiciones)
+        caja = rng.choices([c for c, _ in CAJAS], weights=[w for _, w in CAJAS])[0]
+        forma = rng.choices([f for f, _ in FORMAS_COMPRA], weights=[w for _, w in FORMAS_COMPRA])[0]
+        lineas = []
+        for r in sorted(reposiciones, key=lambda r: r.sku):
+            p = POR_SKU[r.sku]
+            costo = variar_costo(rng, p)
+            total = (r.cantidad * costo).quantize(CENTAVOS, rounding=ROUND_HALF_UP)
+            lineas.append(LineaCompra(p.sku, p.nombre, r.cantidad, costo, total))
+            promedio[p.sku] = costo_promedio_nuevo(promedio[p.sku], r.anterior, r.cantidad, costo)
+        numero = f"COM-{fecha:%Y%m%d}-{secuencia:05d}"
+        compras.append(Compra(numero, fecha, caja, forma, proveedor, tuple(lineas), sum((l.total for l in lineas), Decimal(0))))
+    res.compras = compras
+    res.costo_promedio = promedio
+
+
+def generar_gastos_fijos(rng, inicio, fin):
+    movimientos = []
+    anio, mes = inicio.year, inicio.month
+    while date(anio, mes, 1) <= fin:
+        ultimo = calendar.monthrange(anio, mes)[1]
+        for concepto, dia, base, variacion, estacional in GASTOS_MENSUALES:
+            fecha = date(anio, mes, ultimo if dia == 0 else dia)
+            if not inicio <= fecha <= fin:
+                continue
+            if estacional:
+                valor = base * (1 + variacion * math.cos(2 * math.pi * (mes - 5) / 12))
+            else:
+                valor = base * (1 + rng.uniform(-variacion, variacion))
+            hora = datetime.combine(fecha, time(rng.randrange(8, 18), rng.randrange(60), rng.randrange(60)))
+            movimientos.append(Movimiento(
+                hora, CAJA_PRINCIPAL, "TRANSFERENCIA", "EGRESO", Decimal(round(valor / 1000) * 1000),
+                f"{concepto} - {MESES[mes - 1]} {anio}", "GASTO",
+            ))
+        mes += 1
+        if mes == 13:
+            anio, mes = anio + 1, 1
+    return movimientos
+
+
+def generar_menor(rng, dia, inicial, entradas):
+    hora = datetime.combine(dia, time(rng.randrange(12, 18), rng.randrange(60), rng.randrange(60)))
+    disponible = inicial + sum((monto for fecha, monto in entradas if fecha <= hora), Decimal(0))
+    concepto, bajo, alto, _ = rng.choices(GASTOS_MENORES, weights=[g[3] for g in GASTOS_MENORES])[0]
+    monto = min(Decimal(rng.randrange(bajo, alto + 1, 1000)), (disponible - 10000) // 1000 * 1000)
+    if monto < 10000:
+        return None
+    return Movimiento(hora, CAJA_PRINCIPAL, "EFECTIVO", "EGRESO", monto, f"{concepto} - gasto menor", "GASTO")
+
+
+def programar_abono(rng, desde, limite):
+    siguiente = desde + timedelta(days=rng.randint(14, 35))
+    if limite is not None and siguiente > limite:
+        return None
+    return siguiente
+
+
+def ejecutar_abono(rng, dia, documento, cuentas):
+    hora = datetime.combine(dia, time(rng.randrange(9, 19), rng.randrange(60), rng.randrange(60)))
+    pendientes = [c for c in cuentas if c.fecha <= hora and c.saldo > 0]
+    deuda = sum((c.saldo for c in pendientes), Decimal(0))
+    if deuda < 1000:
+        return None
+    if rng.random() < 0.35:
+        monto = deuda
+    else:
+        fraccion = Decimal(str(round(rng.uniform(0.4, 0.99), 2)))
+        monto = (deuda * fraccion / 100).to_integral_value(rounding=ROUND_DOWN) * 100
+    if monto < 1000:
+        return None
+    restante = monto
+    for cuenta in pendientes:
+        aplicado = min(restante, cuenta.saldo)
+        cuenta.saldo -= aplicado
+        cuenta.actualizado = hora
+        restante -= aplicado
+        if restante == 0:
+            break
+    forma = rng.choices([f for f, _ in FORMAS_ABONO], weights=[w for _, w in FORMAS_ABONO])[0]
+    return Movimiento(
+        hora, CAJA_PRINCIPAL, forma, "INGRESO", monto,
+        f"Abono de deuda - Cliente: {NOMBRE_CLIENTE[documento]}", "CUENTA_POR_COBRAR",
+    )
+
+
+def eventos_saldo(res):
+    eventos = defaultdict(list)
+    for f in res.facturas:
+        if f.forma != "CREDITO":
+            eventos[f.caja].append((f.fecha, f.total))
+    for c in res.compras:
+        eventos[c.caja].append((c.fecha, -c.total))
+    for m in res.movimientos:
+        eventos[m.caja].append((m.fecha, m.monto if m.tipo == "INGRESO" else -m.monto))
+    for lista in eventos.values():
+        lista.sort(key=lambda e: (e[0], e[1] > 0))
+    return eventos
+
+
+def calcular_capital(res):
+    eventos = eventos_saldo(res)
+    capital = {}
+    for caja, _ in CAJAS:
+        saldo = minimo = Decimal(0)
+        for _, monto in eventos[caja]:
+            saldo += monto
+            minimo = min(minimo, saldo)
+        if minimo == 0:
+            capital[caja] = Decimal(0)
+        else:
+            capital[caja] = ((-minimo + CAPITAL_MARGEN) / CAPITAL_PASO).to_integral_value(rounding=ROUND_CEILING) * CAPITAL_PASO
+    return capital
+
+
+def simular(rng, rng_c, inicio):
+    fin = inicio + timedelta(days=SEMANAS * 7 - 1)
     niveles = {p.sku: generar_niveles(rng, p) for p in CATALOGO}
     stock = {p.sku: Decimal(0) for p in CATALOGO}
     documentos = [c[1] for c in CLIENTES]
     documentos_credito = documentos[:CLIENTES_CREDITO]
+    morosos = set(rng_c.sample(documentos_credito, MOROSOS))
+    limites = {
+        d: inicio + timedelta(weeks=rng_c.randint(14, 36)) if d in morosos else None for d in documentos_credito
+    }
+    agenda = {d: programar_abono(rng_c, inicio, limites[d]) for d in documentos_credito}
+    cuentas_cliente = defaultdict(list)
     res = Resultado()
     secuencia = 0
     for semana in range(SEMANAS):
         lunes = inicio + timedelta(weeks=semana)
         for p in CATALOGO:
             planear_stock(rng, p, semana, lunes, inicio, niveles[p.sku][semana], stock, res)
+        dia_menor = lunes + timedelta(days=rng_c.randrange(7))
         for desplazamiento in range(7):
             dia = lunes + timedelta(days=desplazamiento)
             facturas_dia = []
@@ -631,15 +892,40 @@ def simular(rng, inicio):
                 facturas_dia.append(factura)
                 for linea in factura.lineas:
                     res.ventas[(linea.sku, semana + 1)] += linea.cantidad
+                if factura.forma == "CREDITO":
+                    cuenta = Cuenta(factura.numero, factura.documento, factura.fecha, factura.total, factura.total, factura.fecha)
+                    res.cuentas[factura.numero] = cuenta
+                    cuentas_cliente[factura.documento].append(cuenta)
             res.facturas.extend(facturas_dia)
+            abonos = []
+            for documento in documentos_credito:
+                if agenda[documento] == dia:
+                    abono = ejecutar_abono(rng_c, dia, documento, cuentas_cliente[documento])
+                    if abono is not None:
+                        abonos.append(abono)
+                    agenda[documento] = programar_abono(rng_c, dia, limites[documento])
             for caja, _ in CAJAS:
-                efectivo = sum((f.total for f in facturas_dia if f.caja == caja and f.forma == "EFECTIVO"), Decimal(0))
-                res.aperturas.append(cerrar_caja(rng, dia, caja, efectivo))
-    ajustar_cierre(rng, inicio, stock, res)
+                inicial = sortear_inicial(rng)
+                entradas = [(f.fecha, f.total) for f in facturas_dia if f.caja == caja and f.forma == "EFECTIVO"]
+                salidas = Decimal(0)
+                if caja == CAJA_PRINCIPAL:
+                    entradas += [(a.fecha, a.monto) for a in abonos if a.forma == "EFECTIVO"]
+                    if dia == dia_menor:
+                        menor = generar_menor(rng_c, dia, inicial, entradas)
+                        if menor is not None:
+                            res.movimientos.append(menor)
+                            salidas = menor.monto
+                efectivo = sum((monto for _, monto in entradas), Decimal(0)) - salidas
+                res.aperturas.append(cerrar_caja(rng, dia, caja, inicial, efectivo, dia == fin))
+            res.movimientos.extend(abonos)
+    ajustar_cierre(inicio, stock, res)
+    res.movimientos.extend(generar_gastos_fijos(rng_c, inicio, fin))
+    construir_compras(rng_c, res)
     for p in CATALOGO:
         if p.activo:
             res.stock_lunes[(p.sku, SEMANAS + 1)] = stock[p.sku]
     res.stock_final = dict(stock)
+    res.capital = calcular_capital(res)
     return res
 
 
@@ -660,7 +946,18 @@ def facturas_por_dia(res):
     return conteo
 
 
-def validar(res, inicio):
+def eventos_efectivo(res):
+    eventos = defaultdict(list)
+    for f in res.facturas:
+        if f.forma == "EFECTIVO":
+            eventos[(f.fecha.date(), f.caja)].append((f.fecha, f.total))
+    for m in res.movimientos:
+        if m.forma == "EFECTIVO":
+            eventos[(m.fecha.date(), m.caja)].append((m.fecha, m.monto if m.tipo == "INGRESO" else -m.monto))
+    return eventos
+
+
+def validar_ventas(res):
     numeros = []
     total_lineas = Decimal(0)
     for f in res.facturas:
@@ -680,27 +977,102 @@ def validar(res, inicio):
         fallar("la numeración no es única y creciente")
     if len(numeros) >= 100000:
         fallar("la secuencia excede 5 dígitos")
-    if any(v < 0 for v in res.stock_final.values()):
-        fallar("stock final negativo")
-    if any(v < 0 for v in res.stock_lunes.values()):
-        fallar("foto semanal negativa")
     if sum(res.ventas.values(), Decimal(0)) != total_lineas:
         fallar("las ventas semanales no suman las líneas")
     for p in CATALOGO:
         for numero in range(1, SEMANAS + 1):
             if (numero < p.inicio or numero > p.fin) and res.ventas.get((p.sku, numero), 0) != 0:
                 fallar(f"ventas fuera de la vida de {p.sku}")
+    conteo = facturas_por_dia(res)
+    promedio = sum(conteo.values()) / len(conteo)
+    if not 60 <= promedio <= 100:
+        fallar(f"promedio de facturas por día fuera de 60 a 100: {promedio:.1f}")
+
+
+def validar_caja(res):
     if len(res.aperturas) != SEMANAS * 7 * len(CAJAS):
         fallar("falta una apertura por caja y día")
-    efectivo = defaultdict(Decimal)
-    for f in res.facturas:
-        if f.forma == "EFECTIVO":
-            efectivo[(f.fecha.date(), f.caja)] += f.total
+    eventos = eventos_efectivo(res)
+    ventana = {}
     for a in res.aperturas:
-        if a.esperado != a.inicial + efectivo[(a.dia, a.caja)]:
+        ventana[(a.dia, a.caja)] = (a.apertura, a.cierre)
+        neto = sum((monto for _, monto in eventos[(a.dia, a.caja)]), Decimal(0))
+        if a.esperado != a.inicial + neto:
             fallar(f"esperado inconsistente en {a.caja} {a.dia}")
         if a.diferencia != a.contado - a.esperado:
             fallar(f"diferencia inconsistente en {a.caja} {a.dia}")
+        if a.contado < 0:
+            fallar(f"efectivo contado negativo en {a.caja} {a.dia}")
+        corrido = a.inicial
+        for _, monto in sorted(eventos[(a.dia, a.caja)], key=lambda e: (e[0], e[1] > 0)):
+            corrido += monto
+            if corrido < 0:
+                fallar(f"efectivo intradía negativo en {a.caja} {a.dia}")
+    registros = [(f.fecha, f.caja) for f in res.facturas]
+    registros += [(c.fecha, c.caja) for c in res.compras]
+    registros += [(m.fecha, m.caja) for m in res.movimientos]
+    for fecha, caja in registros:
+        clave = (fecha.date(), caja)
+        if clave not in ventana or not ventana[clave][0] <= fecha <= ventana[clave][1]:
+            fallar(f"movimiento fuera de apertura en {caja} {fecha}")
+    for caja, lista in eventos_saldo(res).items():
+        corrido = res.capital[caja]
+        for _, monto in lista:
+            corrido += monto
+            if corrido < 0:
+                fallar(f"saldo negativo en {caja}")
+
+
+def validar_compras(res):
+    numeros = [c.numero for c in res.compras]
+    if len(set(numeros)) != len(numeros) or numeros != sorted(numeros):
+        fallar("la numeración de compras no es única y creciente")
+    formas = {f for f, _ in FORMAS_COMPRA}
+    for c in res.compras:
+        if c.forma not in formas:
+            fallar(f"forma de pago inválida en {c.numero}")
+        if not c.lineas or c.total != sum((l.total for l in c.lineas), Decimal(0)):
+            fallar(f"total de compra inconsistente en {c.numero}")
+        if c.total != c.total.quantize(CENTAVOS):
+            fallar(f"total sin cuantizar en {c.numero}")
+        for l in c.lineas:
+            if l.total != l.cantidad * l.costo or l.cantidad <= 0:
+                fallar(f"línea de compra inconsistente en {c.numero}")
+            base = POR_SKU[l.sku].costo
+            if abs(l.costo - base) > base * Decimal(str(VARIACION_COSTO)) + 10:
+                fallar(f"costo fuera de rango en {c.numero} {l.sku}")
+
+
+def validar_cuentas(res):
+    abonado = sum((m.monto for m in res.movimientos if m.referencia == "CUENTA_POR_COBRAR"), Decimal(0))
+    pendiente = Decimal(0)
+    estados = set()
+    for c in res.cuentas.values():
+        if not 0 <= c.saldo <= c.original:
+            fallar(f"saldo inválido en la cuenta {c.numero}")
+        pendiente += c.original - c.saldo
+        estados.add(c.estado)
+    if abonado != pendiente:
+        fallar("los abonos no cuadran con las cuentas")
+    if estados != {"ABIERTA", "PARCIAL", "PAGADA"}:
+        fallar(f"faltan estados de cuenta por cobrar: {sorted(estados)}")
+
+
+def validar_stock(res):
+    cambio = defaultdict(Decimal)
+    for a in res.ajustes:
+        cambio[a.sku] += a.nueva - a.anterior
+    for r in res.reposiciones:
+        cambio[r.sku] += r.cantidad
+    for (sku, _), cantidad_vendida in res.ventas.items():
+        cambio[sku] -= cantidad_vendida
+    for p in CATALOGO:
+        if cambio[p.sku] != res.stock_final[p.sku]:
+            fallar(f"la cadena de stock no cuadra en {p.sku}")
+    if any(v < 0 for v in res.stock_final.values()):
+        fallar("stock final negativo")
+    if any(v < 0 for v in res.stock_lunes.values()):
+        fallar("foto semanal negativa")
     for p in CATALOGO:
         if not p.activo:
             continue
@@ -711,10 +1083,37 @@ def validar(res, inicio):
             fallar(f"{p.sku} debía quedar con stock bajo")
         if p.cierre == "NORMAL" and final < p.stock_minimo:
             fallar(f"{p.sku} quedó bajo sin ser de cierre bajo")
-    conteo = facturas_por_dia(res)
-    promedio = sum(conteo.values()) / len(conteo)
-    if not 60 <= promedio <= 100:
-        fallar(f"promedio de facturas por día fuera de 60 a 100: {promedio:.1f}")
+
+
+def validar(res):
+    validar_ventas(res)
+    validar_caja(res)
+    validar_compras(res)
+    validar_cuentas(res)
+    validar_stock(res)
+    validar_usuarios(res)
+
+
+def validar_usuarios(res):
+    roles = {nombre for nombre, _, _ in ROLES}
+    correos = [email for _, email, _ in USUARIOS]
+    nombres = [username for username, _, _ in USUARIOS]
+    if len(set(correos)) != len(correos) or len(set(nombres)) != len(nombres):
+        fallar("usuarios repetidos")
+    if any(rol not in roles for _, _, rol in USUARIOS):
+        fallar("usuario con rol inexistente")
+    if any(not 4 <= len(n) <= 50 for n in nombres):
+        fallar("nombre de usuario fuera de rango")
+    if any(m not in MODULOS_VALIDOS for _, _, lista in ROLES for m in lista):
+        fallar("módulo inexistente en un rol")
+    if len(CAJEROS) < len(CAJAS) + 1:
+        fallar("hacen falta más cajeros que cajas")
+    inicio = min(a.dia for a in res.aperturas)
+    por_dia = defaultdict(set)
+    for a in res.aperturas:
+        por_dia[a.dia].add(asignar_cajero(inicio, a.dia, a.caja))
+    if any(len(cajeros) != len(CAJAS) for cajeros in por_dia.values()):
+        fallar("un cajero atiende dos cajas el mismo día")
 
 
 def txt(valor):
@@ -775,6 +1174,9 @@ BEGIN
         OR EXISTS (SELECT 1 FROM categoria_producto WHERE empresa_id = {eid})
         OR EXISTS (SELECT 1 FROM cliente WHERE empresa_id = {eid})
         OR EXISTS (SELECT 1 FROM proveedor WHERE empresa_id = {eid})
+        OR EXISTS (SELECT 1 FROM compra WHERE empresa_id = {eid})
+        OR EXISTS (SELECT 1 FROM rol WHERE empresa_id = {eid} AND nombre <> 'ADMIN')
+        OR (SELECT COUNT(*) FROM usuario WHERE empresa_id = {eid}) <> 1
         OR EXISTS (SELECT 1 FROM movimiento_caja WHERE empresa_id = {eid})
         OR EXISTS (SELECT 1 FROM apertura_caja WHERE empresa_id = {eid} AND estado = 'CERRADA') THEN
         RAISE EXCEPTION 'La empresa {eid} ya tiene datos; la carga solo es para una empresa recién registrada';
@@ -784,13 +1186,14 @@ DELETE FROM apertura_caja WHERE empresa_id = {eid} AND estado = 'ABIERTA';
 """
 
 
-def sql_estructura(eid, inicio):
+def sql_estructura(eid, inicio, capital):
     creado = datetime.combine(inicio - timedelta(days=7), time(18, 30))
     sql = [f"""INSERT INTO forma_pago (created_at, updated_at, active, empresa_id, nombre, tipo)
 SELECT CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, TRUE, {eid}, 'Crédito', 'CREDITO'
 WHERE NOT EXISTS (SELECT 1 FROM forma_pago WHERE empresa_id = {eid} AND tipo = 'CREDITO');
 INSERT INTO caja (created_at, updated_at, active, empresa_id, nombre, saldo_inicial, saldo_actual)
-VALUES ({fecha_hora(creado)}, {fecha_hora(creado)}, TRUE, {eid}, 'Caja 2', 0, 0);
+VALUES ({fecha_hora(creado)}, {fecha_hora(creado)}, TRUE, {eid}, 'Caja 2', {dinero(capital['Caja 2'])}, 0);
+UPDATE caja SET saldo_inicial = {dinero(capital[CAJA_PRINCIPAL])} WHERE empresa_id = {eid} AND nombre = 'Caja Principal';
 """]
     categorias = [[fecha_hora(creado), str(eid), txt(nombre), txt(icono)] for _, nombre, icono in CATEGORIAS]
     sql.append(en_lotes(
@@ -845,7 +1248,7 @@ def sql_inventario(eid, res, inicio):
         domingo = inicio + timedelta(weeks=p.inicio - 1) - timedelta(days=1)
         filas.append([
             fecha_hora(datetime.combine(domingo, time(18, 30))), booleano(p.activo), txt(p.sku),
-            cantidad(res.stock_final[p.sku]), dinero(p.costo),
+            cantidad(res.stock_final[p.sku]), dinero(res.costo_promedio[p.sku]),
         ])
     return en_lotes(
         f"INSERT INTO inventario (created_at, updated_at, active, empresa_id, producto_id, cantidad_actual, "
@@ -855,11 +1258,49 @@ def sql_inventario(eid, res, inicio):
     )
 
 
-def sql_aperturas(eid, correo, res):
-    usuario = f"(SELECT id FROM usuario WHERE empresa_id = {eid} AND email = {txt(correo)})"
+def asignar_cajero(inicio, dia, caja):
+    indice_caja = [c for c, _ in CAJAS].index(caja)
+    return CAJEROS[((dia - inicio).days + indice_caja) % len(CAJEROS)]
+
+
+def sql_usuarios(eid, inicio):
+    creado = fecha_hora(datetime.combine(inicio - timedelta(days=7), time(18, 30)))
+    roles = [[txt(nombre), txt(descripcion)] for nombre, descripcion, _ in ROLES]
+    modulos = [[txt(nombre), txt(modulo)] for nombre, _, lista in ROLES for modulo in lista]
+    usuarios = [[txt(username), txt(email)] for username, email, _ in USUARIOS]
+    asignaciones = [[txt(username), txt(rol)] for username, _, rol in USUARIOS]
+    return "".join([
+        en_lotes(
+            f"INSERT INTO rol (created_at, updated_at, active, empresa_id, nombre, descripcion) "
+            f"SELECT {creado}, {creado}, TRUE, {eid}, v.nombre, v.descripcion FROM (VALUES",
+            roles,
+            ") AS v(nombre, descripcion)",
+        ),
+        en_lotes(
+            f"INSERT INTO rol_modulos (rol_id, modulo) SELECT r.id, v.modulo FROM (VALUES",
+            modulos,
+            f") AS v(rol, modulo) JOIN rol r ON r.empresa_id = {eid} AND r.nombre = v.rol",
+        ),
+        en_lotes(
+            f"INSERT INTO usuario (created_at, updated_at, active, empresa_id, username, email, password_hash) "
+            f"SELECT {creado}, {creado}, TRUE, {eid}, v.username, v.email, {txt(HASH_CLAVE_INICIAL)} FROM (VALUES",
+            usuarios,
+            ") AS v(username, email)",
+        ),
+        en_lotes(
+            "INSERT INTO usuario_rol (usuario_id, rol_id) SELECT u.id, r.id FROM (VALUES",
+            asignaciones,
+            f") AS v(username, rol) JOIN usuario u ON u.empresa_id = {eid} AND u.username = v.username "
+            f"JOIN rol r ON r.empresa_id = {eid} AND r.nombre = v.rol",
+        ),
+    ])
+
+
+def sql_aperturas(eid, res):
+    inicio = min(a.dia for a in res.aperturas)
     aperturas = [
         [txt(a.caja), fecha_hora(a.apertura), fecha_hora(a.cierre), dinero(a.inicial), dinero(a.esperado),
-         dinero(a.contado), dinero(a.diferencia)]
+         dinero(a.contado), dinero(a.diferencia), txt(asignar_cajero(inicio, a.dia, a.caja))]
         for a in res.aperturas
     ]
     return en_lotes(
@@ -869,9 +1310,9 @@ def sql_aperturas(eid, correo, res):
         f"SELECT v.apertura, v.cierre, TRUE, {eid}, ca.id, 'CERRADA', u.id, v.apertura, v.inicial, u.id, "
         f"v.cierre, v.esperado, v.contado, v.diferencia, 'MANUAL' FROM (VALUES",
         aperturas,
-        f") AS v(caja, apertura, cierre, inicial, esperado, contado, diferencia) "
+        f") AS v(caja, apertura, cierre, inicial, esperado, contado, diferencia, cajero) "
         f"JOIN caja ca ON ca.empresa_id = {eid} AND ca.nombre = v.caja "
-        f"CROSS JOIN {usuario} u(id)",
+        f"JOIN usuario u ON u.empresa_id = {eid} AND u.username = v.cajero",
     )
 
 
@@ -886,7 +1327,9 @@ def sql_ventas(eid, res):
         for f in res.facturas for l in f.lineas
     ]
     contado = [[txt(f.numero), txt(f.caja)] for f in res.facturas if f.forma != "CREDITO"]
-    credito = [[txt(f.numero)] for f in res.facturas if f.forma == "CREDITO"]
+    credito = [
+        [txt(c.numero), dinero(c.saldo), txt(c.estado), fecha_hora(c.actualizado)] for c in res.cuentas.values()
+    ]
     sql = [
         en_lotes(
             f"INSERT INTO factura_venta (created_at, updated_at, active, empresa_id, cliente_id, forma_pago_id, "
@@ -924,14 +1367,84 @@ def sql_ventas(eid, res):
         en_lotes(
             f"INSERT INTO cuenta_por_cobrar (created_at, updated_at, active, empresa_id, factura_venta_id, "
             f"cliente_id, monto_original, saldo, fecha_vencimiento, estado) "
-            f"SELECT f.fecha_emision, f.fecha_emision, TRUE, {eid}, f.id, f.cliente_id, f.total, f.total, "
-            f"f.fecha_emision + INTERVAL '30 days', 'ABIERTA' FROM (VALUES",
+            f"SELECT f.fecha_emision, v.actualizado, TRUE, {eid}, f.id, f.cliente_id, f.total, v.saldo, "
+            f"f.fecha_emision + INTERVAL '30 days', v.estado FROM (VALUES",
             credito,
-            f") AS v(numero) JOIN factura_venta f ON f.empresa_id = {eid} AND f.numero = v.numero",
+            f") AS v(numero, saldo, estado, actualizado) JOIN factura_venta f ON f.empresa_id = {eid} AND f.numero = v.numero",
         ),
+        f"UPDATE factura_venta f SET estado = 'PAGADA' FROM cuenta_por_cobrar c "
+        f"WHERE c.factura_venta_id = f.id AND c.saldo = 0 AND f.empresa_id = {eid};\n",
         "DROP INDEX tmp_carga_factura_numero;\n",
     ]
     return "".join(sql)
+
+
+def sql_compras(eid, res):
+    compras = [
+        [fecha_hora(c.fecha), txt(c.numero), txt(NOMBRE_PROVEEDOR[c.proveedor]), txt(c.forma), dinero(c.total)]
+        for c in res.compras
+    ]
+    detalles = [
+        [txt(c.numero), txt(l.sku), txt(l.descripcion), cantidad(l.cantidad), dinero(l.costo), dinero(l.total)]
+        for c in res.compras for l in c.lineas
+    ]
+    egresos = [[txt(c.numero), txt(c.caja)] for c in res.compras]
+    return "".join([
+        en_lotes(
+            f"INSERT INTO compra (created_at, updated_at, active, empresa_id, proveedor_id, forma_pago_id, "
+            f"numero_documento, fecha_compra, estado, subtotal, total_impuestos, total) "
+            f"SELECT v.fecha, v.fecha, TRUE, {eid}, pr.id, fp.id, v.numero, v.fecha, 'REGISTRADA', v.total, 0, "
+            f"v.total FROM (VALUES",
+            compras,
+            f") AS v(fecha, numero, proveedor, forma, total) "
+            f"JOIN proveedor pr ON pr.empresa_id = {eid} AND pr.nombre = v.proveedor "
+            f"JOIN forma_pago fp ON fp.empresa_id = {eid} AND fp.tipo = v.forma AND fp.active",
+        ),
+        "CREATE INDEX tmp_carga_compra_numero ON compra (empresa_id, numero_documento);\nANALYZE compra;\n",
+        en_lotes(
+            "INSERT INTO detalle_compra (created_at, updated_at, active, compra_id, producto_id, descripcion, "
+            "cantidad, costo_unitario, total_linea) "
+            "SELECT c.fecha_compra, c.fecha_compra, TRUE, c.id, p.id, v.descripcion, v.cantidad, v.costo, v.total "
+            "FROM (VALUES",
+            detalles,
+            f") AS v(numero, sku, descripcion, cantidad, costo, total) "
+            f"JOIN compra c ON c.empresa_id = {eid} AND c.numero_documento = v.numero "
+            f"JOIN producto p ON p.empresa_id = {eid} AND p.sku = v.sku",
+        ),
+        en_lotes(
+            f"INSERT INTO movimiento_caja (created_at, updated_at, active, empresa_id, caja_id, forma_pago_id, "
+            f"apertura_id, fecha, tipo, monto, descripcion, tipo_referencia, referencia_id) "
+            f"SELECT c.fecha_compra, c.fecha_compra, TRUE, {eid}, ca.id, c.forma_pago_id, a.id, c.fecha_compra, "
+            f"'EGRESO', c.total, 'Compra #' || c.numero_documento, 'COMPRA', c.id FROM (VALUES",
+            egresos,
+            f") AS v(numero, caja) "
+            f"JOIN compra c ON c.empresa_id = {eid} AND c.numero_documento = v.numero "
+            f"JOIN caja ca ON ca.empresa_id = {eid} AND ca.nombre = v.caja "
+            f"JOIN apertura_caja a ON a.caja_id = ca.id AND a.estado = 'CERRADA' "
+            f"AND a.fecha_apertura::date = c.fecha_compra::date",
+        ),
+        "DROP INDEX tmp_carga_compra_numero;\n",
+    ])
+
+
+def sql_movimientos(eid, res):
+    filas = [
+        [txt(m.caja), txt(m.forma), fecha_hora(m.fecha), txt(m.tipo), dinero(m.monto), txt(m.descripcion),
+         txt(m.referencia)]
+        for m in sorted(res.movimientos, key=lambda m: m.fecha)
+    ]
+    return en_lotes(
+        f"INSERT INTO movimiento_caja (created_at, updated_at, active, empresa_id, caja_id, forma_pago_id, "
+        f"apertura_id, fecha, tipo, monto, descripcion, tipo_referencia, referencia_id) "
+        f"SELECT v.fecha, v.fecha, TRUE, {eid}, ca.id, fp.id, a.id, v.fecha, v.tipo, v.monto, v.descripcion, "
+        f"v.referencia, NULL::bigint FROM (VALUES",
+        filas,
+        f") AS v(caja, forma, fecha, tipo, monto, descripcion, referencia) "
+        f"JOIN caja ca ON ca.empresa_id = {eid} AND ca.nombre = v.caja "
+        f"JOIN forma_pago fp ON fp.empresa_id = {eid} AND fp.tipo = v.forma AND fp.active "
+        f"JOIN apertura_caja a ON a.caja_id = ca.id AND a.estado = 'CERRADA' "
+        f"AND a.fecha_apertura::date = v.fecha::date",
+    )
 
 
 def sql_saldos(eid):
@@ -944,7 +1457,7 @@ WHERE empresa_id = {eid};
 """
 
 
-def sql_stock(eid, correo, res, inicio):
+def sql_stock(eid, res, inicio):
     ajustes = [
         [txt(a.sku), txt(a.tipo), cantidad(a.anterior), cantidad(a.nueva), txt(a.motivo), fecha_hora(a.fecha)]
         for a in res.ajustes
@@ -953,7 +1466,7 @@ def sql_stock(eid, correo, res, inicio):
         [txt(sku), solo_fecha(inicio + timedelta(weeks=numero - 1)), cantidad(valor)]
         for (sku, numero), valor in sorted(res.stock_lunes.items(), key=lambda item: (item[0][1], item[0][0]))
     ]
-    usuario = f"(SELECT id FROM usuario WHERE empresa_id = {eid} AND email = {txt(correo)})"
+    usuario = f"(SELECT id FROM usuario WHERE empresa_id = {eid} AND username = {txt(BODEGUERO)})"
     return en_lotes(
         f"INSERT INTO movimiento_inventario (empresa_id, producto_id, usuario_id, tipo, cantidad_anterior, "
         f"cantidad_nueva, diferencia, motivo, active, created_at, updated_at) "
@@ -974,6 +1487,9 @@ def sql_stock(eid, correo, res, inicio):
 
 def sql_resumen(eid):
     return f"""SELECT 'categorias' AS tabla, COUNT(*) AS filas FROM categoria_producto WHERE empresa_id = {eid}
+UNION ALL SELECT 'usuarios', COUNT(*) FROM usuario WHERE empresa_id = {eid}
+UNION ALL SELECT 'roles', COUNT(*) FROM rol WHERE empresa_id = {eid}
+UNION ALL SELECT 'rol_modulos', COUNT(*) FROM rol_modulos m JOIN rol r ON r.id = m.rol_id WHERE r.empresa_id = {eid}
 UNION ALL SELECT 'proveedores', COUNT(*) FROM proveedor WHERE empresa_id = {eid}
 UNION ALL SELECT 'productos', COUNT(*) FROM producto WHERE empresa_id = {eid}
 UNION ALL SELECT 'inventarios', COUNT(*) FROM inventario WHERE empresa_id = {eid}
@@ -986,6 +1502,9 @@ UNION ALL SELECT 'detalles', COUNT(*) FROM detalle_factura d JOIN factura_venta 
     WHERE f.empresa_id = {eid}
 UNION ALL SELECT 'movimientos_caja', COUNT(*) FROM movimiento_caja WHERE empresa_id = {eid}
 UNION ALL SELECT 'cuentas_por_cobrar', COUNT(*) FROM cuenta_por_cobrar WHERE empresa_id = {eid}
+UNION ALL SELECT 'compras', COUNT(*) FROM compra WHERE empresa_id = {eid}
+UNION ALL SELECT 'detalles_compra', COUNT(*) FROM detalle_compra d JOIN compra c ON c.id = d.compra_id
+    WHERE c.empresa_id = {eid}
 UNION ALL SELECT 'ajustes_inventario', COUNT(*) FROM movimiento_inventario WHERE empresa_id = {eid}
 UNION ALL SELECT 'fotos_semanales', COUNT(*) FROM inventario_semanal WHERE empresa_id = {eid};
 """
@@ -996,15 +1515,25 @@ def construir_sql(eid, correo, res, inicio):
         "\\set ON_ERROR_STOP on",
         "BEGIN;",
         sql_guardas(eid, correo),
-        sql_estructura(eid, inicio),
+        sql_estructura(eid, inicio, res.capital),
+        sql_usuarios(eid, inicio),
         sql_inventario(eid, res, inicio),
-        sql_aperturas(eid, correo, res),
+        sql_aperturas(eid, res),
         sql_ventas(eid, res),
+        sql_compras(eid, res),
+        sql_movimientos(eid, res),
         sql_saldos(eid),
-        sql_stock(eid, correo, res, inicio),
+        sql_stock(eid, res, inicio),
         "COMMIT;",
         sql_resumen(eid),
     ])
+
+
+def saldos_finales(res):
+    finales = {}
+    for caja, lista in eventos_saldo(res).items():
+        finales[caja] = res.capital[caja] + sum((monto for _, monto in lista), Decimal(0))
+    return finales
 
 
 def escribir_csv(ruta, encabezado, filas):
@@ -1026,10 +1555,27 @@ def escribir_referencias(salida, res, inicio):
         for (sku, numero), valor in sorted(res.stock_lunes.items(), key=lambda item: (item[0][1], item[0][0]))
     ]
     escribir_csv(salida / "stock_lunes.csv", ["sku", "semana_inicio", "cantidad"], stock)
+    escribir_csv(
+        salida / "costo_promedio.csv", ["sku", "costo_promedio"],
+        [[p.sku, f"{res.costo_promedio[p.sku]:.2f}"] for p in CATALOGO],
+    )
+    escribir_csv(
+        salida / "cuentas_por_cobrar.csv", ["numero_factura", "documento", "fecha", "original", "saldo", "estado"],
+        [[c.numero, c.documento, c.fecha.isoformat(), f"{c.original:.2f}", f"{c.saldo:.2f}", c.estado]
+         for c in res.cuentas.values()],
+    )
+    finales = saldos_finales(res)
+    escribir_csv(
+        salida / "saldos_cajas.csv", ["caja", "saldo_inicial", "saldo_final"],
+        [[caja, f"{res.capital[caja]:.2f}", f"{finales[caja]:.2f}"] for caja, _ in CAJAS],
+    )
 
 
 def contar_esperado(res):
     return {
+        "usuarios": len(USUARIOS) + 1,
+        "roles": len(ROLES) + 1,
+        "rol_modulos": sum(len(lista) for _, _, lista in ROLES),
         "categorias": len(CATEGORIAS),
         "proveedores": len(PROVEEDORES),
         "productos": len(CATALOGO),
@@ -1040,11 +1586,19 @@ def contar_esperado(res):
         "aperturas_abiertas": 0,
         "facturas": len(res.facturas),
         "detalles": sum(len(f.lineas) for f in res.facturas),
-        "movimientos_caja": sum(1 for f in res.facturas if f.forma != "CREDITO"),
-        "cuentas_por_cobrar": sum(1 for f in res.facturas if f.forma == "CREDITO"),
+        "movimientos_caja": sum(1 for f in res.facturas if f.forma != "CREDITO") + len(res.compras) + len(res.movimientos),
+        "cuentas_por_cobrar": len(res.cuentas),
+        "compras": len(res.compras),
+        "detalles_compra": sum(len(c.lineas) for c in res.compras),
         "ajustes_inventario": len(res.ajustes),
         "fotos_semanales": len(res.stock_lunes),
     }
+
+
+def porcentaje_gastos(res):
+    ventas_total = sum((f.total for f in res.facturas), Decimal(0))
+    gastos = sum((m.monto for m in res.movimientos if m.referencia == "GASTO"), Decimal(0))
+    return gastos, float(gastos / ventas_total * 100)
 
 
 def imprimir_resumen(res, inicio, salida):
@@ -1058,6 +1612,22 @@ def imprimir_resumen(res, inicio, salida):
     bruto = sum((l.total for f in res.facturas for l in f.lineas), Decimal(0))
     print(f"Ventas totales: {ventas_total:,.2f}")
     print(f"Margen bruto sobre el subtotal: {(bruto - costo_total) / bruto * 100:.1f} %")
+    gastos, pct = porcentaje_gastos(res)
+    print(f"Gastos: {gastos:,.2f} ({pct:.1f} % de las ventas)")
+    if not GASTOS_MIN_PCT <= pct <= GASTOS_MAX_PCT:
+        print(f"ADVERTENCIA: los gastos están fuera de {GASTOS_MIN_PCT:.0f} a {GASTOS_MAX_PCT:.0f} % de las ventas")
+    compras_total = sum((c.total for c in res.compras), Decimal(0))
+    print(f"Compras: {len(res.compras)} por {compras_total:,.2f}")
+    abonos = sum((m.monto for m in res.movimientos if m.referencia == "CUENTA_POR_COBRAR"), Decimal(0))
+    por_cobrar = sum((c.saldo for c in res.cuentas.values()), Decimal(0))
+    estados = defaultdict(int)
+    for c in res.cuentas.values():
+        estados[c.estado] += 1
+    print(f"Abonos: {abonos:,.2f}; saldo por cobrar: {por_cobrar:,.2f}; cuentas: {dict(sorted(estados.items()))}")
+    print(f"Usuarios: {len(USUARIOS)} además del admin; cajeros {len(CAJEROS)} rotando entre {len(CAJAS)} cajas")
+    finales = saldos_finales(res)
+    for caja, _ in CAJAS:
+        print(f"{caja}: capital inicial {res.capital[caja]:,.2f}, saldo final {finales[caja]:,.2f}")
     conteo = facturas_por_dia(res)
     print(f"Facturas por día: mínimo {min(conteo.values())}, promedio {sum(conteo.values()) / len(conteo):.1f}, "
           f"máximo {max(conteo.values())}")
@@ -1100,8 +1670,8 @@ def principal():
         raise SystemExit("--fuerza-quincena debe ser mayor que 0")
     if args.fuerza_quincena != 1.0:
         escalar_quincena(args.fuerza_quincena)
-    resultado = simular(random.Random(args.semilla), inicio)
-    validar(resultado, inicio)
+    resultado = simular(random.Random(args.semilla), random.Random(args.semilla + 1), inicio)
+    validar(resultado)
     args.salida.mkdir(parents=True, exist_ok=True)
     sql = construir_sql(args.empresa_id, args.correo_admin, resultado, inicio)
     (args.salida / "supermercado.sql").write_text(sql, encoding="utf-8")
