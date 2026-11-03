@@ -171,7 +171,7 @@ export default function ConfiguracionPage() {
 	if (loading) {
 		return (
 			<div className="set">
-				<LoadingState label="Cargando configuración..." />
+				<LoadingState label="Cargando configuración..." pagina="configuracion" />
 			</div>
 		);
 	}

@@ -218,7 +218,7 @@ export default function CategoriasPage() {
 	if (loading) {
 		return (
 			<div className="cat">
-				<LoadingState label="Cargando categorías..." />
+				<LoadingState label="Cargando categorías..." pagina="categorias" />
 			</div>
 		);
 	}

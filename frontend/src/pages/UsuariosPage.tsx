@@ -223,7 +223,7 @@ export default function UsuariosPage() {
 	if (loading) {
 		return (
 			<div className="usr">
-				<LoadingState label="Cargando usuarios..." />
+				<LoadingState label="Cargando usuarios..." pagina="usuarios" />
 			</div>
 		);
 	}

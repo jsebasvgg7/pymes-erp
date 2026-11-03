@@ -280,7 +280,7 @@ export default function CajaPage() {
     if (loading) {
         return (
             <div className="cash">
-                <LoadingState label="Cargando caja..." />
+                <LoadingState label="Cargando caja..." pagina="caja" />
             </div>
         );
     }

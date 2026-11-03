@@ -163,7 +163,7 @@ export default function RolesPage() {
 	if (loading) {
 		return (
 			<div className="rol">
-				<LoadingState label="Cargando roles..." />
+				<LoadingState label="Cargando roles..." pagina="roles" />
 			</div>
 		);
 	}

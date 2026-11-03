@@ -398,7 +398,7 @@ export default function PosPage() {
 	if (loading) {
 		return (
 			<div className="pos">
-				<LoadingState label="Cargando punto de venta..." />
+				<LoadingState label="Cargando punto de venta..." pagina="pos" />
 			</div>
 		);
 	}

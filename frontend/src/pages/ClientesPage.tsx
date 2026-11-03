@@ -276,7 +276,7 @@ export default function ClientesPage() {
 	if (loading) {
 		return (
 			<div className="cli">
-				<LoadingState label="Cargando clientes..." />
+				<LoadingState label="Cargando clientes..." pagina="clientes" />
 			</div>
 		);
 	}

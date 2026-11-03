@@ -268,7 +268,7 @@ export default function InventarioPage() {
   if (loading) {
     return (
       <div className="inv">
-        <LoadingState label="Cargando inventario..." />
+        <LoadingState label="Cargando inventario..." pagina="inventario" />
       </div>
     );
   }

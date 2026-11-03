@@ -286,7 +286,7 @@ export default function ProductosPage() {
 	if (loading) {
 		return (
 			<div className="prod">
-				<LoadingState label="Cargando productos..." />
+				<LoadingState label="Cargando productos..." pagina="productos" />
 			</div>
 		);
 	}

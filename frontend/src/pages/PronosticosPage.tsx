@@ -260,7 +260,7 @@ export default function PronosticosPage() {
   if (loading) {
     return (
       <div className="pro">
-        <LoadingState label="Cargando pronósticos..." />
+        <LoadingState label="Cargando pronósticos..." pagina="pronosticos" />
       </div>
     );
   }

@@ -47,7 +47,7 @@ function ModuleGuard({ children, modulo }: { children: React.ReactNode, modulo: 
 
 export default function AppRouter() {
   return (
-    <Suspense fallback={<div style={{ display: "flex", height: "100vh", alignItems: "center", justifyContent: "center" }}><LoadingState label="Cargando módulo..." /></div>}>
+    <Suspense fallback={<div style={{ display: "flex", height: "100vh", alignItems: "center", justifyContent: "center" }}><LoadingState label="Cargando módulo..." pagina="generico" /></div>}>
       <Routes>
         <Route path="/login" element={<LoginPage />} />
         <Route path="/setup" element={<SetupPage />} />

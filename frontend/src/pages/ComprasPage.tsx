@@ -274,7 +274,7 @@ export default function ComprasPage() {
 	if (loading) {
 		return (
 			<div className="pur">
-				<LoadingState label="Cargando compras..." />
+				<LoadingState label="Cargando compras..." pagina="compras" />
 			</div>
 		);
 	}

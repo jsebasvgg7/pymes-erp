@@ -300,7 +300,7 @@ export default function ReportesPage() {
 	if (loading) {
 		return (
 			<div className="rep">
-				<LoadingState label="Cargando reportes..." />
+				<LoadingState label="Cargando reportes..." pagina="reportes" />
 			</div>
 		);
 	}

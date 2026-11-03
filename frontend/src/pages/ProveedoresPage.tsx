@@ -215,7 +215,7 @@ export default function ProveedoresPage() {
 	if (loading) {
 		return (
 			<div className="prov">
-				<LoadingState label="Cargando proveedores..." />
+				<LoadingState label="Cargando proveedores..." pagina="proveedores" />
 			</div>
 		);
 	}

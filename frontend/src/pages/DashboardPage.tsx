@@ -255,7 +255,7 @@ export default function DashboardPage() {
 	if (loading) {
 		return (
 			<div className="db">
-				<LoadingState label="Cargando dashboard..." />
+				<LoadingState label="Cargando dashboard..." pagina="dashboard" />
 			</div>
 		);
 	}
