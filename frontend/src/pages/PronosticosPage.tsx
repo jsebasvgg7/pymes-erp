@@ -7,6 +7,7 @@ import PrimaryButton from "../components/PrimaryButton";
 import SearchBar from "../components/SearchBar";
 import SecondaryButton from "../components/SecondaryButton";
 import StatusBadge from "../components/StatusBadge";
+import { useProgresoCarga } from "../hooks/useProgresoCarga";
 import { authService } from "../services/authService";
 import { inventarioService, type Inventario } from "../services/inventarioService";
 import { pronosticoService, type PronosticoDemanda } from "../services/pronosticoService";
@@ -156,6 +157,7 @@ function CeldaTendencia({ tendencia }: { tendencia: Tendencia }) {
 export default function PronosticosPage() {
   useFormato();
   const empresaId = authService.getUsuario()?.empresaId;
+  const { progreso, registrar, reiniciar } = useProgresoCarga(2);
 
   const [inventarios, setInventarios] = useState<Inventario[]>([]);
   const [pronosticos, setPronosticos] = useState<PronosticoDemanda[]>([]);
@@ -176,12 +178,13 @@ export default function PronosticosPage() {
       return;
     }
 
+    reiniciar();
     setLoading(true);
     setError(null);
     try {
       const [inventarioData, pronosticoData] = await Promise.all([
-        inventarioService.listarPorEmpresa(empresaId),
-        pronosticoService.obtenerPronosticos(empresaId)
+        registrar(inventarioService.listarPorEmpresa(empresaId)),
+        registrar(pronosticoService.obtenerPronosticos(empresaId))
       ]);
       setInventarios(inventarioData);
       setPronosticos(pronosticoData);
@@ -190,7 +193,7 @@ export default function PronosticosPage() {
     } finally {
       setLoading(false);
     }
-  }, [empresaId]);
+  }, [empresaId, registrar, reiniciar]);
 
   useEffect(() => {
     cargar();
@@ -260,7 +263,7 @@ export default function PronosticosPage() {
   if (loading) {
     return (
       <div className="pro">
-        <CargaPagina pagina="pronosticos" />
+        <CargaPagina pagina="pronosticos" progreso={progreso} />
       </div>
     );
   }
