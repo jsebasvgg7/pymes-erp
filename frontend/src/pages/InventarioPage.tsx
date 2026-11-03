@@ -2,7 +2,6 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { SlidersHorizontal, History, Boxes } from "lucide-react";
 import DataTable, { DataTableLayout } from "../components/DataTable";
 import CargaPagina from "../components/CargaPagina";
-import { SkeletonControles, SkeletonEncabezado, SkeletonLista } from "../components/skeleton/Skeleton";
 import ErrorState from "../components/ErrorState";
 import { describirError, errorSesion, type ErrorPagina } from "../utils/erroresPagina";
 import Modal from "../components/Modal";
@@ -269,11 +268,7 @@ export default function InventarioPage() {
   if (loading) {
     return (
       <div className="inv">
-        <CargaPagina pagina="inventario">
-          <SkeletonEncabezado acciones={0} />
-          <SkeletonControles filtros={2} />
-          <SkeletonLista filas={10} />
-        </CargaPagina>
+        <CargaPagina pagina="inventario" />
       </div>
     );
   }

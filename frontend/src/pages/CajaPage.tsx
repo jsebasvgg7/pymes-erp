@@ -3,7 +3,6 @@ import { Receipt, TrendingDown, TrendingUp, Wallet, Plus, ArrowLeftRight, Circle
 import DataTable, { DataTableLayout } from "../components/DataTable";
 import { formatDateShort } from "../utils/formatDate";
 import CargaPagina from "../components/CargaPagina";
-import { SkeletonEncabezado, SkeletonLista, SkeletonResumen } from "../components/skeleton/Skeleton";
 import ErrorState from "../components/ErrorState";
 import { describirError, errorSesion, type ErrorPagina } from "../utils/erroresPagina";
 import Modal from "../components/Modal";
@@ -281,12 +280,7 @@ export default function CajaPage() {
     if (loading) {
         return (
             <div className="cash">
-                <CargaPagina pagina="caja">
-                    <SkeletonEncabezado acciones={3} />
-                    <SkeletonResumen cantidad={4} />
-                    <SkeletonLista filas={8} />
-                    <SkeletonLista filas={3} />
-                </CargaPagina>
+                <CargaPagina pagina="caja" />
             </div>
         );
     }

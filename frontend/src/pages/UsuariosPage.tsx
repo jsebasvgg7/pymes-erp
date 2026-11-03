@@ -3,7 +3,6 @@ import { Pencil, User, UserCheck, UserPlus, UserX } from "lucide-react";
 import Avatar from "../components/Avatar";
 import ConfirmDialog from "../components/ConfirmDialog";
 import CargaPagina from "../components/CargaPagina";
-import { SkeletonControles, SkeletonDosColumnas, SkeletonEncabezado, SkeletonLateral, SkeletonMosaico } from "../components/skeleton/Skeleton";
 import ErrorState from "../components/ErrorState";
 import { describirError, errorSesion, type ErrorPagina } from "../utils/erroresPagina";
 import Modal from "../components/Modal";
@@ -224,13 +223,7 @@ export default function UsuariosPage() {
 	if (loading) {
 		return (
 			<div className="usr">
-				<CargaPagina pagina="usuarios">
-					<SkeletonEncabezado acciones={1} />
-					<SkeletonControles />
-					<SkeletonDosColumnas lateral={<SkeletonLateral />}>
-					  <SkeletonMosaico cantidad={8} minimo={209} cuadrado />
-					</SkeletonDosColumnas>
-				</CargaPagina>
+				<CargaPagina pagina="usuarios" />
 			</div>
 		);
 	}

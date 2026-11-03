@@ -4,7 +4,6 @@ import { useNavigate } from "react-router-dom";
 import ConfirmDialog from "../components/ConfirmDialog";
 import DataTable, { DataTableLayout } from "../components/DataTable";
 import CargaPagina from "../components/CargaPagina";
-import { SkeletonControles, SkeletonEncabezado, SkeletonLista } from "../components/skeleton/Skeleton";
 import ErrorState from "../components/ErrorState";
 import { describirError, errorSesion, type ErrorPagina } from "../utils/erroresPagina";
 import Modal from "../components/Modal";
@@ -287,11 +286,7 @@ export default function ProductosPage() {
 	if (loading) {
 		return (
 			<div className="prod">
-				<CargaPagina pagina="productos">
-					<SkeletonEncabezado acciones={1} />
-					<SkeletonControles filtros={1} />
-					<SkeletonLista filas={10} />
-				</CargaPagina>
+				<CargaPagina pagina="productos" />
 			</div>
 		);
 	}

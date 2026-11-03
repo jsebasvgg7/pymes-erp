@@ -6,7 +6,6 @@ import PageHeader from "../components/PageHeader";
 import PrimaryButton from "../components/PrimaryButton";
 import SearchBar from "../components/SearchBar";
 import SecondaryButton from "../components/SecondaryButton";
-import { SkeletonEncabezado, SkeletonPanel, SkeletonResumen } from "../components/skeleton/Skeleton";
 import StatusBadge from "../components/StatusBadge";
 import { authService } from "../services/authService";
 import { inventarioService, type Inventario } from "../services/inventarioService";
@@ -261,11 +260,7 @@ export default function PronosticosPage() {
   if (loading) {
     return (
       <div className="pro">
-        <CargaPagina pagina="pronosticos">
-          <SkeletonEncabezado acciones={2} />
-          <SkeletonResumen cantidad={4} />
-          <SkeletonPanel filas={10} />
-        </CargaPagina>
+        <CargaPagina pagina="pronosticos" />
       </div>
     );
   }

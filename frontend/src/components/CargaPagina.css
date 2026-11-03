@@ -49,3 +49,12 @@
     animation: none;
   }
 }
+
+.cargaPagina--continua {
+  opacity: 1;
+  animation: none;
+}
+
+.cargaPagina__texto--quieto {
+  animation: none;
+}

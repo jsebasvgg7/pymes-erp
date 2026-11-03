@@ -2,7 +2,6 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Plus, Pencil, Trash2, RotateCcw, Tag } from "lucide-react";
 import ConfirmDialog from "../components/ConfirmDialog";
 import CargaPagina from "../components/CargaPagina";
-import { SkeletonControles, SkeletonEncabezado, SkeletonMosaico } from "../components/skeleton/Skeleton";
 import ErrorState from "../components/ErrorState";
 import { describirError, errorSesion, type ErrorPagina } from "../utils/erroresPagina";
 import Modal from "../components/Modal";
@@ -219,11 +218,7 @@ export default function CategoriasPage() {
 	if (loading) {
 		return (
 			<div className="cat">
-				<CargaPagina pagina="categorias">
-					<SkeletonEncabezado acciones={1} />
-					<SkeletonControles />
-					<SkeletonMosaico cantidad={8} minimo={240} altoMinimo={176} relleno={20} />
-				</CargaPagina>
+				<CargaPagina pagina="categorias" />
 			</div>
 		);
 	}

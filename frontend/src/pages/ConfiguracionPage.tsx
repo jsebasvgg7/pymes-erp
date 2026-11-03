@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import CargaPagina from "../components/CargaPagina";
-import { SkeletonAjustes, SkeletonEncabezado } from "../components/skeleton/Skeleton";
 import ErrorState from "../components/ErrorState";
 import PageHeader from "../components/PageHeader";
 import ConfigNav from "../components/configuracion/ConfigNav";
@@ -172,10 +171,7 @@ export default function ConfiguracionPage() {
 	if (loading) {
 		return (
 			<div className="set">
-				<CargaPagina pagina="configuracion">
-					<SkeletonEncabezado acciones={0} />
-					<SkeletonAjustes modulos={MODULOS_CONFIG.length} filas={MODULOS_CONFIG[0].filas.length} />
-				</CargaPagina>
+				<CargaPagina pagina="configuracion" />
 			</div>
 		);
 	}
