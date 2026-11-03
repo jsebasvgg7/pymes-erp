@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Pencil, Trash2, User, UserPlus } from "lucide-react";
 import ConfirmDialog from "../components/ConfirmDialog";
-import LoadingState from "../components/LoadingState";
+import CargaPagina from "../components/CargaPagina";
+import { SkeletonControles, SkeletonEncabezado, SkeletonLista } from "../components/skeleton/Skeleton";
 import ErrorState from "../components/ErrorState";
 import { describirError, errorSesion, type ErrorPagina } from "../utils/erroresPagina";
 import Modal from "../components/Modal";
@@ -276,7 +277,11 @@ export default function ClientesPage() {
 	if (loading) {
 		return (
 			<div className="cli">
-				<LoadingState label="Cargando clientes..." pagina="clientes" />
+				<CargaPagina pagina="clientes">
+					<SkeletonEncabezado acciones={1} />
+					<SkeletonControles conteo />
+					<SkeletonLista filas={8} conTitulo={false} />
+				</CargaPagina>
 			</div>
 		);
 	}

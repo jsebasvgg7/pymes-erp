@@ -2,7 +2,8 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Pencil, User, UserCheck, UserPlus, UserX } from "lucide-react";
 import Avatar from "../components/Avatar";
 import ConfirmDialog from "../components/ConfirmDialog";
-import LoadingState from "../components/LoadingState";
+import CargaPagina from "../components/CargaPagina";
+import { SkeletonControles, SkeletonDosColumnas, SkeletonEncabezado, SkeletonLateral, SkeletonMosaico } from "../components/skeleton/Skeleton";
 import ErrorState from "../components/ErrorState";
 import { describirError, errorSesion, type ErrorPagina } from "../utils/erroresPagina";
 import Modal from "../components/Modal";
@@ -223,7 +224,13 @@ export default function UsuariosPage() {
 	if (loading) {
 		return (
 			<div className="usr">
-				<LoadingState label="Cargando usuarios..." pagina="usuarios" />
+				<CargaPagina pagina="usuarios">
+					<SkeletonEncabezado acciones={1} />
+					<SkeletonControles />
+					<SkeletonDosColumnas lateral={<SkeletonLateral />}>
+					  <SkeletonMosaico cantidad={8} minimo={209} cuadrado />
+					</SkeletonDosColumnas>
+				</CargaPagina>
 			</div>
 		);
 	}

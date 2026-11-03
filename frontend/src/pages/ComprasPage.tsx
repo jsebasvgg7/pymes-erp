@@ -2,7 +2,8 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Plus, ShoppingCart } from "lucide-react";
 import ConfirmDialog from "../components/ConfirmDialog";
 import DataTable, { DataTableLayout } from "../components/DataTable";
-import LoadingState from "../components/LoadingState";
+import CargaPagina from "../components/CargaPagina";
+import { SkeletonEncabezado, SkeletonLista } from "../components/skeleton/Skeleton";
 import ErrorState from "../components/ErrorState";
 import { describirError, errorSesion, type ErrorPagina } from "../utils/erroresPagina";
 import Modal from "../components/Modal";
@@ -274,7 +275,10 @@ export default function ComprasPage() {
 	if (loading) {
 		return (
 			<div className="pur">
-				<LoadingState label="Cargando compras..." pagina="compras" />
+				<CargaPagina pagina="compras">
+					<SkeletonEncabezado acciones={1} />
+					<SkeletonLista filas={10} />
+				</CargaPagina>
 			</div>
 		);
 	}

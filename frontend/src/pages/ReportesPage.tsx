@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { CreditCard, Download, Package, Receipt, Wallet } from "lucide-react";
 import DataTable, { DataTableLayout } from "../components/DataTable";
-import LoadingState from "../components/LoadingState";
+import CargaPagina from "../components/CargaPagina";
+import { SkeletonEncabezado, SkeletonLista, SkeletonPeriodo, SkeletonTarjetas } from "../components/skeleton/Skeleton";
 import ErrorState from "../components/ErrorState";
 import { describirError, errorSesion, type ErrorPagina } from "../utils/erroresPagina";
 import PageHeader from "../components/PageHeader";
@@ -300,7 +301,13 @@ export default function ReportesPage() {
 	if (loading) {
 		return (
 			<div className="rep">
-				<LoadingState label="Cargando reportes..." pagina="reportes" />
+				<CargaPagina pagina="reportes">
+					<SkeletonEncabezado acciones={0} />
+					<SkeletonPeriodo />
+					<SkeletonTarjetas cantidad={4} />
+					<SkeletonLista filas={5} />
+					<SkeletonLista filas={5} />
+				</CargaPagina>
 			</div>
 		);
 	}

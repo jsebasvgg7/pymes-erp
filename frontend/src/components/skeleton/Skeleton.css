@@ -130,7 +130,7 @@
 
 .sk-mosaico {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(var(--sk-min, 240px), 1fr));
   gap: 16px;
   min-width: 0;
 }
@@ -249,6 +249,65 @@
 @media (max-width: 560px) {
   .sk-resumen {
     grid-template-columns: 1fr;
+  }
+}
+
+.sk-mosaico__tarjeta--cuadrada {
+  min-height: 0;
+  aspect-ratio: 1 / 1;
+}
+
+.sk-controles {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px 18px;
+}
+
+.sk-periodo {
+  display: grid;
+  gap: 10px;
+  padding: 14px 16px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--paper);
+}
+
+.sk-periodo__campos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.sk-dos {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 340px;
+  align-items: start;
+  gap: 24px;
+}
+
+.sk-dos__principal {
+  min-width: 0;
+}
+
+.sk-lateral {
+  display: grid;
+  gap: 22px;
+  padding: 22px;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: var(--paper);
+}
+
+.sk-lateral__fila {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+@media (max-width: 1200px) {
+  .sk-dos {
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 

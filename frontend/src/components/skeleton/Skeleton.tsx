@@ -1,4 +1,4 @@
-import type { CSSProperties } from "react";
+import type { CSSProperties, ReactNode } from "react";
 import "./Skeleton.css";
 
 type Medida = string | number;
@@ -97,11 +97,18 @@ export function SkeletonLista({ filas = 8, conTitulo = true }: SkeletonListaProp
   );
 }
 
-export function SkeletonMosaico({ cantidad = 8 }: { cantidad?: number }) {
+interface SkeletonMosaicoProps {
+  cantidad?: number;
+  minimo?: number;
+  cuadrado?: boolean;
+}
+
+export function SkeletonMosaico({ cantidad = 8, minimo = 240, cuadrado = false }: SkeletonMosaicoProps) {
+  const estilo = { "--sk-min": `${minimo}px` } as CSSProperties;
   return (
-    <div className="sk-mosaico">
+    <div className="sk-mosaico" style={estilo}>
       {Array.from({ length: cantidad }, (_, i) => (
-        <div key={i} className="sk-mosaico__tarjeta">
+        <div key={i} className={cuadrado ? "sk-mosaico__tarjeta sk-mosaico__tarjeta--cuadrada" : "sk-mosaico__tarjeta"}>
           <div className="sk-mosaico__arriba">
             <Bloque ancho={44} alto={44} circulo />
             <Bloque ancho={40} alto={40} radio={12} />
@@ -183,6 +190,58 @@ export function SkeletonPanel({ filas = 10 }: { filas?: number }) {
           <Bloque ancho="70%" alto={22} radio={6} className="sk-lista__etiqueta" />
           <Bloque ancho={72} alto={22} radio={999} className="sk-lista__estado" />
           <Bloque ancho={64} alto={14} className="sk-lista__valor" />
+        </div>
+      ))}
+    </div>
+  );
+}
+
+interface SkeletonControlesProps {
+  filtros?: number;
+  conteo?: boolean;
+}
+
+export function SkeletonControles({ filtros = 0, conteo = false }: SkeletonControlesProps) {
+  return (
+    <div className="sk-controles">
+      <Bloque ancho={300} alto={38} radio={10} />
+      {Array.from({ length: filtros }, (_, i) => (
+        <Bloque key={i} ancho={150} alto={38} radio={10} />
+      ))}
+      {conteo ? <Bloque ancho={90} alto={13} /> : null}
+    </div>
+  );
+}
+
+export function SkeletonPeriodo() {
+  return (
+    <div className="sk-periodo">
+      <div className="sk-periodo__campos">
+        <Bloque ancho={160} alto={38} radio={10} />
+        <Bloque ancho={160} alto={38} radio={10} />
+      </div>
+      <Bloque ancho="min(520px, 90%)" alto={12} />
+    </div>
+  );
+}
+
+export function SkeletonDosColumnas({ lateral, children }: { lateral: ReactNode; children: ReactNode }) {
+  return (
+    <div className="sk-dos">
+      <div className="sk-dos__principal">{children}</div>
+      <div className="sk-dos__lateral">{lateral}</div>
+    </div>
+  );
+}
+
+export function SkeletonLateral({ filas = 5 }: { filas?: number }) {
+  return (
+    <div className="sk-lateral">
+      <Bloque ancho="50%" alto={16} radio={6} />
+      {Array.from({ length: filas }, (_, i) => (
+        <div key={i} className="sk-lateral__fila">
+          <Bloque ancho="45%" alto={13} />
+          <Bloque ancho={40} alto={13} />
         </div>
       ))}
     </div>
