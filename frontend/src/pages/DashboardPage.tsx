@@ -4,6 +4,7 @@ import DataTable, { DataTableLayout } from "../components/DataTable";
 import PageHeader from "../components/PageHeader";
 import AperturaCajaControl from "../components/AperturaCajaControl";
 import { useEstadoCaja } from "../hooks/useEstadoCaja";
+import { useProgresoCarga } from "../hooks/useProgresoCarga";
 import StatusBadge from "../components/StatusBadge";
 import { etiquetaMovimiento } from "../utils/etiquetaMovimiento";
 import { formatDateShort } from "../utils/formatDate";
@@ -60,6 +61,10 @@ type MovimientoUnificado = {
 
 const RANGO_DIAS_DEFECTO = 240;
 
+type Contar = <T>(promesa: Promise<T>) => Promise<T>;
+
+const sinContar: Contar = (promesa) => promesa;
+
 export default function DashboardPage() {
 	useFormato();
 	const { avisarStockBajo } = useAjustes();
@@ -67,6 +72,7 @@ export default function DashboardPage() {
 	const empresaId = usuario?.empresaId;
 	const { estados: estadosCaja } = useEstadoCaja(empresaId);
 	const estadoCaja = estadosCaja.find((e) => e.abierta) ?? estadosCaja[0] ?? null;
+	const { progreso, registrar, reiniciar } = useProgresoCarga(8);
 
 	const [loading, setLoading] = useState(true);
 	const [reloading, setReloading] = useState(false);
@@ -89,22 +95,26 @@ export default function DashboardPage() {
 	const [iconosCategoria, setIconosCategoria] = useState<Record<string, string | null>>({});
 
 	const cargarDashboard = useCallback(
-		async (empresaIdActual: number, signalCancelled: () => boolean) => {
+		async (empresaIdActual: number, signalCancelled: () => boolean, contar: Contar = sinContar) => {
 			// LÍMITE ESTRICTO: Se reduce la carga de productos y clientes a 50 (suficientes para la métrica "nuevos hoy")
 			const [resumenData, cajaData, flujoData, productosData, clientesData, ventasDiaData, categoriasData] = await Promise.all([
-				dashboardService.obtenerResumen(empresaIdActual),
-				cajaService.listarMovimientosPorEmpresa(empresaIdActual, 0, 50),
-				cajaService.obtenerFlujoCajaDiario(empresaIdActual, 12).catch((e) => {
-					console.error("Flujo de caja no disponible:", e);
-					return [] as FlujoCajaDiario[];
-				}),
-				productoService.listarPorEmpresa(empresaIdActual, 0, 50),
-				clienteService.listarPorEmpresa(empresaIdActual, 0, 50),
-				cargarVentasHoyAyer(empresaIdActual).catch((e) => {
-					console.error("Ventas de hoy no disponibles:", e);
-					return null;
-				}),
-				categoriaProductoService.listarPorEmpresa(empresaIdActual).catch(() => [])
+				contar(dashboardService.obtenerResumen(empresaIdActual)),
+				contar(cajaService.listarMovimientosPorEmpresa(empresaIdActual, 0, 50)),
+				contar(
+					cajaService.obtenerFlujoCajaDiario(empresaIdActual, 12).catch((e) => {
+						console.error("Flujo de caja no disponible:", e);
+						return [] as FlujoCajaDiario[];
+					})
+				),
+				contar(productoService.listarPorEmpresa(empresaIdActual, 0, 50)),
+				contar(clienteService.listarPorEmpresa(empresaIdActual, 0, 50)),
+				contar(
+					cargarVentasHoyAyer(empresaIdActual).catch((e) => {
+						console.error("Ventas de hoy no disponibles:", e);
+						return null;
+					})
+				),
+				contar(categoriaProductoService.listarPorEmpresa(empresaIdActual).catch(() => []))
 			]);
 
 			if (signalCancelled()) return;
@@ -123,13 +133,13 @@ export default function DashboardPage() {
 	);
 
 	const cargarVentasPorCategoria = useCallback(
-		async (empresaIdActual: number, inicio: string, fin: string, signalCancelled: () => boolean) => {
-			const categorias = await ventaService
-				.obtenerVentasPorCategoria(empresaIdActual, toInicioDeDia(inicio), toFinDeDia(fin))
-				.catch((e) => {
+		async (empresaIdActual: number, inicio: string, fin: string, signalCancelled: () => boolean, contar: Contar = sinContar) => {
+			const categorias = await contar(
+				ventaService.obtenerVentasPorCategoria(empresaIdActual, toInicioDeDia(inicio), toFinDeDia(fin)).catch((e) => {
 					console.error("Ventas por categoría no disponibles:", e);
 					return [] as CategoriaVenta[];
-				});
+				})
+			);
 			if (signalCancelled()) return;
 			setCategoriasVenta(categorias);
 		},
@@ -147,12 +157,13 @@ export default function DashboardPage() {
 		let cancelled = false;
 
 		async function load() {
+			reiniciar();
 			setLoading(true);
 			setError(null);
 			try {
 				await Promise.all([
-					cargarDashboard(empresaIdActual, () => cancelled),
-					cargarVentasPorCategoria(empresaIdActual, fechaInicio, fechaFin, () => cancelled)
+					cargarDashboard(empresaIdActual, () => cancelled, registrar),
+					cargarVentasPorCategoria(empresaIdActual, fechaInicio, fechaFin, () => cancelled, registrar)
 				]);
 			} catch (err) {
 				console.error("Error cargando dashboard:", err);
@@ -168,7 +179,7 @@ export default function DashboardPage() {
 		return () => {
 			cancelled = true;
 		};
-	}, [empresaId, intento]);
+	}, [empresaId, intento, registrar, reiniciar]);
 
 	const esPrimerRenderRango = useRef(true);
 
@@ -255,7 +266,7 @@ export default function DashboardPage() {
 	if (loading) {
 		return (
 			<div className="db">
-				<CargaPagina pagina="dashboard" />
+				<CargaPagina pagina="dashboard" progreso={progreso} />
 			</div>
 		);
 	}
