@@ -38,7 +38,7 @@ function BarXAxisLabel({
   const fadeRadius = tickerHalfWidth + fadeBuffer;
 
   let opacity = 1;
-  if (isHovering && crosshairX !== null) {
+  if (tickerHalfWidth > 0 && isHovering && crosshairX !== null) {
     const distance = Math.abs(x - crosshairX);
     if (distance < tickerHalfWidth) {
       opacity = 0;

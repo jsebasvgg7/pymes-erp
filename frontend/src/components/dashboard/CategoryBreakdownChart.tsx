@@ -98,8 +98,9 @@ export default function CategoryBreakdownChart({
 				>
 					<Grid horizontal strokeDasharray="3,4" />
 					<Bar dataKey="total" fill="var(--ink)" />
-					<BarXAxis showAllLabels renderLabel={renderEtiqueta} />
+					<BarXAxis showAllLabels tickerHalfWidth={0} renderLabel={renderEtiqueta} />
 					<ChartTooltip
+						showDatePill={false}
 						rows={(point) => [
 							{ label: String(point.label), value: formatCurrencyShort(Number(point.total) || 0), color: "var(--ink)" },
 							{ label: "Promedio", value: formatCurrencyShort(Number(point.promedio) || 0), color: "var(--muted)" }
