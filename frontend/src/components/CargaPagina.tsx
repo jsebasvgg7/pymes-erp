@@ -28,6 +28,7 @@ export default function CargaPagina({ pagina, children, progreso }: CargaPaginaP
   const quieta = continua && frase === fraseInicial;
   const conProgreso = progreso !== undefined && progreso.total > 0;
   const reservaProgreso = conProgreso || PAGINAS_CON_PROGRESO.includes(pagina);
+  const porcentaje = conProgreso ? Math.round((progreso.hechas / progreso.total) * 100) : 0;
 
   return (
     <div className={continua ? "cargaPagina cargaPagina--continua" : "cargaPagina"}>
@@ -39,7 +40,7 @@ export default function CargaPagina({ pagina, children, progreso }: CargaPaginaP
         </p>
         {reservaProgreso && (
           <p className="cargaPagina__progreso">
-            {conProgreso ? `Cargando datos del negocio: ${progreso.hechas} de ${progreso.total}` : null}
+            {conProgreso ? `Cargando datos del negocio: ${porcentaje}\u00a0%` : null}
           </p>
         )}
       </div>
