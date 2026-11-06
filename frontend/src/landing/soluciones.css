@@ -137,12 +137,12 @@
 
 .lp-solucion__antes {
   margin: 0 0 9px;
-  font-size: 0.77rem;
+  font-size: 0.9rem;
   font-weight: 600;
   color: var(--muted);
   text-decoration: line-through;
-  text-decoration-color: var(--line);
-  text-decoration-thickness: 2px;
+  text-decoration-color: currentColor;
+  text-decoration-thickness: 1px;
 }
 
 .lp-solucion__titulo {
@@ -155,7 +155,7 @@
 
 .lp-solucion__desc {
   margin: 7px 0 0;
-  font-size: 0.825rem;
+  font-size: 0.95rem;
   line-height: 1.5;
   color: var(--muted);
 }
